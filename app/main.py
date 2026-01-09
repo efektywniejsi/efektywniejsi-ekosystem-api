@@ -12,17 +12,11 @@ from app.core.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """
-    Lifespan context manager for FastAPI application.
-    Handles startup and shutdown events.
-    """
-    # Startup: Connect to Redis
     print("Connecting to Redis...")
     redis_module.redis_client = Redis.from_url(
         settings.REDIS_URL, decode_responses=True, encoding="utf-8"
     )
 
-    # Test Redis connection
     try:
         await redis_module.redis_client.ping()
         print("✓ Connected to Redis successfully")
@@ -31,14 +25,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     yield
 
-    # Shutdown: Close Redis connection
     print("Closing Redis connection...")
     if redis_module.redis_client:
         await redis_module.redis_client.close()
     print("✓ Redis connection closed")
 
 
-# Create FastAPI application
 app = FastAPI(
     title=settings.PROJECT_NAME,
     debug=settings.DEBUG,
@@ -47,7 +39,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Configure CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -56,22 +47,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
 app.include_router(auth.router, prefix=f"{settings.API_V1_PREFIX}/auth", tags=["authentication"])
 app.include_router(password.router, prefix=f"{settings.API_V1_PREFIX}/password", tags=["password-reset"])
 app.include_router(admin.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["admin"])
 
 
-# Health check endpoints
 @app.get("/")
 async def root() -> dict[str, str]:
-    """Root endpoint"""
     return {"message": "Efektywniejsi Ekosystem Auth API", "version": "1.0.0", "status": "running"}
 
 
 @app.get("/health")
 async def health_check() -> dict[str, str]:
-    """Health check endpoint for monitoring"""
     redis_status = "unknown"
 
     try:

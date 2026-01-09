@@ -19,7 +19,6 @@ class TestRequestPasswordResetEndpoint:
         data = response.json()
         assert "reset link has been sent" in data["message"]
 
-        # Verify token stored in database
         db_session.refresh(test_user)
         assert test_user.password_reset_token is not None
         assert test_user.password_reset_token_expires is not None
@@ -48,7 +47,6 @@ class TestRequestPasswordResetEndpoint:
         data = response.json()
         assert "reset link has been sent" in data["message"]
 
-        # Verify NO token stored for inactive user
         db_session.refresh(inactive_user)
         assert inactive_user.password_reset_token is None
 
@@ -56,7 +54,6 @@ class TestRequestPasswordResetEndpoint:
 class TestResetPasswordEndpoint:
     @pytest.mark.asyncio
     async def test_should_reset_password_with_valid_token(self, test_client, test_user, db_session):
-        # Generate reset token
         raw_token, hashed_token, expiry = generate_reset_token()
         test_user.password_reset_token = hashed_token
         test_user.password_reset_token_expires = expiry
@@ -64,7 +61,6 @@ class TestResetPasswordEndpoint:
 
         old_password_hash = test_user.hashed_password
 
-        # Reset password
         payload = {"token": raw_token, "new_password": "newSecurePassword123"}
 
         response = await test_client.post("/api/v1/password/reset", json=payload)
@@ -72,7 +68,6 @@ class TestResetPasswordEndpoint:
         assert response.status_code == 200
         assert "successfully reset" in response.json()["message"]
 
-        # Verify password changed
         db_session.refresh(test_user)
         assert test_user.hashed_password != old_password_hash
         assert test_user.password_reset_token is None
@@ -89,7 +84,6 @@ class TestResetPasswordEndpoint:
 
     @pytest.mark.asyncio
     async def test_should_return_400_when_token_expired(self, test_client, test_user, db_session):
-        # Generate expired token
         raw_token, hashed_token, _ = generate_reset_token()
         test_user.password_reset_token = hashed_token
         test_user.password_reset_token_expires = datetime.utcnow() - timedelta(hours=1)
@@ -102,7 +96,6 @@ class TestResetPasswordEndpoint:
         assert response.status_code == 400
         assert "expired" in response.json()["detail"]
 
-        # Verify token cleared
         db_session.refresh(test_user)
         assert test_user.password_reset_token is None
 
@@ -110,7 +103,6 @@ class TestResetPasswordEndpoint:
     async def test_should_return_422_when_password_too_short(
         self, test_client, test_user, db_session
     ):
-        # Generate reset token
         raw_token, hashed_token, expiry = generate_reset_token()
         test_user.password_reset_token = hashed_token
         test_user.password_reset_token_expires = expiry
@@ -125,7 +117,6 @@ class TestResetPasswordEndpoint:
 
     @pytest.mark.asyncio
     async def test_should_allow_login_with_new_password(self, test_client, test_user, db_session):
-        # Generate reset token and reset password
         raw_token, hashed_token, expiry = generate_reset_token()
         test_user.password_reset_token = hashed_token
         test_user.password_reset_token_expires = expiry
@@ -135,7 +126,6 @@ class TestResetPasswordEndpoint:
         reset_payload = {"token": raw_token, "new_password": new_password}
         await test_client.post("/api/v1/password/reset", json=reset_payload)
 
-        # Try to login with new password
         login_payload = {"email": test_user.email, "password": new_password}
         response = await test_client.post("/api/v1/auth/login", json=login_payload)
 

@@ -110,7 +110,6 @@ class TestListUsersEndpoint:
     async def test_should_support_pagination(
         self, test_client, test_admin_token, db_session, test_user, test_admin
     ):
-        # Create additional users
         for i in range(5):
             create_user_factory(db_session, email=f"user{i}@example.com")
 
@@ -130,13 +129,11 @@ class TestListUsersEndpoint:
     async def test_should_filter_by_role(
         self, test_client, test_admin_token, test_user, test_admin, db_session
     ):
-        # Create more paid users
         create_user_factory(db_session, email="paid1@example.com", role="paid")
         create_user_factory(db_session, email="paid2@example.com", role="paid")
 
         headers = create_auth_headers(test_admin_token)
 
-        # Filter by admin role
         response = await test_client.get("/api/v1/admin/users?role=admin", headers=headers)
 
         assert response.status_code == 200
@@ -148,12 +145,10 @@ class TestListUsersEndpoint:
     async def test_should_filter_by_active_status(
         self, test_client, test_admin_token, db_session, test_user
     ):
-        # Create inactive user
         create_user_factory(db_session, email="inactive@example.com", is_active=False)
 
         headers = create_auth_headers(test_admin_token)
 
-        # Filter by inactive
         response = await test_client.get("/api/v1/admin/users?is_active=false", headers=headers)
 
         assert response.status_code == 200
@@ -188,7 +183,6 @@ class TestUpdateUserEndpoint:
         assert data["name"] == "Updated Name"
         assert data["email"] == test_user.email
 
-        # Verify in database
         db_session.refresh(test_user)
         assert test_user.name == "Updated Name"
 
@@ -208,7 +202,6 @@ class TestUpdateUserEndpoint:
 
         assert data["role"] == "admin"
 
-        # Verify in database
         db_session.refresh(test_user)
         assert test_user.role == "admin"
 
@@ -225,7 +218,6 @@ class TestUpdateUserEndpoint:
 
         assert response.status_code == 200
 
-        # Verify in database
         db_session.refresh(test_user)
         assert test_user.is_active is False
 

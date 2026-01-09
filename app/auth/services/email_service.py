@@ -10,8 +10,6 @@ from app.core.config import settings
 
 @dataclass
 class EmailMessage:
-    """Email message data class"""
-
     to: str
     subject: str
     body_html: str
@@ -19,22 +17,13 @@ class EmailMessage:
 
 
 class EmailService(ABC):
-    """Abstract base class for email services"""
-
     @abstractmethod
     async def send_email(self, message: EmailMessage) -> bool:
-        """Send an email"""
         pass
 
 
 class ConsoleEmailService(EmailService):
-    """
-    Development email service that prints emails to console.
-    Use this for local development and testing.
-    """
-
     async def send_email(self, message: EmailMessage) -> bool:
-        """Print email to console instead of sending"""
         print("\n" + "=" * 80)
         print("📧 EMAIL (Console Output - Development Mode)")
         print("=" * 80)
@@ -48,11 +37,6 @@ class ConsoleEmailService(EmailService):
 
 
 class SMTPEmailService(EmailService):
-    """
-    Production email service that sends emails via SMTP.
-    Supports Gmail, SendGrid, and other SMTP providers.
-    """
-
     def __init__(
         self,
         smtp_host: str,
@@ -70,21 +54,17 @@ class SMTPEmailService(EmailService):
         self.from_name = from_name
 
     async def send_email(self, message: EmailMessage) -> bool:
-        """Send email via SMTP"""
         try:
-            # Create message
             msg = MIMEMultipart("alternative")
             msg["Subject"] = message.subject
             msg["From"] = f"{self.from_name} <{self.from_email}>"
             msg["To"] = message.to
 
-            # Attach text and HTML parts
             part1 = MIMEText(message.body_text, "plain")
             part2 = MIMEText(message.body_html, "html")
             msg.attach(part1)
             msg.attach(part2)
 
-            # Send via SMTP
             await aiosmtplib.send(
                 msg,
                 hostname=self.smtp_host,
@@ -100,10 +80,6 @@ class SMTPEmailService(EmailService):
 
 
 def get_email_service() -> EmailService:
-    """
-    Factory function to get the appropriate email service.
-    Returns ConsoleEmailService for development, SMTPEmailService for production.
-    """
     if settings.EMAIL_BACKEND == "smtp":
         return SMTPEmailService(
             smtp_host=settings.SMTP_HOST,
@@ -117,17 +93,6 @@ def get_email_service() -> EmailService:
 
 
 def build_password_reset_email(name: str, email: str, token: str) -> EmailMessage:
-    """
-    Build password reset email with link.
-
-    Args:
-        name: User's name
-        email: User's email
-        token: Password reset token (raw, not hashed)
-
-    Returns:
-        EmailMessage ready to send
-    """
     reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
 
     html_body = f"""
@@ -152,9 +117,6 @@ def build_password_reset_email(name: str, email: str, token: str) -> EmailMessag
         </p>
     </body>
     </html>
-    """
-
-    text_body = f"""
 Reset hasła - Efektywniejsi
 
 Cześć {name},
@@ -170,18 +132,6 @@ Jeśli nie prosiłeś o reset hasła, zignoruj tę wiadomość.
 
 ---
 © 2026 Efektywniejsi. Wszystkie prawa zastrzeżone.
-    """
-
-    return EmailMessage(
-        to=email,
-        subject="Reset hasła - Efektywniejsi",
-        body_html=html_body,
-        body_text=text_body,
-    )
-
-
-def build_welcome_email(name: str, email: str, temp_password: str) -> EmailMessage:
-    """
     Build welcome email for admin-created users.
 
     Args:
@@ -191,10 +141,6 @@ def build_welcome_email(name: str, email: str, temp_password: str) -> EmailMessa
 
     Returns:
         EmailMessage ready to send
-    """
-    login_url = f"{settings.FRONTEND_URL}/login"
-
-    html_body = f"""
     <html>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
         <h2 style="color: #4CAF50;">Witaj w Efektywniejsi!</h2>
@@ -218,9 +164,6 @@ def build_welcome_email(name: str, email: str, temp_password: str) -> EmailMessa
         </p>
     </body>
     </html>
-    """
-
-    text_body = f"""
 Witaj w Efektywniejsi!
 
 Cześć {name},
@@ -236,11 +179,3 @@ Ważne: Zmień hasło po pierwszym logowaniu.
 
 ---
 © 2026 Efektywniejsi. Wszystkie prawa zastrzeżone.
-    """
-
-    return EmailMessage(
-        to=email,
-        subject="Witaj w Efektywniejsi",
-        body_html=html_body,
-        body_text=text_body,
-    )

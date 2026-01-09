@@ -7,7 +7,7 @@ from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
 from testcontainers.redis import RedisContainer
 
-from app.auth.models.user import User  # noqa: F401
+from app.auth.models.user import User
 from app.core import redis as redis_module
 from app.core.config import settings
 from app.core.security import create_access_token, create_refresh_token, hash_token

@@ -18,20 +18,6 @@ def create_user_factory(
     role: str = "paid",
     is_active: bool = True,
 ) -> User:
-    """
-    Factory function to create test users.
-
-    Args:
-        db_session: Database session
-        email: User email (generates random if None)
-        password: Plain text password
-        name: User name (generates random if None)
-        role: User role ("paid" or "admin")
-        is_active: Whether user is active
-
-    Returns:
-        Created User instance
-    """
     user = User(
         id=uuid.uuid4(),
         email=email or fake.email(),

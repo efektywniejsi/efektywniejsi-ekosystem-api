@@ -1,14 +1,6 @@
-"""
-Seed script to create initial admin user.
-
-Usage:
-    uv run python -m app.scripts.seeds.seed_users
-"""
-
 import sys
 from pathlib import Path
 
-# Add project root to path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -18,10 +10,8 @@ from app.db.session import SessionLocal
 
 
 def seed_admin_user() -> None:
-    """Create initial admin user if it doesn't exist"""
     db = SessionLocal()
     try:
-        # Check if admin already exists
         admin_email = "admin@efektywniejsi.pl"
         existing_admin = db.query(User).filter(User.email == admin_email).first()
 
@@ -29,7 +19,6 @@ def seed_admin_user() -> None:
             print(f"✓ Admin user already exists: {admin_email}")
             return
 
-        # Create admin user
         admin_user = User(
             email=admin_email,
             name="Admin",
@@ -54,7 +43,6 @@ def seed_admin_user() -> None:
 
 
 def seed_test_users() -> None:
-    """Create test users for development"""
     db = SessionLocal()
     try:
         test_users = [

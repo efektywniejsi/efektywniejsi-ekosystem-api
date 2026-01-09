@@ -27,7 +27,6 @@ class TestLoginEndpoint:
         assert data["user"]["role"] == "paid"
         assert data["user"]["id"] == str(test_user.id)
 
-        # Verify refresh token stored in Redis
         token_hash = hash_token(data["refresh_token"])
         token_data = await redis_module.get_refresh_token(token_hash)
         assert token_data is not None
@@ -106,7 +105,6 @@ class TestRefreshEndpoint:
     async def test_should_return_401_when_refresh_token_revoked(
         self, test_client, test_refresh_token, redis_client
     ):
-        # Revoke token
         token_hash = hash_token(test_refresh_token)
         await redis_module.revoke_refresh_token(token_hash)
 
@@ -123,12 +121,10 @@ class TestLogoutEndpoint:
     async def test_should_revoke_refresh_token(
         self, test_client, test_user_token, test_refresh_token, redis_client
     ):
-        # Verify token exists before logout
         token_hash = hash_token(test_refresh_token)
         token_data = await redis_module.get_refresh_token(token_hash)
         assert token_data is not None
 
-        # Logout
         payload = {"refresh_token": test_refresh_token}
         headers = create_auth_headers(test_user_token)
 
@@ -137,7 +133,6 @@ class TestLogoutEndpoint:
         assert response.status_code == 200
         assert "Successfully logged out" in response.json()["message"]
 
-        # Verify token revoked
         token_data = await redis_module.get_refresh_token(token_hash)
         assert token_data is None
 
