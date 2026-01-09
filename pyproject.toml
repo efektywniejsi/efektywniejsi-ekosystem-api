@@ -27,6 +27,7 @@ dev = [
     "pytest-cov==6.0.0",
     "httpx==0.28.1",
     "faker==33.1.0",
+    "testcontainers==4.8.2",
     "ruff==0.8.4",
     "mypy==1.13.0",
 ]
