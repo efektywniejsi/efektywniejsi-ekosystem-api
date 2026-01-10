@@ -4,9 +4,9 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from app.auth.models.user import User
-from app.core.security import get_password_hash
-from app.db.session import SessionLocal
+from app.auth.models.user import User  # noqa: E402
+from app.core.security import get_password_hash  # noqa: E402
+from app.db.session import SessionLocal  # noqa: E402
 
 
 def seed_admin_user() -> None:

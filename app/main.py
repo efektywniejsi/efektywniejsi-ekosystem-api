@@ -18,8 +18,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
 
     try:
-        await redis_module.redis_client.ping()
-        print("✓ Connected to Redis successfully")
+        if redis_module.redis_client:
+            await redis_module.redis_client.ping()
+            print("✓ Connected to Redis successfully")
     except Exception as e:
         print(f"✗ Failed to connect to Redis: {e}")
 
@@ -48,7 +49,9 @@ app.add_middleware(
 )
 
 app.include_router(auth.router, prefix=f"{settings.API_V1_PREFIX}/auth", tags=["authentication"])
-app.include_router(password.router, prefix=f"{settings.API_V1_PREFIX}/password", tags=["password-reset"])
+app.include_router(
+    password.router, prefix=f"{settings.API_V1_PREFIX}/password", tags=["password-reset"]
+)
 app.include_router(admin.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["admin"])
 
 

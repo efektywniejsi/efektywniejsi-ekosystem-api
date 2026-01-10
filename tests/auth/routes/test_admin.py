@@ -44,9 +44,7 @@ class TestCreateUserEndpoint:
         assert "already registered" in response.json()["detail"]
 
     @pytest.mark.asyncio
-    async def test_should_return_422_when_password_too_short(
-        self, test_client, test_admin_token
-    ):
+    async def test_should_return_422_when_password_too_short(self, test_client, test_admin_token):
         headers = create_auth_headers(test_admin_token)
         payload = {
             "email": "newuser@example.com",
@@ -115,9 +113,7 @@ class TestListUsersEndpoint:
 
         headers = create_auth_headers(test_admin_token)
 
-        response = await test_client.get(
-            "/api/v1/admin/users?skip=0&limit=3", headers=headers
-        )
+        response = await test_client.get("/api/v1/admin/users?skip=0&limit=3", headers=headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -235,9 +231,7 @@ class TestUpdateUserEndpoint:
         assert "not found" in response.json()["detail"]
 
     @pytest.mark.asyncio
-    async def test_should_return_403_when_not_admin(
-        self, test_client, test_user_token, test_user
-    ):
+    async def test_should_return_403_when_not_admin(self, test_client, test_user_token, test_user):
         headers = create_auth_headers(test_user_token)
         payload = {"name": "Updated Name"}
 

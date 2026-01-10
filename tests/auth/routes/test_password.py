@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from app.core.security import generate_reset_token, get_password_hash, hash_token
+from app.core.security import generate_reset_token
 from tests.utils.factories import create_user_factory
 
 

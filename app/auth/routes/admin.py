@@ -67,8 +67,8 @@ async def create_user(
     if request.send_welcome_email:
         email_service = get_email_service()
         email_message = build_welcome_email(
-            name=new_user.name,
-            email=new_user.email,
+            name=str(new_user.name),
+            email=str(new_user.email),
             temp_password=request.password,
         )
         await email_service.send_email(email_message)
@@ -129,13 +129,13 @@ async def update_user(
         )
 
     if request.name is not None:
-        user.name = request.name
+        user.name = request.name  # type: ignore[assignment]
     if request.role is not None:
-        user.role = request.role
+        user.role = request.role  # type: ignore[assignment]
     if request.is_active is not None:
-        user.is_active = request.is_active
+        user.is_active = request.is_active  # type: ignore[assignment]
 
-    user.updated_at = datetime.utcnow()
+    user.updated_at = datetime.utcnow()  # type: ignore[assignment]
 
     db.commit()
     db.refresh(user)

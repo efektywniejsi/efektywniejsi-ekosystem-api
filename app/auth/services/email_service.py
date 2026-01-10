@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-
-import aiosmtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+import aiosmtplib
 
 from app.core.config import settings
 
@@ -117,6 +117,9 @@ def build_password_reset_email(name: str, email: str, token: str) -> EmailMessag
         </p>
     </body>
     </html>
+    """
+
+    text_body = f"""
 Reset hasła - Efektywniejsi
 
 Cześć {name},
@@ -132,15 +135,20 @@ Jeśli nie prosiłeś o reset hasła, zignoruj tę wiadomość.
 
 ---
 © 2026 Efektywniejsi. Wszystkie prawa zastrzeżone.
-    Build welcome email for admin-created users.
+    """
 
-    Args:
-        name: User's name
-        email: User's email
-        temp_password: Temporary password
+    return EmailMessage(
+        to=email,
+        subject="Reset hasła - Efektywniejsi",
+        body_html=html_body,
+        body_text=text_body,
+    )
 
-    Returns:
-        EmailMessage ready to send
+
+def build_welcome_email(name: str, email: str, temp_password: str) -> EmailMessage:
+    login_url = f"{settings.FRONTEND_URL}/login"
+
+    html_body = f"""
     <html>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
         <h2 style="color: #4CAF50;">Witaj w Efektywniejsi!</h2>
@@ -164,6 +172,9 @@ Jeśli nie prosiłeś o reset hasła, zignoruj tę wiadomość.
         </p>
     </body>
     </html>
+    """
+
+    text_body = f"""
 Witaj w Efektywniejsi!
 
 Cześć {name},
@@ -179,3 +190,11 @@ Ważne: Zmień hasło po pierwszym logowaniu.
 
 ---
 © 2026 Efektywniejsi. Wszystkie prawa zastrzeżone.
+    """
+
+    return EmailMessage(
+        to=email,
+        subject="Witaj w Efektywniejsi",
+        body_html=html_body,
+        body_text=text_body,
+    )
