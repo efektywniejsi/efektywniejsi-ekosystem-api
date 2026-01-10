@@ -6,7 +6,6 @@ from tests.utils.factories import create_user_factory
 from tests.utils.helpers import (
     assert_token_response_valid,
     assert_user_response_valid,
-    create_auth_headers,
     extract_token_from_cookie,
     set_auth_cookies,
 )

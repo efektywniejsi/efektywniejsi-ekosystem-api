@@ -169,9 +169,7 @@ class TestUpdateUserEndpoint:
         set_access_token_cookie(test_client, test_admin_token)
         payload = {"name": "Updated Name"}
 
-        response = await test_client.patch(
-            f"/api/v1/admin/users/{test_user.id}", json=payload
-        )
+        response = await test_client.patch(f"/api/v1/admin/users/{test_user.id}", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -186,9 +184,7 @@ class TestUpdateUserEndpoint:
         set_access_token_cookie(test_client, test_admin_token)
         payload = {"role": "admin"}
 
-        response = await test_client.patch(
-            f"/api/v1/admin/users/{test_user.id}", json=payload
-        )
+        response = await test_client.patch(f"/api/v1/admin/users/{test_user.id}", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -202,9 +198,7 @@ class TestUpdateUserEndpoint:
         set_access_token_cookie(test_client, test_admin_token)
         payload = {"is_active": False}
 
-        response = await test_client.patch(
-            f"/api/v1/admin/users/{test_user.id}", json=payload
-        )
+        response = await test_client.patch(f"/api/v1/admin/users/{test_user.id}", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -217,9 +211,7 @@ class TestUpdateUserEndpoint:
         payload = {"name": "Updated Name"}
         fake_uuid = "00000000-0000-0000-0000-000000000000"
 
-        response = await test_client.patch(
-            f"/api/v1/admin/users/{fake_uuid}", json=payload
-        )
+        response = await test_client.patch(f"/api/v1/admin/users/{fake_uuid}", json=payload)
 
         assert response.status_code == 404
         assert "not found" in response.json()["detail"]
@@ -229,8 +221,6 @@ class TestUpdateUserEndpoint:
         set_access_token_cookie(test_client, test_user_token)
         payload = {"name": "Updated Name"}
 
-        response = await test_client.patch(
-            f"/api/v1/admin/users/{test_user.id}", json=payload
-        )
+        response = await test_client.patch(f"/api/v1/admin/users/{test_user.id}", json=payload)
 
         assert response.status_code == 403
