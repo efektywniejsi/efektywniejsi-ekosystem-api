@@ -50,8 +50,6 @@ class TestResetPasswordEndpoint:
         test_user.password_reset_token_expires = expiry
         db_session.commit()
 
-        old_password_hash = test_user.hashed_password
-
         payload = {"token": raw_token, "new_password": "newSecurePassword123"}
 
         response = await test_client.post("/api/v1/password/reset", json=payload)
@@ -83,7 +81,9 @@ class TestResetPasswordEndpoint:
         assert "expired" in response.json()["detail"]
 
     @pytest.mark.asyncio
-    async def test_should_return_422_when_password_too_short(self, test_client, test_user, db_session):
+    async def test_should_return_422_when_password_too_short(
+        self, test_client, test_user, db_session
+    ):
         raw_token, hashed_token, expiry = generate_reset_token()
         test_user.password_reset_token = hashed_token
         test_user.password_reset_token_expires = expiry
