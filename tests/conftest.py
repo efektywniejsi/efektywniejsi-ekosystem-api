@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -10,9 +11,6 @@ from httpx import ASGITransport, AsyncClient  # noqa: E402
 from redis.asyncio import Redis  # noqa: E402
 from sqlalchemy import create_engine  # noqa: E402
 from sqlalchemy.orm import sessionmaker  # noqa: E402
-from testcontainers.core.container import DockerContainer  # noqa: E402
-from testcontainers.core.waiting_utils import wait_for_logs  # noqa: E402
-from testcontainers.redis import RedisContainer  # noqa: E402
 
 from app.core import redis as redis_module  # noqa: E402
 from app.core.config import settings  # noqa: E402
@@ -25,37 +23,52 @@ from app.db.session import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from tests.utils.factories import create_user_factory  # noqa: E402
 
+IS_CI = os.getenv("CI") == "true"
+
+if not IS_CI:
+    from testcontainers.core.container import DockerContainer  # noqa: E402
+    from testcontainers.core.waiting_utils import wait_for_logs  # noqa: E402
+    from testcontainers.redis import RedisContainer  # noqa: E402
+
 
 @pytest.fixture(scope="session")
 def postgres_container():
-    container = DockerContainer("postgres:16")
-    container.with_exposed_ports(5432)
-    container.with_env("POSTGRES_USER", "test")
-    container.with_env("POSTGRES_PASSWORD", "test")
-    container.with_env("POSTGRES_DB", "test")
+    if IS_CI:
+        yield None
+    else:
+        container = DockerContainer("postgres:16")
+        container.with_exposed_ports(5432)
+        container.with_env("POSTGRES_USER", "test")
+        container.with_env("POSTGRES_PASSWORD", "test")
+        container.with_env("POSTGRES_DB", "test")
 
-    container.start()
-    wait_for_logs(container, "database system is ready to accept connections", timeout=30)
+        container.start()
+        wait_for_logs(container, "database system is ready to accept connections", timeout=30)
 
-    yield container
-    container.stop()
+        yield container
+        container.stop()
 
 
 @pytest.fixture(scope="session")
 def redis_container():
-    with RedisContainer("redis:7") as redis:
-        yield redis
+    if IS_CI:
+        yield None
+    else:
+        with RedisContainer("redis:7") as redis:
+            yield redis
 
 
 @pytest.fixture(scope="session")
 def test_database_url(postgres_container):
-    host = postgres_container.get_container_host_ip()
-    port = postgres_container.get_exposed_port(5432)
-    user = "test"
-    password = "test"
-    dbname = "test"
-
-    return f"postgresql://{user}:{password}@{host}:{port}/{dbname}"
+    if IS_CI:
+        return "postgresql://test:test@localhost:5432/test"
+    else:
+        host = postgres_container.get_container_host_ip()
+        port = postgres_container.get_exposed_port(5432)
+        user = "test"
+        password = "test"
+        dbname = "test"
+        return f"postgresql://{user}:{password}@{host}:{port}/{dbname}"
 
 
 @pytest.fixture(scope="session")
@@ -91,9 +104,12 @@ def db_session(test_session_local):
 
 @pytest.fixture(scope="session")
 def test_redis_url(redis_container):
-    host = redis_container.get_container_host_ip()
-    port = redis_container.get_exposed_port(6379)
-    return f"redis://{host}:{port}/0"
+    if IS_CI:
+        return "redis://localhost:6379/0"
+    else:
+        host = redis_container.get_container_host_ip()
+        port = redis_container.get_exposed_port(6379)
+        return f"redis://{host}:{port}/0"
 
 
 @pytest.fixture
