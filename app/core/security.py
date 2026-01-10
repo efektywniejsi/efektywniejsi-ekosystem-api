@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
+from fastapi import Response
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
@@ -62,3 +63,41 @@ def generate_reset_token() -> tuple[str, str, datetime]:
     hashed_token = hashlib.sha256(raw_token.encode()).hexdigest()
     expiry = datetime.utcnow() + timedelta(hours=settings.PASSWORD_RESET_TOKEN_EXPIRE_HOURS)
     return raw_token, hashed_token, expiry
+
+
+def set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
+    """Set httpOnly cookies for authentication tokens"""
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False,  # Set to True in production with HTTPS
+        samesite="lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,  # Set to True in production with HTTPS
+        samesite="lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+    )
+
+
+def update_access_cookie(response: Response, access_token: str) -> None:
+    """Update only the access token cookie (used in refresh endpoint)"""
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False,  # Set to True in production with HTTPS
+        samesite="lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+
+
+def clear_auth_cookies(response: Response) -> None:
+    """Clear authentication cookies on logout"""
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")

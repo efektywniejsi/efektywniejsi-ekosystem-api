@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     PASSWORD_RESET_TOKEN_EXPIRE_HOURS: int = 1
 
-    BACKEND_CORS_ORIGINS: str = '["http://localhost:5173","http://localhost:3000"]'
+    BACKEND_CORS_ORIGINS: str = '["http://localhost:5173","http://localhost:3000","http://localhost:3001"]'
 
     API_V1_PREFIX: str = "/api/v1"
     PROJECT_NAME: str = "Efektywniejsi Ekosystem Auth API"

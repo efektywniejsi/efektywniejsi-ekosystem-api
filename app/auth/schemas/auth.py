@@ -18,13 +18,16 @@ class TokenResponse(BaseModel):
     user: UserResponse
 
 
+class LoginResponse(BaseModel):
+    user: UserResponse
+
+
 class RefreshRequest(BaseModel):
     refresh_token: str
 
 
 class RefreshResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
+    message: str = "Token refreshed successfully"
 
 
 class LogoutRequest(BaseModel):

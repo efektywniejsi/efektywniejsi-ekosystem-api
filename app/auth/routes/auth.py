@@ -1,27 +1,32 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import (
+    get_current_user,
+    get_refresh_token_from_cookie,
+    get_validated_token_payload,
+)
 from app.auth.models.user import User
 from app.auth.schemas.auth import (
     LoginRequest,
+    LoginResponse,
     LogoutRequest,
     LogoutResponse,
     RefreshRequest,
     RefreshResponse,
-    TokenResponse,
 )
 from app.auth.schemas.user import UserResponse
-from app.core import redis as redis_module
+from app.auth.services.token_service import token_service
 from app.core import security
-from app.core.config import settings
 from app.db.session import get_db
 
 router = APIRouter()
 
 
-@router.post("/login", response_model=TokenResponse)
-async def login(credentials: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
+@router.post("/login", response_model=LoginResponse)
+async def login(
+    credentials: LoginRequest, response: Response, db: Session = Depends(get_db)
+) -> LoginResponse:
     user = db.query(User).filter(User.email == credentials.email).first()
 
     if not user:
@@ -46,9 +51,9 @@ async def login(credentials: LoginRequest, db: Session = Depends(get_db)) -> Tok
     access_token = security.create_access_token(token_data)
     refresh_token = security.create_refresh_token(token_data)
 
-    token_hash = security.hash_token(refresh_token)
-    ttl_seconds = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
-    await redis_module.store_refresh_token(token_hash, str(user.id), ttl_seconds)
+    await token_service.store_refresh_token(refresh_token, str(user.id))
+
+    security.set_auth_cookies(response, access_token, refresh_token)
 
     user_response = UserResponse(
         id=str(user.id),
@@ -58,35 +63,18 @@ async def login(credentials: LoginRequest, db: Session = Depends(get_db)) -> Tok
         is_active=user.is_active,
     )
 
-    return TokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type="bearer",
-        user=user_response,
-    )
+    return LoginResponse(user=user_response)
 
 
 @router.post("/refresh", response_model=RefreshResponse)
-async def refresh_token(request: RefreshRequest, db: Session = Depends(get_db)) -> RefreshResponse:
-    payload = security.decode_token(request.refresh_token)
+async def refresh_token(
+    refresh_token: str = Depends(get_refresh_token_from_cookie),
+    response: Response = ...,
+    db: Session = Depends(get_db),
+) -> RefreshResponse:
+    payload = await get_validated_token_payload(refresh_token, expected_type="refresh")
 
-    if payload is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    if payload.get("type") != "refresh":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token type",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    token_hash = security.hash_token(request.refresh_token)
-    token_data = await redis_module.get_refresh_token(token_hash)
-
+    token_data = await token_service.validate_refresh_token(refresh_token)
     if token_data is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -97,27 +85,35 @@ async def refresh_token(request: RefreshRequest, db: Session = Depends(get_db)) 
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
         )
 
     user = db.query(User).filter(User.id == user_id).first()
     if not user or not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive",
         )
 
     token_payload = {"sub": str(user.id), "email": user.email, "role": user.role}
     new_access_token = security.create_access_token(token_payload)
 
-    return RefreshResponse(access_token=new_access_token, token_type="bearer")
+    security.update_access_cookie(response, new_access_token)
+
+    return RefreshResponse(message="Token refreshed successfully")
 
 
 @router.post("/logout", response_model=LogoutResponse)
 async def logout(
-    request: LogoutRequest, current_user: User = Depends(get_current_user)
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    refresh_token: str | None = Depends(get_refresh_token_from_cookie),
 ) -> LogoutResponse:
-    token_hash = security.hash_token(request.refresh_token)
-    await redis_module.revoke_refresh_token(token_hash)
+    if refresh_token:
+        await token_service.revoke_refresh_token(refresh_token)
+
+    security.clear_auth_cookies(response)
 
     return LogoutResponse(message="Successfully logged out")
 
