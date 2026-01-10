@@ -42,15 +42,25 @@ packages = ["app"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-exclude = [".venv", "alembic/versions", "__pycache__", ".pytest_cache"]
+exclude = [
+    ".venv",
+    "alembic/versions",
+    "__pycache__",
+    ".pytest_cache",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "A", "C4", "PT"]
-ignore = ["B008"]
+ignore = [
+    "B008",  # FastAPI Depends() in argument defaults is standard pattern
+    "N815",  # mixedCase variable names (needed for frontend compatibility)
+]
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
 
 [tool.mypy]
 python_version = "3.12"
@@ -63,13 +73,48 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+check_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = ["jose.*", "passlib.*", "sqlalchemy.*", "alembic.*"]
+module = [
+    "jose.*",
+    "passlib.*",
+    "sqlalchemy.*",
+    "alembic.*",
+    "faker.*",
+]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
 asyncio_mode = "auto"
-addopts = ["--cov=app", "--cov-report=term-missing", "-v"]
+addopts = [
+    "--cov=app",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-fail-under=0",
+    "-v",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/alembic/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]

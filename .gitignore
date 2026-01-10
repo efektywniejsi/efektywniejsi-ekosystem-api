@@ -48,11 +48,23 @@ alembic/versions/*.pyc
 # Testing
 .pytest_cache/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
 .tox/
+.nox/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Ruff
+.ruff_cache/
 
 # Logs
 *.log
+logs/
 
 # OS
 .DS_Store
@@ -60,4 +72,6 @@ Thumbs.db
 
 # uv
 .uv/
-uv.lock
+
+# Claude
+.claude/
