@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import (
@@ -10,9 +10,7 @@ from app.auth.models.user import User
 from app.auth.schemas.auth import (
     LoginRequest,
     LoginResponse,
-    LogoutRequest,
     LogoutResponse,
-    RefreshRequest,
     RefreshResponse,
 )
 from app.auth.schemas.user import UserResponse
@@ -68,8 +66,8 @@ async def login(
 
 @router.post("/refresh", response_model=RefreshResponse)
 async def refresh_token(
+    response: Response,
     refresh_token: str = Depends(get_refresh_token_from_cookie),
-    response: Response = ...,
     db: Session = Depends(get_db),
 ) -> RefreshResponse:
     payload = await get_validated_token_payload(refresh_token, expected_type="refresh")

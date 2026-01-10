@@ -82,6 +82,7 @@ module = [
     "sqlalchemy.*",
     "alembic.*",
     "faker.*",
+    "aiosmtplib.*",
 ]
 ignore_missing_imports = true
 

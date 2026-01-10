@@ -111,4 +111,6 @@ class TestResetPasswordEndpoint:
         response = await test_client.post("/api/v1/auth/login", json=login_payload)
 
         assert response.status_code == 200
-        assert "access_token" in response.json()
+        # Verify tokens are set in cookies
+        assert "access_token" in response.cookies
+        assert "refresh_token" in response.cookies

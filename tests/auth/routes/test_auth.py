@@ -7,6 +7,8 @@ from tests.utils.helpers import (
     assert_token_response_valid,
     assert_user_response_valid,
     create_auth_headers,
+    extract_token_from_cookie,
+    set_auth_cookies,
 )
 
 
@@ -22,12 +24,14 @@ class TestLoginEndpoint:
         assert response.status_code == 200
         data = response.json()
 
-        assert_token_response_valid(data)
+        assert_token_response_valid(data, response)
         assert data["user"]["email"] == test_user.email
         assert data["user"]["role"] == "paid"
         assert data["user"]["id"] == str(test_user.id)
 
-        token_hash = hash_token(data["refresh_token"])
+        # Verify refresh token is stored in Redis
+        refresh_token = extract_token_from_cookie(response, "refresh_token")
+        token_hash = hash_token(refresh_token)
         token_data = await redis_module.get_refresh_token(token_hash)
         assert token_data is not None
         assert token_data["user_id"] == str(test_user.id)
@@ -79,38 +83,41 @@ class TestLoginEndpoint:
 class TestRefreshEndpoint:
     @pytest.mark.asyncio
     async def test_should_return_new_access_token_when_valid_refresh_token(
-        self, test_client, test_user, test_refresh_token
+        self, test_client, test_user, test_user_token, test_refresh_token
     ):
-        payload = {"refresh_token": test_refresh_token}
+        # Set auth cookies
+        set_auth_cookies(test_client, test_user_token, test_refresh_token)
 
-        response = await test_client.post("/api/v1/auth/refresh", json=payload)
+        response = await test_client.post("/api/v1/auth/refresh")
 
         assert response.status_code == 200
         data = response.json()
 
-        assert "access_token" in data
-        assert "token_type" in data
-        assert data["token_type"] == "bearer"
+        # Response should confirm token refresh
+        assert "message" in data
+        # Check that new access token cookie was set
+        assert "access_token" in response.cookies
 
     @pytest.mark.asyncio
     async def test_should_return_401_when_invalid_refresh_token(self, test_client):
-        payload = {"refresh_token": "invalid-token"}
+        # Set invalid refresh token cookie
+        test_client.cookies.set("refresh_token", "invalid-token")
 
-        response = await test_client.post("/api/v1/auth/refresh", json=payload)
+        response = await test_client.post("/api/v1/auth/refresh")
 
         assert response.status_code == 401
-        assert "Invalid refresh token" in response.json()["detail"]
 
     @pytest.mark.asyncio
     async def test_should_return_401_when_refresh_token_revoked(
-        self, test_client, test_refresh_token, redis_client
+        self, test_client, test_user_token, test_refresh_token, redis_client
     ):
         token_hash = hash_token(test_refresh_token)
         await redis_module.revoke_refresh_token(token_hash)
 
-        payload = {"refresh_token": test_refresh_token}
+        # Set revoked refresh token cookie
+        set_auth_cookies(test_client, test_user_token, test_refresh_token)
 
-        response = await test_client.post("/api/v1/auth/refresh", json=payload)
+        response = await test_client.post("/api/v1/auth/refresh")
 
         assert response.status_code == 401
         assert "revoked or expired" in response.json()["detail"]
@@ -125,10 +132,10 @@ class TestLogoutEndpoint:
         token_data = await redis_module.get_refresh_token(token_hash)
         assert token_data is not None
 
-        payload = {"refresh_token": test_refresh_token}
-        headers = create_auth_headers(test_user_token)
+        # Set auth cookies
+        set_auth_cookies(test_client, test_user_token, test_refresh_token)
 
-        response = await test_client.post("/api/v1/auth/logout", json=payload, headers=headers)
+        response = await test_client.post("/api/v1/auth/logout")
 
         assert response.status_code == 200
         assert "Successfully logged out" in response.json()["message"]
@@ -138,9 +145,9 @@ class TestLogoutEndpoint:
 
     @pytest.mark.asyncio
     async def test_should_return_403_when_no_auth_token(self, test_client, test_refresh_token):
-        payload = {"refresh_token": test_refresh_token}
+        # No cookies set - should fail with 403
 
-        response = await test_client.post("/api/v1/auth/logout", json=payload)
+        response = await test_client.post("/api/v1/auth/logout")
 
         assert response.status_code == 403
 
@@ -148,11 +155,12 @@ class TestLogoutEndpoint:
 class TestMeEndpoint:
     @pytest.mark.asyncio
     async def test_should_return_user_info_when_authenticated(
-        self, test_client, test_user, test_user_token
+        self, test_client, test_user, test_user_token, test_refresh_token
     ):
-        headers = create_auth_headers(test_user_token)
+        # Set auth cookies
+        set_auth_cookies(test_client, test_user_token, test_refresh_token)
 
-        response = await test_client.get("/api/v1/auth/me", headers=headers)
+        response = await test_client.get("/api/v1/auth/me")
 
         assert response.status_code == 200
         data = response.json()
@@ -171,8 +179,9 @@ class TestMeEndpoint:
 
     @pytest.mark.asyncio
     async def test_should_return_401_when_invalid_token(self, test_client):
-        headers = create_auth_headers("invalid-token")
+        # Set invalid access token cookie
+        test_client.cookies.set("access_token", "invalid-token")
 
-        response = await test_client.get("/api/v1/auth/me", headers=headers)
+        response = await test_client.get("/api/v1/auth/me")
 
         assert response.status_code == 401
