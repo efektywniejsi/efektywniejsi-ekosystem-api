@@ -85,7 +85,7 @@ async def get_current_user(
             detail="Inactive user",
         )
 
-    return user
+    return user  # type: ignore[no-any-return]
 
 
 async def require_admin(current_user: User = Depends(get_current_user)) -> User:

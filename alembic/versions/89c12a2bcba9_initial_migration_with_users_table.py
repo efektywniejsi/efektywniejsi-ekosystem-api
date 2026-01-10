@@ -1,7 +1,7 @@
 """Initial migration with users table
 
 Revision ID: 89c12a2bcba9
-Revises: 
+Revises:
 Create Date: 2026-01-09 19:54:15.696203
 
 """
