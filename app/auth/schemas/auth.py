@@ -8,7 +8,7 @@ from app.auth.schemas.user import UserResponse
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
-    role: Literal["paid", "admin"] = "paid"  # Optional, defaults to 'paid'
+    role: Literal["paid", "admin"] = "paid"
 
 
 class TokenResponse(BaseModel):

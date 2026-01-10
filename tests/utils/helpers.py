@@ -16,7 +16,6 @@ def assert_token_response_valid(
     """
     assert "user" in data
 
-    # If response is provided, verify cookies are set
     if response is not None:
         cookies = response.cookies
         assert "access_token" in cookies

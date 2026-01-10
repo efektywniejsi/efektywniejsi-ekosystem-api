@@ -37,10 +37,8 @@ def postgres_container():
 
     container.start()
 
-    # PostgreSQL logs "ready to accept connections" twice during startup
-    # We need to wait for both occurrences to ensure it's fully ready
     wait_for_logs(container, "database system is ready to accept connections", timeout=60)
-    time.sleep(2)  # Additional buffer to ensure full readiness
+    time.sleep(2)
 
     yield container
     container.stop()
