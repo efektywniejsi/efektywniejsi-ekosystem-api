@@ -78,6 +78,7 @@ async def create_user(
         email=new_user.email,
         name=new_user.name,
         role=new_user.role,
+        is_active=new_user.is_active,
     )
 
 
@@ -107,6 +108,7 @@ async def list_users(
             email=user.email,
             name=user.name,
             role=user.role,
+            is_active=user.is_active,
         )
         for user in users
     ]
@@ -145,4 +147,5 @@ async def update_user(
         email=user.email,
         name=user.name,
         role=user.role,
+        is_active=user.is_active,
     )

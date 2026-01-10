@@ -55,6 +55,7 @@ async def login(credentials: LoginRequest, db: Session = Depends(get_db)) -> Tok
         email=user.email,
         name=user.name,
         role=user.role,
+        is_active=user.is_active,
     )
 
     return TokenResponse(
@@ -130,6 +131,7 @@ async def get_current_user_info(
         email=current_user.email,
         name=current_user.name,
         role=current_user.role,
+        is_active=current_user.is_active,
     )
 
     return user_response

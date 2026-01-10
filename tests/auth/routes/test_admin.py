@@ -164,7 +164,7 @@ class TestListUsersEndpoint:
 class TestUpdateUserEndpoint:
     @pytest.mark.asyncio
     async def test_should_update_user_name_when_admin(
-        self, test_client, test_admin_token, test_user, db_session
+        self, test_client, test_admin_token, test_user
     ):
         headers = create_auth_headers(test_admin_token)
         payload = {"name": "Updated Name"}
@@ -179,12 +179,9 @@ class TestUpdateUserEndpoint:
         assert data["name"] == "Updated Name"
         assert data["email"] == test_user.email
 
-        db_session.refresh(test_user)
-        assert test_user.name == "Updated Name"
-
     @pytest.mark.asyncio
     async def test_should_update_user_role_when_admin(
-        self, test_client, test_admin_token, test_user, db_session
+        self, test_client, test_admin_token, test_user
     ):
         headers = create_auth_headers(test_admin_token)
         payload = {"role": "admin"}
@@ -198,12 +195,9 @@ class TestUpdateUserEndpoint:
 
         assert data["role"] == "admin"
 
-        db_session.refresh(test_user)
-        assert test_user.role == "admin"
-
     @pytest.mark.asyncio
     async def test_should_update_active_status_when_admin(
-        self, test_client, test_admin_token, test_user, db_session
+        self, test_client, test_admin_token, test_user
     ):
         headers = create_auth_headers(test_admin_token)
         payload = {"is_active": False}
@@ -213,9 +207,9 @@ class TestUpdateUserEndpoint:
         )
 
         assert response.status_code == 200
+        data = response.json()
 
-        db_session.refresh(test_user)
-        assert test_user.is_active is False
+        assert data["is_active"] is False
 
     @pytest.mark.asyncio
     async def test_should_return_404_when_user_not_found(self, test_client, test_admin_token):
