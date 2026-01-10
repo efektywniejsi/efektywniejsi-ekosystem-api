@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -6,21 +5,25 @@ from dotenv import load_dotenv
 env_file = Path(__file__).parent.parent / ".env.test"
 load_dotenv(env_file)
 
-import pytest
-from httpx import ASGITransport, AsyncClient
-from redis.asyncio import Redis
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from testcontainers.core.container import DockerContainer
-from testcontainers.core.waiting_utils import wait_for_logs
-from testcontainers.redis import RedisContainer
+import pytest  # noqa: E402
+from httpx import ASGITransport, AsyncClient  # noqa: E402
+from redis.asyncio import Redis  # noqa: E402
+from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy.orm import sessionmaker  # noqa: E402
+from testcontainers.core.container import DockerContainer  # noqa: E402
+from testcontainers.core.waiting_utils import wait_for_logs  # noqa: E402
+from testcontainers.redis import RedisContainer  # noqa: E402
 
-from app.core import redis as redis_module
-from app.core.config import settings
-from app.core.security import create_access_token, create_refresh_token, hash_token
-from app.db.session import Base, get_db
-from app.main import app
-from tests.utils.factories import create_user_factory
+from app.core import redis as redis_module  # noqa: E402
+from app.core.config import settings  # noqa: E402
+from app.core.security import (  # noqa: E402
+    create_access_token,
+    create_refresh_token,
+    hash_token,
+)
+from app.db.session import Base, get_db  # noqa: E402
+from app.main import app  # noqa: E402
+from tests.utils.factories import create_user_factory  # noqa: E402
 
 
 @pytest.fixture(scope="session")
