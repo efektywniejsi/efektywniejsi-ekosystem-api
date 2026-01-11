@@ -53,6 +53,7 @@ services:
       - "8001:8000"
     volumes:
       - .:/app
+      - uploads_data:/app/uploads
     command: sh -c "uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     networks:
       - ekosystem_network
@@ -60,6 +61,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  uploads_data:
 
 networks:
   ekosystem_network:

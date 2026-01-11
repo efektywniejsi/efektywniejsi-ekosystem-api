@@ -1,0 +1,18 @@
+{
+  "mappings": [
+    {
+      "placeholder": "TO_BE_REPLACED_001",
+      "mux_playback_id": "abc123xyz456def789",
+      "mux_asset_id": "asset-abc-123",
+      "video_title": "Wprowadzenie do kursu - Masterclass Low-code",
+      "duration_seconds": 420
+    },
+    {
+      "placeholder": "TO_BE_REPLACED_002",
+      "mux_playback_id": "def456ghi789jkl012",
+      "mux_asset_id": "asset-def-456",
+      "video_title": "Konfiguracja środowiska n8n",
+      "duration_seconds": 960
+    }
+  ]
+}

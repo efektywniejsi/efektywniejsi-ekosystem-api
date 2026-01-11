@@ -8,6 +8,15 @@ from redis.asyncio import Redis
 from app.auth.routes import admin, auth, password
 from app.core import redis as redis_module
 from app.core.config import settings
+from app.courses.routes import (
+    attachments,
+    certificates,
+    courses,
+    enrollment,
+    gamification,
+    lessons,
+    progress,
+)
 
 
 @asynccontextmanager
@@ -53,6 +62,15 @@ app.include_router(
     password.router, prefix=f"{settings.API_V1_PREFIX}/password", tags=["password-reset"]
 )
 app.include_router(admin.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["admin"])
+
+# Course routes
+app.include_router(courses.router, prefix=settings.API_V1_PREFIX, tags=["courses"])
+app.include_router(enrollment.router, prefix=settings.API_V1_PREFIX, tags=["enrollments"])
+app.include_router(lessons.router, prefix=settings.API_V1_PREFIX, tags=["lessons"])
+app.include_router(progress.router, prefix=settings.API_V1_PREFIX, tags=["progress"])
+app.include_router(gamification.router, prefix=settings.API_V1_PREFIX, tags=["gamification"])
+app.include_router(attachments.router, prefix=settings.API_V1_PREFIX, tags=["attachments"])
+app.include_router(certificates.router, prefix=settings.API_V1_PREFIX, tags=["certificates"])
 
 
 @app.get("/")
