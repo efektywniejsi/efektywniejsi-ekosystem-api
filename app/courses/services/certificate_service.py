@@ -2,6 +2,7 @@ import io
 import secrets
 from datetime import datetime
 from pathlib import Path
+from typing import cast
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -141,7 +142,7 @@ class CertificateService:
         )
 
         if existing_certificate:
-            return existing_certificate
+            return cast(Certificate, existing_certificate)
 
         user = db.query(User).filter(User.id == user_id).first()
         course = db.query(Course).filter(Course.id == course_id).first()
@@ -177,7 +178,7 @@ class CertificateService:
         db.commit()
         db.refresh(certificate)
 
-        return certificate
+        return cast(Certificate, certificate)
 
     @staticmethod
     def verify_certificate(certificate_code: str, db: Session) -> dict:

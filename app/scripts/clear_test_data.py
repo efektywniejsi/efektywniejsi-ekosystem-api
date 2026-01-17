@@ -84,12 +84,8 @@ def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(description="Clear test data")
-    parser.add_argument(
-        "--user", default="user@test.pl", help="User email (default: user@test.pl)"
-    )
-    parser.add_argument(
-        "--execute", action="store_true", help="Execute changes (default: dry run)"
-    )
+    parser.add_argument("--user", default="user@test.pl", help="User email (default: user@test.pl)")
+    parser.add_argument("--execute", action="store_true", help="Execute changes (default: dry run)")
     args = parser.parse_args()
 
     dry_run = not args.execute

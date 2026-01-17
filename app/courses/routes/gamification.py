@@ -58,7 +58,7 @@ async def get_my_gamification_summary(
     total_earned = (
         db.query(UserAchievement).filter(UserAchievement.user_id == current_user.id).count()
     )
-    total_available = db.query(Achievement).filter(Achievement.is_active == True).count()
+    total_available = db.query(Achievement).filter(Achievement.is_active).count()
 
     grace_available = True
     days_until_grace = 0
@@ -123,7 +123,7 @@ async def get_all_achievements(
     current_user: User = Depends(get_current_user),
 ) -> list[AchievementResponse]:
     """Get all available achievements."""
-    achievements = db.query(Achievement).filter(Achievement.is_active == True).all()
+    achievements = db.query(Achievement).filter(Achievement.is_active).all()
 
     return [
         AchievementResponse(

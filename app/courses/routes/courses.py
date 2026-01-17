@@ -24,8 +24,6 @@ from app.db.session import get_db
 router = APIRouter()
 
 
-
-
 @router.post(
     "/courses",
     response_model=CourseResponse,
@@ -271,8 +269,6 @@ async def delete_course(
     db.commit()
 
 
-
-
 @router.post(
     "/courses/{course_id}/modules",
     response_model=ModuleResponse,
@@ -367,8 +363,6 @@ async def delete_module(
 
     db.delete(module)
     db.commit()
-
-
 
 
 @router.post(

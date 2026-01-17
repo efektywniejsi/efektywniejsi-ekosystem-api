@@ -16,7 +16,7 @@ router = APIRouter()
 @router.post(
     "/courses/{course_id}/enroll",
     response_model=EnrollmentResponse,
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
 )
 async def enroll_in_course(
     course_id: UUID,

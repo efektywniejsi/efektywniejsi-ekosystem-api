@@ -173,7 +173,6 @@ class CourseImporter:
         print(f"            ⚠️  Attachment '{title}' - file upload not implemented")
         print(f"               Expected file: {file_path}")
 
-
     def print_summary(self) -> None:
         """Print import summary."""
         print()

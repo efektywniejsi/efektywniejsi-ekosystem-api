@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import Cookie, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -85,7 +85,7 @@ async def get_current_user(
             detail="Inactive user",
         )
 
-    return user
+    return cast(User, user)
 
 
 async def require_admin(current_user: User = Depends(get_current_user)) -> User:

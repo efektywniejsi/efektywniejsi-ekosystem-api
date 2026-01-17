@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import cast
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -49,9 +50,9 @@ class ProgressService:
                 user_id=user_id,
                 points=GamificationService.POINTS_LESSON_COMPLETED,
                 reason="Lesson completed",
+                db=db,
                 reference_type="lesson",
                 reference_id=lesson_id,
-                db=db,
             )
 
             if not was_completed:
@@ -65,7 +66,7 @@ class ProgressService:
         db.commit()
         db.refresh(progress)
 
-        return progress
+        return cast(LessonProgress, progress)
 
     @staticmethod
     def check_course_completion(user_id: UUID, lesson_id: UUID, db: Session) -> None:
@@ -95,7 +96,7 @@ class ProgressService:
             .filter(
                 LessonProgress.user_id == user_id,
                 LessonProgress.lesson_id.in_(all_lesson_ids),
-                LessonProgress.is_completed == True,
+                LessonProgress.is_completed,
             )
             .count()
         )
@@ -114,9 +115,9 @@ class ProgressService:
                     user_id=user_id,
                     points=GamificationService.POINTS_COURSE_COMPLETED,
                     reason=f"Course completed: {course.title}",
+                    db=db,
                     reference_type="course",
                     reference_id=course.id,
-                    db=db,
                 )
 
                 GamificationService.check_course_completion_achievement(user_id, course.slug, db)
@@ -147,9 +148,9 @@ class ProgressService:
                 user_id=user_id,
                 points=GamificationService.POINTS_LESSON_COMPLETED,
                 reason="Lesson completed",
+                db=db,
                 reference_type="lesson",
                 reference_id=lesson_id,
-                db=db,
             )
 
             GamificationService.check_lesson_completion_achievement(user_id, db)
@@ -161,7 +162,7 @@ class ProgressService:
             db.commit()
             db.refresh(progress)
 
-        return progress
+        return cast(LessonProgress, progress)
 
     @staticmethod
     def get_course_progress_summary(user_id: UUID, course_id: UUID, db: Session) -> dict:
@@ -181,7 +182,7 @@ class ProgressService:
             .filter(
                 LessonProgress.user_id == user_id,
                 LessonProgress.lesson_id.in_(lesson_ids),
-                LessonProgress.is_completed == True,
+                LessonProgress.is_completed,
             )
             .count()
         )

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import cast
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -45,7 +46,7 @@ class EnrollmentService:
         db.commit()
         db.refresh(enrollment)
 
-        return enrollment
+        return cast(Enrollment, enrollment)
 
     @staticmethod
     def unenroll_user(user_id: UUID, course_id: UUID, db: Session) -> None:
@@ -78,11 +79,12 @@ class EnrollmentService:
     @staticmethod
     def get_user_enrollment(user_id: UUID, course_id: UUID, db: Session) -> Enrollment | None:
         """Get user's enrollment for a specific course."""
-        return (
+        result = (
             db.query(Enrollment)
             .filter(Enrollment.user_id == user_id, Enrollment.course_id == course_id)
             .first()
         )
+        return cast(Enrollment | None, result)
 
     @staticmethod
     def update_last_accessed(user_id: UUID, course_id: UUID, db: Session) -> None:

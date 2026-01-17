@@ -21,7 +21,7 @@ router = APIRouter()
 @router.post(
     "/certificates/courses/{course_id}",
     response_model=CertificateWithCourseResponse,
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
 )
 async def generate_certificate(
     course_id: UUID,

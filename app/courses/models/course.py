@@ -1,9 +1,8 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
 
@@ -11,21 +10,19 @@ from app.db.session import Base
 class Course(Base):
     __tablename__ = "courses"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    slug = Column(String(255), unique=True, nullable=False, index=True)
-    title = Column(String(500), nullable=False)
-    description = Column(Text, nullable=False)
-    thumbnail_url = Column(String(1000), nullable=True)
-    difficulty = Column(
-        String(50), nullable=False, default="beginner"
-    )
-    estimated_hours = Column(Integer, nullable=False, default=0)
-    is_published = Column(Boolean, default=False, nullable=False)
-    is_featured = Column(Boolean, default=False, nullable=False)
-    category = Column(String(100), nullable=True, index=True)
-    sort_order = Column(Integer, default=0, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4, index=True)
+    slug: Mapped[str] = mapped_column(unique=True, index=True)
+    title: Mapped[str] = mapped_column()
+    description: Mapped[str] = mapped_column()
+    thumbnail_url: Mapped[str | None] = mapped_column(default=None)
+    difficulty: Mapped[str] = mapped_column(default="beginner")
+    estimated_hours: Mapped[int] = mapped_column(default=0)
+    is_published: Mapped[bool] = mapped_column(default=False)
+    is_featured: Mapped[bool] = mapped_column(default=False)
+    category: Mapped[str | None] = mapped_column(default=None, index=True)
+    sort_order: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
 
     modules = relationship("Module", back_populates="course", cascade="all, delete-orphan")
     enrollments = relationship("Enrollment", back_populates="course", cascade="all, delete-orphan")
@@ -40,15 +37,15 @@ class Course(Base):
 class Module(Base):
     __tablename__ = "modules"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    course_id = Column(
-        UUID(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4, index=True)
+    course_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("courses.id", ondelete="CASCADE"), index=True
     )
-    title = Column(String(500), nullable=False)
-    description = Column(Text, nullable=True)
-    sort_order = Column(Integer, nullable=False, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    title: Mapped[str] = mapped_column()
+    description: Mapped[str | None] = mapped_column(default=None)
+    sort_order: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
 
     course = relationship("Course", back_populates="modules")
     lessons = relationship("Lesson", back_populates="module", cascade="all, delete-orphan")
@@ -60,19 +57,19 @@ class Module(Base):
 class Lesson(Base):
     __tablename__ = "lessons"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    module_id = Column(
-        UUID(as_uuid=True), ForeignKey("modules.id", ondelete="CASCADE"), nullable=False, index=True
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4, index=True)
+    module_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("modules.id", ondelete="CASCADE"), index=True
     )
-    title = Column(String(500), nullable=False)
-    description = Column(Text, nullable=True)
-    mux_playback_id = Column(String(255), nullable=False, index=True)
-    mux_asset_id = Column(String(255), nullable=True, index=True)
-    duration_seconds = Column(Integer, nullable=False, default=0)
-    is_preview = Column(Boolean, default=False, nullable=False)
-    sort_order = Column(Integer, nullable=False, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    title: Mapped[str] = mapped_column()
+    description: Mapped[str | None] = mapped_column(default=None)
+    mux_playback_id: Mapped[str] = mapped_column(index=True)
+    mux_asset_id: Mapped[str | None] = mapped_column(default=None, index=True)
+    duration_seconds: Mapped[int] = mapped_column(default=0)
+    is_preview: Mapped[bool] = mapped_column(default=False)
+    sort_order: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
 
     module = relationship("Module", back_populates="lessons")
     progress_records = relationship(

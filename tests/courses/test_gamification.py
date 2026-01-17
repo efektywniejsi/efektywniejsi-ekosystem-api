@@ -40,10 +40,10 @@ async def test_get_user_gamification_data(
 
     assert response.status_code == 200
     data = response.json()
-    assert data["total_points"] == 500
-    assert data["level"] == 3
-    assert data["current_streak"] == 7
-    assert data["longest_streak"] == 10
+    assert data["points"]["total_points"] == 500
+    assert data["points"]["level"] == 3
+    assert data["streak"]["current_streak"] == 7
+    assert data["streak"]["longest_streak"] == 10
 
 
 @pytest.mark.asyncio

@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import cast
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -46,13 +47,13 @@ class GamificationService:
             db.refresh(user_streak)
 
             GamificationService.check_streak_achievements(user_id, 1, db)
-            return user_streak
+            return cast(UserStreak, user_streak)
 
         last_activity = user_streak.last_activity_date
         days_since_last = (today - last_activity).days
 
         if days_since_last == 0:
-            return user_streak
+            return cast(UserStreak, user_streak)
 
         if days_since_last == 1:
             user_streak.current_streak += 1
@@ -61,7 +62,7 @@ class GamificationService:
             db.commit()
 
             GamificationService.check_streak_achievements(user_id, user_streak.current_streak, db)
-            return user_streak
+            return cast(UserStreak, user_streak)
 
         if days_since_last == 2:
             grace_available = (
@@ -81,20 +82,20 @@ class GamificationService:
                 GamificationService.check_streak_achievements(
                     user_id, user_streak.current_streak, db
                 )
-                return user_streak
+                return cast(UserStreak, user_streak)
             else:
                 user_streak.current_streak = 1
                 user_streak.last_activity_date = today
                 db.commit()
-                return user_streak
+                return cast(UserStreak, user_streak)
 
         if days_since_last > 2:
             user_streak.current_streak = 1
             user_streak.last_activity_date = today
             db.commit()
-            return user_streak
+            return cast(UserStreak, user_streak)
 
-        return user_streak
+        return cast(UserStreak, user_streak)
 
     @staticmethod
     def check_streak_achievements(user_id: UUID, current_streak: int, db: Session) -> None:
@@ -134,9 +135,9 @@ class GamificationService:
                         user_id=user_id,
                         points=achievement.points_reward,
                         reason=f"Achievement: {achievement.title}",
+                        db=db,
                         reference_type="achievement",
                         reference_id=achievement.id,
-                        db=db,
                     )
 
                     db.commit()
@@ -146,9 +147,9 @@ class GamificationService:
         user_id: UUID,
         points: int,
         reason: str,
+        db: Session,
         reference_type: str | None = None,
         reference_id: UUID | None = None,
-        db: Session | None = None,
     ) -> UserPoints:
         """Award points to a user and update their level."""
         user_points = db.query(UserPoints).filter(UserPoints.user_id == user_id).first()
@@ -175,7 +176,7 @@ class GamificationService:
         db.commit()
         db.refresh(user_points)
 
-        return user_points
+        return cast(UserPoints, user_points)
 
     @staticmethod
     def calculate_level(total_points: int) -> int:

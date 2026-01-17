@@ -105,9 +105,7 @@ def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(description="Seed test enrollments")
-    parser.add_argument(
-        "--execute", action="store_true", help="Execute changes (default: dry run)"
-    )
+    parser.add_argument("--execute", action="store_true", help="Execute changes (default: dry run)")
     args = parser.parse_args()
 
     dry_run = not args.execute
