@@ -12,9 +12,11 @@ from app.courses.schemas.course import (
     CourseResponse,
     CourseUpdate,
     LessonCreate,
+    LessonReorderRequest,
     LessonResponse,
     LessonUpdate,
     ModuleCreate,
+    ModuleReorderRequest,
     ModuleResponse,
     ModuleUpdate,
     ModuleWithLessonsResponse,
@@ -501,3 +503,89 @@ async def delete_lesson(
 
     db.delete(lesson)
     db.commit()
+
+
+@router.post("/courses/{course_id}/modules/reorder", status_code=status.HTTP_200_OK)
+async def reorder_modules(
+    course_id: UUID,
+    request: ModuleReorderRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> dict[str, str]:
+    """Reorder modules in a course (admin only)."""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found",
+        )
+
+    # Verify all module IDs belong to this course
+    module_ids = [UUID(mid) for mid in request.module_ids]
+    modules = db.query(Module).filter(Module.id.in_(module_ids)).all()
+
+    if len(modules) != len(module_ids):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="One or more module IDs are invalid",
+        )
+
+    # Verify all modules belong to this course
+    for module in modules:
+        if module.course_id != course_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Module {module.id} does not belong to this course",
+            )
+
+    # Update sort_order for each module
+    for index, module_id in enumerate(module_ids):
+        module = next(m for m in modules if m.id == module_id)
+        module.sort_order = index
+
+    db.commit()
+
+    return {"message": "Modules reordered successfully"}
+
+
+@router.post("/modules/{module_id}/lessons/reorder", status_code=status.HTTP_200_OK)
+async def reorder_lessons(
+    module_id: UUID,
+    request: LessonReorderRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> dict[str, str]:
+    """Reorder lessons in a module (admin only)."""
+    module = db.query(Module).filter(Module.id == module_id).first()
+    if not module:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Module not found",
+        )
+
+    # Verify all lesson IDs belong to this module
+    lesson_ids = [UUID(lid) for lid in request.lesson_ids]
+    lessons = db.query(Lesson).filter(Lesson.id.in_(lesson_ids)).all()
+
+    if len(lessons) != len(lesson_ids):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="One or more lesson IDs are invalid",
+        )
+
+    # Verify all lessons belong to this module
+    for lesson in lessons:
+        if lesson.module_id != module_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Lesson {lesson.id} does not belong to this module",
+            )
+
+    # Update sort_order for each lesson
+    for index, lesson_id in enumerate(lesson_ids):
+        lesson = next(les for les in lessons if les.id == lesson_id)
+        lesson.sort_order = index
+
+    db.commit()
+
+    return {"message": "Lessons reordered successfully"}

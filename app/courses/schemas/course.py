@@ -143,3 +143,11 @@ class EnrollmentResponse(BaseModel):
 
 class EnrollmentWithCourseResponse(EnrollmentResponse):
     course: CourseResponse
+
+
+class ModuleReorderRequest(BaseModel):
+    module_ids: list[str] = Field(..., min_length=1)
+
+
+class LessonReorderRequest(BaseModel):
+    lesson_ids: list[str] = Field(..., min_length=1)
