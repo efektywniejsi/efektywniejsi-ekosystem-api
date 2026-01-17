@@ -19,6 +19,7 @@ from app.courses.schemas.course import (
     ModuleUpdate,
     ModuleWithLessonsResponse,
 )
+from app.courses.services.mux_service import MuxService, get_mux_service
 from app.db.session import get_db
 
 router = APIRouter()
@@ -352,13 +353,24 @@ async def delete_module(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ) -> None:
-    """Delete a module (admin only)."""
-    module = db.query(Module).filter(Module.id == module_id).first()
+    """Delete a module (admin only). Module must be empty (no lessons)."""
+    module = (
+        db.query(Module).filter(Module.id == module_id).options(joinedload(Module.lessons)).first()
+    )
 
     if not module:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Module not found",
+        )
+
+    # Check if module has any lessons
+    if module.lessons:
+        lesson_count = len(module.lessons)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete module with {lesson_count} lesson(s). "
+            "Please delete all lessons first.",
         )
 
     db.delete(module)
@@ -467,8 +479,9 @@ async def delete_lesson(
     lesson_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
+    mux_service: MuxService = Depends(get_mux_service),
 ) -> None:
-    """Delete a lesson (admin only)."""
+    """Delete a lesson (admin only). Also deletes associated Mux video asset if present."""
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
 
     if not lesson:
@@ -476,6 +489,15 @@ async def delete_lesson(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Lesson not found",
         )
+
+    # Delete Mux asset if present
+    if lesson.mux_asset_id:
+        try:
+            mux_service.delete_asset(lesson.mux_asset_id)
+        except Exception as e:
+            # Log warning but don't fail the deletion
+            # The asset might already be deleted or Mux might be unavailable
+            print(f"Warning: Failed to delete Mux asset {lesson.mux_asset_id}: {e}")
 
     db.delete(lesson)
     db.commit()
