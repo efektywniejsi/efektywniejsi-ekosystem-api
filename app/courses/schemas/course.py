@@ -72,7 +72,7 @@ class ModuleResponse(ModuleBase):
 class LessonBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=500)
     description: str | None = None
-    mux_playback_id: str = Field(..., min_length=1, max_length=255)
+    mux_playback_id: str | None = Field(None, max_length=255)
     mux_asset_id: str | None = Field(None, max_length=255)
     duration_seconds: int = Field(default=0, ge=0)
     is_preview: bool = False

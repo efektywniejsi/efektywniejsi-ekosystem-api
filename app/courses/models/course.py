@@ -63,7 +63,7 @@ class Lesson(Base):
     )
     title: Mapped[str] = mapped_column()
     description: Mapped[str | None] = mapped_column(default=None)
-    mux_playback_id: Mapped[str] = mapped_column(index=True)
+    mux_playback_id: Mapped[str | None] = mapped_column(default=None, index=True)
     mux_asset_id: Mapped[str | None] = mapped_column(default=None, index=True)
     duration_seconds: Mapped[int] = mapped_column(default=0)
     is_preview: Mapped[bool] = mapped_column(default=False)
