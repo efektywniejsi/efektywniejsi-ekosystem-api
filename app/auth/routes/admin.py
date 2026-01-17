@@ -131,13 +131,13 @@ async def update_user(
         )
 
     if request.name is not None:
-        user.name = request.name  # type: ignore[assignment]
+        user.name = request.name
     if request.role is not None:
-        user.role = request.role  # type: ignore[assignment]
+        user.role = request.role
     if request.is_active is not None:
-        user.is_active = request.is_active  # type: ignore[assignment]
+        user.is_active = request.is_active
 
-    user.updated_at = datetime.utcnow()  # type: ignore[assignment]
+    user.updated_at = datetime.utcnow()
 
     db.commit()
     db.refresh(user)

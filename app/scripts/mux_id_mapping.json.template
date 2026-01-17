@@ -1,0 +1,25 @@
+{
+  "mappings": [
+    {
+      "placeholder": "TO_BE_REPLACED_001",
+      "mux_playback_id": "PASTE_REAL_MUX_PLAYBACK_ID_HERE",
+      "mux_asset_id": "asset-xxxxx-xxxxx",
+      "video_title": "Wprowadzenie do kursu - Masterclass Low-code",
+      "duration_seconds": 420
+    },
+    {
+      "placeholder": "TO_BE_REPLACED_002",
+      "mux_playback_id": "PASTE_REAL_MUX_PLAYBACK_ID_HERE",
+      "mux_asset_id": null,
+      "video_title": "Konfiguracja środowiska n8n",
+      "duration_seconds": 960
+    },
+    {
+      "placeholder": "TO_BE_REPLACED_003",
+      "mux_playback_id": "PASTE_REAL_MUX_PLAYBACK_ID_HERE",
+      "mux_asset_id": null,
+      "video_title": "Webhooks i triggery",
+      "duration_seconds": 780
+    }
+  ]
+}

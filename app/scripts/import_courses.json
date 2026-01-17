@@ -1,0 +1,211 @@
+{
+  "courses": [
+    {
+      "slug": "masterclass-lowcode",
+      "title": "Masterclass Low-code",
+      "description": "Kompleksowy kurs automatyzacji z n8n i systemami agentowymi. Nauczysz się budować zaawansowane workflow, integracje API oraz projektować rozwiązania AI-powered.",
+      "difficulty": "intermediate",
+      "estimated_hours": 12,
+      "is_published": true,
+      "is_featured": true,
+      "category": "masterclass",
+      "thumbnail_url": null,
+      "modules": [
+        {
+          "title": "Moduł 1: Wprowadzenie",
+          "description": "Podstawy automatyzacji i konfiguracja środowiska",
+          "sort_order": 0,
+          "lessons": [
+            {
+              "title": "Wprowadzenie do kursu",
+              "description": "Czego się nauczysz i jak korzystać z platformy",
+              "mux_playback_id": "TO_BE_REPLACED_001",
+              "mux_asset_id": null,
+              "duration_seconds": 420,
+              "is_preview": true,
+              "sort_order": 0,
+              "video_source": {
+                "zanfia_url": "https://zanfia.com/video/intro-masterclass",
+                "local_path": null
+              },
+              "attachments": [
+                {
+                  "title": "Checklist konfiguracji",
+                  "file_path": "./pdfs/checklist-konfiguracji.pdf"
+                }
+              ]
+            },
+            {
+              "title": "Konfiguracja środowiska n8n",
+              "description": "Instalacja i pierwszy workflow",
+              "mux_playback_id": "TO_BE_REPLACED_002",
+              "mux_asset_id": null,
+              "duration_seconds": 960,
+              "is_preview": false,
+              "sort_order": 1,
+              "video_source": {
+                "zanfia_url": "https://zanfia.com/video/n8n-setup",
+                "local_path": null
+              },
+              "attachments": []
+            }
+          ]
+        },
+        {
+          "title": "Moduł 2: Integracje API",
+          "description": "Zaawansowane integracje z zewnętrznymi systemami",
+          "sort_order": 1,
+          "lessons": [
+            {
+              "title": "Webhooks i triggery",
+              "description": "Budowanie workflow reagujących na zdarzenia",
+              "mux_playback_id": "TO_BE_REPLACED_003",
+              "mux_asset_id": null,
+              "duration_seconds": 780,
+              "is_preview": false,
+              "sort_order": 0,
+              "video_source": {
+                "zanfia_url": "https://zanfia.com/video/webhooks",
+                "local_path": null
+              },
+              "attachments": [
+                {
+                  "title": "Przykłady webhooks",
+                  "file_path": "./pdfs/webhook-examples.pdf"
+                }
+              ]
+            },
+            {
+              "title": "Integracja z Claude API",
+              "description": "Wykorzystanie AI w automatyzacjach",
+              "mux_playback_id": "TO_BE_REPLACED_004",
+              "mux_asset_id": null,
+              "duration_seconds": 1200,
+              "is_preview": false,
+              "sort_order": 1,
+              "video_source": {
+                "zanfia_url": "https://zanfia.com/video/claude-api",
+                "local_path": null
+              },
+              "attachments": []
+            }
+          ]
+        },
+        {
+          "title": "Moduł 3: Projekty praktyczne",
+          "description": "Budowanie rzeczywistych rozwiązań",
+          "sort_order": 2,
+          "lessons": [
+            {
+              "title": "Case study: Automatyzacja onboardingu",
+              "description": "Pełny system automatyzacji procesu wdrożenia klienta",
+              "mux_playback_id": "TO_BE_REPLACED_005",
+              "mux_asset_id": null,
+              "duration_seconds": 1800,
+              "is_preview": false,
+              "sort_order": 0,
+              "video_source": {
+                "zanfia_url": "https://zanfia.com/video/onboarding-case",
+                "local_path": null
+              },
+              "attachments": [
+                {
+                  "title": "Template workflow onboardingu",
+                  "file_path": "./pdfs/onboarding-template.pdf"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "ai-assisted-development",
+      "title": "AI-Assisted Development z Claude Code",
+      "description": "Naucz się efektywnie programować z wykorzystaniem AI. Claude Code, prompting, integracje i best practices.",
+      "difficulty": "intermediate",
+      "estimated_hours": 8,
+      "is_published": true,
+      "is_featured": false,
+      "category": "development",
+      "thumbnail_url": null,
+      "modules": [
+        {
+          "title": "Moduł 1: Podstawy AI-assisted dev",
+          "description": "Wprowadzenie do programowania z AI",
+          "sort_order": 0,
+          "lessons": [
+            {
+              "title": "Czym jest AI-assisted development",
+              "description": "Przegląd narzędzi i możliwości",
+              "mux_playback_id": "TO_BE_REPLACED_006",
+              "mux_asset_id": null,
+              "duration_seconds": 540,
+              "is_preview": true,
+              "sort_order": 0,
+              "video_source": {
+                "zanfia_url": "https://zanfia.com/video/ai-dev-intro",
+                "local_path": null
+              },
+              "attachments": []
+            },
+            {
+              "title": "Setup Claude Code",
+              "description": "Instalacja i konfiguracja środowiska",
+              "mux_playback_id": "TO_BE_REPLACED_007",
+              "mux_asset_id": null,
+              "duration_seconds": 720,
+              "is_preview": false,
+              "sort_order": 1,
+              "video_source": {
+                "zanfia_url": "https://zanfia.com/video/claude-setup",
+                "local_path": null
+              },
+              "attachments": [
+                {
+                  "title": "Konfiguracja Claude Code",
+                  "file_path": "./pdfs/claude-code-setup.pdf"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Moduł 2: Zaawansowane techniki",
+          "description": "Prompting i workflow dla developerów",
+          "sort_order": 1,
+          "lessons": [
+            {
+              "title": "Effective prompting dla kodu",
+              "description": "Jak pisać prompty, które generują dobry kod",
+              "mux_playback_id": "TO_BE_REPLACED_008",
+              "mux_asset_id": null,
+              "duration_seconds": 900,
+              "is_preview": false,
+              "sort_order": 0,
+              "video_source": {
+                "zanfia_url": "https://zanfia.com/video/prompting",
+                "local_path": null
+              },
+              "attachments": []
+            },
+            {
+              "title": "Debugging z AI",
+              "description": "Wykorzystanie AI do znajdowania i naprawiania błędów",
+              "mux_playback_id": "TO_BE_REPLACED_009",
+              "mux_asset_id": null,
+              "duration_seconds": 840,
+              "is_preview": false,
+              "sort_order": 1,
+              "video_source": {
+                "zanfia_url": "https://zanfia.com/video/debugging-ai",
+                "local_path": null
+              },
+              "attachments": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

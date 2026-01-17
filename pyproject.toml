@@ -18,6 +18,8 @@ dependencies = [
     "redis==5.0.1",
     "aiosmtplib==3.0.1",
     "jinja2==3.1.3",
+    "reportlab==4.2.5",
+    "Pillow==11.0.0",
 ]
 
 [project.optional-dependencies]
@@ -47,6 +49,7 @@ exclude = [
     "alembic/versions",
     "__pycache__",
     ".pytest_cache",
+    "app/scripts",
 ]
 
 [tool.ruff.lint]
@@ -69,9 +72,15 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 check_untyped_defs = true
 plugins = ["pydantic.mypy"]
+exclude = ["app/scripts/"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
+disallow_untyped_defs = false
+check_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "app.scripts.*"
 disallow_untyped_defs = false
 check_untyped_defs = false
 
@@ -83,6 +92,7 @@ module = [
     "alembic.*",
     "faker.*",
     "aiosmtplib.*",
+    "reportlab.*",
 ]
 ignore_missing_imports = true
 

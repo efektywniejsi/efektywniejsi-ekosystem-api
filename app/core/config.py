@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Efektywniejsi Ekosystem Auth API"
     DEBUG: bool = False
 
+    UPLOAD_DIR: str = "./uploads"
+    MAX_FILE_SIZE_MB: int = 50
+
     class Config:
         env_file = ".env"
         case_sensitive = True
