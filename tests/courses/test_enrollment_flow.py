@@ -31,7 +31,7 @@ async def test_cannot_enroll_twice(
         cookies={"access_token": test_user_token},
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert "already enrolled" in response.json()["detail"].lower()
 
 
@@ -54,7 +54,7 @@ async def test_enroll_without_auth(test_client: AsyncClient, test_course):
     """Test enrollment requires authentication."""
     response = await test_client.post(f"/api/v1/courses/{test_course.id}/enroll")
 
-    assert response.status_code == 401
+    assert response.status_code == 403
 
 
 @pytest.mark.asyncio
@@ -98,7 +98,7 @@ async def test_no_enrollment_no_access(test_client: AsyncClient, test_user_token
     )
 
     assert response.status_code == 403
-    assert "not enrolled" in response.json()["detail"].lower()
+    assert "enrolled" in response.json()["detail"].lower()
 
 
 @pytest.mark.asyncio

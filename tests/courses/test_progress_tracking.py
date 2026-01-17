@@ -188,7 +188,7 @@ async def test_get_course_progress(
     assert data["course_id"] == str(test_course_with_modules.id)
     assert "total_lessons" in data
     assert "completed_lessons" in data
-    assert "completion_percentage" in data
+    assert "progress_percentage" in data
 
 
 @pytest.mark.asyncio

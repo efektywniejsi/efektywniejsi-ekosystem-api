@@ -47,7 +47,9 @@ async def test_get_user_gamification_data(
 
 
 @pytest.mark.asyncio
-async def test_get_available_achievements(test_client: AsyncClient, test_user_token):
+async def test_get_available_achievements(
+    test_client: AsyncClient, test_user_token, test_achievement
+):
     """Test getting list of available achievements."""
     response = await test_client.get(
         "/api/v1/gamification/achievements",
@@ -57,7 +59,7 @@ async def test_get_available_achievements(test_client: AsyncClient, test_user_to
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
-    # Should have achievements from seed script
+    # Should have at least the test achievement
     assert len(data) > 0
 
 
@@ -325,4 +327,4 @@ async def test_points_history_tracked(
 
     assert len(history) > 0
     assert history[0].points == 10  # 10 points for lesson completion
-    assert "lesson_completed" in history[0].reason.lower()
+    assert "lesson completed" in history[0].reason.lower()

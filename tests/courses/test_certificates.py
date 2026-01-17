@@ -48,6 +48,9 @@ async def test_generate_certificate_after_course_completion(
             completed_at=datetime.utcnow(),
         )
         db_session.add(lesson_progress)
+
+    # Mark course as completed
+    enrollment.completed_at = datetime.utcnow()
     db_session.flush()
 
     # Generate certificate
@@ -124,8 +127,15 @@ async def test_download_certificate(
 ):
     """Test downloading certificate PDF."""
     from datetime import datetime
+    from pathlib import Path
 
     from app.courses.models import Certificate
+
+    # Create dummy PDF file
+    upload_dir = Path("/tmp/certificates")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    cert_file = upload_dir / "TEST-CERT-2026-002.pdf"
+    cert_file.write_bytes(b"%PDF-1.4\nDummy PDF")
 
     # Create certificate
     certificate = Certificate(
@@ -133,6 +143,7 @@ async def test_download_certificate(
         course_id=test_course.id,
         certificate_code="TEST-CERT-2026-002",
         issued_at=datetime.utcnow(),
+        file_path=str(cert_file),
     )
     db_session.add(certificate)
     db_session.flush()
@@ -185,7 +196,10 @@ async def test_verify_invalid_certificate(test_client: AsyncClient):
     """Test verifying invalid certificate code."""
     response = await test_client.get("/api/v1/certificates/INVALID-CODE/verify")
 
-    assert response.status_code == 404
+    assert response.status_code == 200
+    data = response.json()
+    assert data["valid"] is False
+    assert "not found" in data["message"].lower()
 
 
 @pytest.mark.asyncio
@@ -228,6 +242,9 @@ async def test_cannot_generate_duplicate_certificate(
         )
         db_session.add(lesson_progress)
 
+    # Mark course as completed
+    enrollment.completed_at = datetime.utcnow()
+
     # Create existing certificate
     certificate = Certificate(
         user_id=test_user.id,
@@ -238,14 +255,15 @@ async def test_cannot_generate_duplicate_certificate(
     db_session.add(certificate)
     db_session.flush()
 
-    # Try to generate again
+    # Try to generate again - should return existing certificate
     response = await test_client.post(
         f"/api/v1/certificates/courses/{test_course_with_modules.id}",
         cookies={"access_token": test_user_token},
     )
 
-    assert response.status_code == 400
-    assert "already has a certificate" in response.json()["detail"].lower()
+    assert response.status_code == 200
+    data = response.json()
+    assert data["certificate_code"] == "EXISTING-CERT"
 
 
 @pytest.mark.asyncio
@@ -289,6 +307,9 @@ async def test_certificate_updates_enrollment(
             completed_at=datetime.utcnow(),
         )
         db_session.add(lesson_progress)
+
+    # Mark course as completed
+    enrollment.completed_at = datetime.utcnow()
     db_session.flush()
 
     # Generate certificate

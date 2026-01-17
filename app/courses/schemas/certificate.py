@@ -25,7 +25,7 @@ class CertificateWithCourseResponse(CertificateResponse):
 class CertificateVerifyResponse(BaseModel):
     valid: bool
     certificate_code: str
-    user_name: str
-    course_title: str
-    issued_at: datetime
+    user_name: str | None = None
+    course_title: str | None = None
+    issued_at: datetime | None = None
     message: str
