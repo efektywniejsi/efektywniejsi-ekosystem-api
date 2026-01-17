@@ -14,7 +14,6 @@ from app.db.session import get_db
 def main():
     db = next(get_db())
     try:
-        # Get all courses except demo
         courses = (
             db.query(Course)
             .filter(Course.slug != "demo-getting-started")

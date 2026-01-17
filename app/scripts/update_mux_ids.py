@@ -67,7 +67,6 @@ class MuxIdUpdater:
         if not new_playback_id:
             raise ValueError(f"Missing 'mux_playback_id' for {placeholder}")
 
-        # Find lesson with placeholder
         lesson = self.db.query(Lesson).filter(Lesson.mux_playback_id == placeholder).first()
 
         if not lesson:
@@ -86,7 +85,6 @@ class MuxIdUpdater:
             print()
             self.stats["updated"] += 1
         else:
-            # Update lesson
             lesson.mux_playback_id = new_playback_id
 
             if new_asset_id:
@@ -149,7 +147,6 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Resolve file path
     file_path = Path(args.mapping)
     if not file_path.is_absolute():
         file_path = Path.cwd() / file_path
@@ -170,7 +167,6 @@ def main() -> None:
         print("🔍 DRY RUN MODE - No database changes will be made")
         print()
 
-    # Load mapping JSON
     try:
         with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
@@ -183,7 +179,6 @@ def main() -> None:
 
     mappings = data.get("mappings", [])
 
-    # Update Mux IDs
     db = next(get_db())
     try:
         updater = MuxIdUpdater(db=db, dry_run=args.dry_run)

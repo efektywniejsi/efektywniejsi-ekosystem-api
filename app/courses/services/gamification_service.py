@@ -7,22 +7,20 @@ from app.courses.models import Achievement, PointsHistory, UserAchievement, User
 
 
 class GamificationService:
-    # Points per action
     POINTS_LESSON_COMPLETED = 10
     POINTS_COURSE_COMPLETED = 100
 
-    # Level thresholds (points needed for each level)
     LEVEL_THRESHOLDS = [
-        0,  # Level 1
-        100,  # Level 2
-        250,  # Level 3
-        500,  # Level 4
-        1000,  # Level 5
-        2000,  # Level 6
-        4000,  # Level 7
-        7500,  # Level 8
-        12500,  # Level 9
-        20000,  # Level 10
+        0,
+        100,
+        250,
+        500,
+        1000,
+        2000,
+        4000,
+        7500,
+        12500,
+        20000,
     ]
 
     @staticmethod
@@ -33,11 +31,9 @@ class GamificationService:
         """
         today = date.today()
 
-        # Get or create streak record
         user_streak = db.query(UserStreak).filter(UserStreak.user_id == user_id).first()
 
         if not user_streak:
-            # First time - create record
             user_streak = UserStreak(
                 user_id=user_id,
                 current_streak=1,
@@ -49,38 +45,31 @@ class GamificationService:
             db.commit()
             db.refresh(user_streak)
 
-            # Check for first streak achievement
             GamificationService.check_streak_achievements(user_id, 1, db)
             return user_streak
 
         last_activity = user_streak.last_activity_date
         days_since_last = (today - last_activity).days
 
-        # Scenario 1: Same day - no change
         if days_since_last == 0:
             return user_streak
 
-        # Scenario 2: Continuity (day after day)
         if days_since_last == 1:
             user_streak.current_streak += 1
             user_streak.longest_streak = max(user_streak.longest_streak, user_streak.current_streak)
             user_streak.last_activity_date = today
             db.commit()
 
-            # Check achievement for new streak
             GamificationService.check_streak_achievements(user_id, user_streak.current_streak, db)
             return user_streak
 
-        # Scenario 3: Grace period (2 days gap = 1 day skip)
         if days_since_last == 2:
-            # Check if grace period is available
             grace_available = (
                 user_streak.grace_period_used_at is None
                 or (today - user_streak.grace_period_used_at).days >= 30
             )
 
             if grace_available:
-                # Use grace period - streak continues
                 user_streak.current_streak += 1
                 user_streak.longest_streak = max(
                     user_streak.longest_streak, user_streak.current_streak
@@ -94,13 +83,11 @@ class GamificationService:
                 )
                 return user_streak
             else:
-                # Grace period unavailable - reset
                 user_streak.current_streak = 1
                 user_streak.last_activity_date = today
                 db.commit()
                 return user_streak
 
-        # Scenario 4: Break longer than 2 days - reset
         if days_since_last > 2:
             user_streak.current_streak = 1
             user_streak.last_activity_date = today
@@ -126,7 +113,6 @@ class GamificationService:
             achievement = db.query(Achievement).filter(Achievement.code == achievement_code).first()
 
             if achievement:
-                # Check if user already has this achievement
                 existing = (
                     db.query(UserAchievement)
                     .filter(
@@ -144,7 +130,6 @@ class GamificationService:
                     )
                     db.add(user_achievement)
 
-                    # Award points
                     GamificationService.award_points(
                         user_id=user_id,
                         points=achievement.points_reward,
@@ -166,21 +151,17 @@ class GamificationService:
         db: Session | None = None,
     ) -> UserPoints:
         """Award points to a user and update their level."""
-        # Get or create user points
         user_points = db.query(UserPoints).filter(UserPoints.user_id == user_id).first()
 
         if not user_points:
             user_points = UserPoints(user_id=user_id, total_points=0, level=1)
             db.add(user_points)
 
-        # Add points
         user_points.total_points += points
 
-        # Update level
         new_level = GamificationService.calculate_level(user_points.total_points)
         user_points.level = new_level
 
-        # Create history record
         points_history = PointsHistory(
             user_id=user_id,
             points=points,
@@ -210,7 +191,7 @@ class GamificationService:
         current_level = GamificationService.calculate_level(total_points)
 
         if current_level >= len(GamificationService.LEVEL_THRESHOLDS):
-            return 0  # Max level reached
+            return 0
 
         next_level_threshold = GamificationService.LEVEL_THRESHOLDS[current_level]
         return next_level_threshold - total_points
@@ -223,7 +204,6 @@ class GamificationService:
         )
 
         if achievement:
-            # Check if user already has this achievement
             existing = (
                 db.query(UserAchievement)
                 .filter(
@@ -241,7 +221,6 @@ class GamificationService:
                 )
                 db.add(user_achievement)
 
-                # Award points
                 GamificationService.award_points(
                     user_id=user_id,
                     points=achievement.points_reward,
@@ -260,7 +239,6 @@ class GamificationService:
         achievement = db.query(Achievement).filter(Achievement.code == achievement_code).first()
 
         if achievement:
-            # Check if user already has this achievement
             existing = (
                 db.query(UserAchievement)
                 .filter(
@@ -278,7 +256,6 @@ class GamificationService:
                 )
                 db.add(user_achievement)
 
-                # Award points
                 GamificationService.award_points(
                     user_id=user_id,
                     points=achievement.points_reward,

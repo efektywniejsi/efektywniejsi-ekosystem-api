@@ -11,7 +11,6 @@ Usage:
 import sys
 from pathlib import Path
 
-# Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from sqlalchemy.orm import Session
@@ -23,7 +22,6 @@ from app.db.session import get_db
 def seed_achievements(db: Session) -> None:
     """Seed achievements into the database."""
 
-    # Streak Achievements (Priority 1)
     streak_achievements = [
         {
             "code": "streak_3_days",
@@ -81,7 +79,6 @@ def seed_achievements(db: Session) -> None:
         },
     ]
 
-    # General Achievements (Priority 2)
     general_achievements = [
         {
             "code": "first_lesson_completed",
@@ -127,7 +124,6 @@ def seed_achievements(db: Session) -> None:
     skipped_count = 0
 
     for achievement_data in all_achievements:
-        # Check if achievement already exists
         existing = (
             db.query(Achievement).filter(Achievement.code == achievement_data["code"]).first()
         )
@@ -137,7 +133,6 @@ def seed_achievements(db: Session) -> None:
             skipped_count += 1
             continue
 
-        # Create new achievement
         achievement = Achievement(**achievement_data)
         db.add(achievement)
         print(f"✅ Created achievement: {achievement_data['code']} ({achievement_data['title']})")

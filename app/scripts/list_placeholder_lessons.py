@@ -19,7 +19,6 @@ from app.db.session import get_db
 def main():
     db = next(get_db())
     try:
-        # Find all lessons with placeholder Mux IDs
         lessons = (
             db.query(Lesson)
             .filter(

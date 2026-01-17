@@ -4,7 +4,6 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-# Course Schemas
 class CourseBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=500)
     slug: str = Field(..., min_length=1, max_length=255)
@@ -44,7 +43,6 @@ class CourseResponse(CourseBase):
         from_attributes = True
 
 
-# Module Schemas
 class ModuleBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=500)
     description: str | None = None
@@ -71,7 +69,6 @@ class ModuleResponse(ModuleBase):
         from_attributes = True
 
 
-# Lesson Schemas
 class LessonBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=500)
     description: str | None = None
@@ -106,7 +103,6 @@ class LessonResponse(LessonBase):
         from_attributes = True
 
 
-# Nested responses for detailed views
 class LessonWithProgressResponse(LessonResponse):
     watched_seconds: int = 0
     last_position_seconds: int = 0
@@ -132,7 +128,6 @@ class CourseWithProgressResponse(CourseResponse):
     last_accessed_at: datetime | None = None
 
 
-# Enrollment Schemas
 class EnrollmentResponse(BaseModel):
     id: str
     user_id: str

@@ -41,8 +41,8 @@ async def request_password_reset(
 
     raw_token, hashed_token, expiry = security.generate_reset_token()
 
-    user.password_reset_token = hashed_token  # type: ignore[assignment]
-    user.password_reset_token_expires = expiry  # type: ignore[assignment]
+    user.password_reset_token = hashed_token
+    user.password_reset_token_expires = expiry
     db.commit()
 
     email_service = get_email_service()
@@ -72,8 +72,8 @@ async def reset_password(
         not user.password_reset_token_expires
         or user.password_reset_token_expires < datetime.utcnow()
     ):
-        user.password_reset_token = None  # type: ignore[assignment]
-        user.password_reset_token_expires = None  # type: ignore[assignment]
+        user.password_reset_token = None
+        user.password_reset_token_expires = None
         db.commit()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -86,10 +86,10 @@ async def reset_password(
             detail="Password must be at least 8 characters long",
         )
 
-    user.hashed_password = security.get_password_hash(request.new_password)  # type: ignore[assignment]
+    user.hashed_password = security.get_password_hash(request.new_password)
 
-    user.password_reset_token = None  # type: ignore[assignment]
-    user.password_reset_token_expires = None  # type: ignore[assignment]
+    user.password_reset_token = None
+    user.password_reset_token_expires = None
 
     db.commit()
 

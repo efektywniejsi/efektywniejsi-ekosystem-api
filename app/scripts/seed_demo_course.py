@@ -11,7 +11,6 @@ Usage:
 import sys
 from pathlib import Path
 
-# Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from sqlalchemy.orm import Session
@@ -23,7 +22,6 @@ from app.db.session import get_db
 def seed_demo_course(db: Session) -> None:
     """Seed demo course into the database."""
 
-    # Check if demo course already exists
     existing_course = db.query(Course).filter(Course.slug == "demo-getting-started").first()
 
     if existing_course:
@@ -32,7 +30,6 @@ def seed_demo_course(db: Session) -> None:
 
     print("📚 Creating demo course...")
 
-    # Create demo course
     demo_course = Course(
         slug="demo-getting-started",
         title="Demo Course - Getting Started",
@@ -45,10 +42,9 @@ def seed_demo_course(db: Session) -> None:
         sort_order=0,
     )
     db.add(demo_course)
-    db.flush()  # Get course ID
+    db.flush()
     print(f"✅ Created course: {demo_course.title} (slug: {demo_course.slug})")
 
-    # Module 1: Podstawy
     module_1 = Module(
         course_id=demo_course.id,
         title="Moduł 1: Podstawy platformy",
@@ -59,35 +55,32 @@ def seed_demo_course(db: Session) -> None:
     db.flush()
     print(f"✅ Created module: {module_1.title}")
 
-    # Lesson 1.1: Witamy (Preview)
     lesson_1_1 = Lesson(
         module_id=module_1.id,
         title="Witamy na platformie",
         description="Poznaj podstawy działania platformy Efektywniejsi",
         mux_playback_id="PLACEHOLDER_MUX_ID_001",
         mux_asset_id="PLACEHOLDER_ASSET_ID_001",
-        duration_seconds=180,  # 3 minutes
+        duration_seconds=180,
         is_preview=True,
         sort_order=1,
     )
     db.add(lesson_1_1)
     print(f"✅ Created lesson: {lesson_1_1.title} (preview)")
 
-    # Lesson 1.2: Nawigacja
     lesson_1_2 = Lesson(
         module_id=module_1.id,
         title="Nawigacja po interfejsie",
         description="Jak poruszać się po platformie i znajdować potrzebne funkcje",
         mux_playback_id="PLACEHOLDER_MUX_ID_002",
         mux_asset_id="PLACEHOLDER_ASSET_ID_002",
-        duration_seconds=240,  # 4 minutes
+        duration_seconds=240,
         is_preview=False,
         sort_order=2,
     )
     db.add(lesson_1_2)
     print(f"✅ Created lesson: {lesson_1_2.title}")
 
-    # Module 2: System postępów
     module_2 = Module(
         course_id=demo_course.id,
         title="Moduł 2: System postępów",
@@ -98,42 +91,39 @@ def seed_demo_course(db: Session) -> None:
     db.flush()
     print(f"✅ Created module: {module_2.title}")
 
-    # Lesson 2.1: Śledzenie postępów
     lesson_2_1 = Lesson(
         module_id=module_2.id,
         title="Śledzenie postępów w nauce",
         description="Dowiedz się jak monitorować swoje postępy w kursach",
         mux_playback_id="PLACEHOLDER_MUX_ID_003",
         mux_asset_id="PLACEHOLDER_ASSET_ID_003",
-        duration_seconds=300,  # 5 minutes
+        duration_seconds=300,
         is_preview=False,
         sort_order=1,
     )
     db.add(lesson_2_1)
     print(f"✅ Created lesson: {lesson_2_1.title}")
 
-    # Lesson 2.2: Punkty i osiągnięcia
     lesson_2_2 = Lesson(
         module_id=module_2.id,
         title="System punktów i osiągnięć",
         description="Zdobywaj punkty, odblokowuj osiągnięcia i buduj swoje streaki",
         mux_playback_id="PLACEHOLDER_MUX_ID_004",
         mux_asset_id="PLACEHOLDER_ASSET_ID_004",
-        duration_seconds=360,  # 6 minutes
+        duration_seconds=360,
         is_preview=False,
         sort_order=2,
     )
     db.add(lesson_2_2)
     print(f"✅ Created lesson: {lesson_2_2.title}")
 
-    # Lesson 2.3: Certyfikaty
     lesson_2_3 = Lesson(
         module_id=module_2.id,
         title="Zdobywanie certyfikatów",
         description="Jak ukończyć kurs i wygenerować swój certyfikat",
         mux_playback_id="PLACEHOLDER_MUX_ID_005",
         mux_asset_id="PLACEHOLDER_ASSET_ID_005",
-        duration_seconds=240,  # 4 minutes
+        duration_seconds=240,
         is_preview=False,
         sort_order=3,
     )

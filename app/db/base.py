@@ -1,5 +1,5 @@
-from app.auth.models.user import User  # noqa: F401
-from app.courses.models import (  # noqa: F401
+from app.auth.models.user import User
+from app.courses.models import (
     Achievement,
     Attachment,
     Certificate,
@@ -13,4 +13,4 @@ from app.courses.models import (  # noqa: F401
     UserPoints,
     UserStreak,
 )
-from app.db.session import Base  # noqa: F401
+from app.db.session import Base

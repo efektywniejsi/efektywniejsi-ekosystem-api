@@ -15,7 +15,6 @@ from app.db.session import get_db
 def main():
     db = next(get_db())
     try:
-        # Load example mapping
         with open("app/scripts/mux_id_mapping_example.json") as f:
             data = json.load(f)
 
@@ -35,23 +34,19 @@ def main():
                 print(f"Before: {lesson.title}")
                 print(f"  Mux ID: {lesson.mux_playback_id}")
 
-                # Update
                 lesson.mux_playback_id = new_id
                 lesson.mux_asset_id = mapping.get("mux_asset_id")
                 db.flush()
 
-                # Verify update
                 updated_lesson = db.query(Lesson).filter(Lesson.id == lesson.id).first()
                 print(f"After:  {updated_lesson.title}")
                 print(f"  Mux ID: {updated_lesson.mux_playback_id}")
                 print("  ✅ Update successful")
                 print()
 
-        # Rollback all changes
         print("🔄 Rolling back all changes...")
         db.rollback()
 
-        # Verify rollback
         print("Verifying rollback...")
         for mapping in mappings:
             placeholder = mapping["placeholder"]

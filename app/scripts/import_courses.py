@@ -16,7 +16,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from sqlalchemy.orm import Session
@@ -70,7 +69,6 @@ class CourseImporter:
         if not slug:
             raise ValueError("Course slug is required")
 
-        # Check if course already exists
         existing = self.db.query(Course).filter(Course.slug == slug).first()
 
         if existing:
@@ -84,12 +82,10 @@ class CourseImporter:
             print(f"   [DRY RUN] Would create course: {course_data.get('title')}")
             self.stats["courses_created"] += 1
 
-            # Process modules in dry-run
             modules_data = course_data.get("modules", [])
             for module_data in modules_data:
                 self._import_module(None, module_data)
         else:
-            # Create course
             course = Course(
                 slug=slug,
                 title=course_data.get("title"),
@@ -103,11 +99,10 @@ class CourseImporter:
                 sort_order=course_data.get("sort_order", 0),
             )
             self.db.add(course)
-            self.db.flush()  # Get course ID
+            self.db.flush()
             self.stats["courses_created"] += 1
             print(f"   ✅ Created course: {course.title}")
 
-            # Import modules
             modules_data = course_data.get("modules", [])
             for module_data in modules_data:
                 self._import_module(course.id, module_data)
@@ -118,7 +113,6 @@ class CourseImporter:
             print(f"   [DRY RUN] Would create module: {module_data.get('title')}")
             self.stats["modules_created"] += 1
 
-            # Process lessons in dry-run
             lessons_data = module_data.get("lessons", [])
             for lesson_data in lessons_data:
                 print(f"      [DRY RUN] Would create lesson: {lesson_data.get('title')}")
@@ -132,7 +126,6 @@ class CourseImporter:
                         )
                         self.stats["attachments_created"] += 1
         else:
-            # Create module
             module = Module(
                 course_id=course_id,
                 title=module_data.get("title"),
@@ -140,18 +133,16 @@ class CourseImporter:
                 sort_order=module_data.get("sort_order", 0),
             )
             self.db.add(module)
-            self.db.flush()  # Get module ID
+            self.db.flush()
             self.stats["modules_created"] += 1
             print(f"      ✅ Created module: {module.title}")
 
-            # Import lessons
             lessons_data = module_data.get("lessons", [])
             for lesson_data in lessons_data:
                 self._import_lesson(module.id, lesson_data)
 
     def _import_lesson(self, module_id: str, lesson_data: dict[str, Any]) -> None:
         """Import a lesson with its attachments."""
-        # Create lesson
         lesson = Lesson(
             module_id=module_id,
             title=lesson_data.get("title"),
@@ -163,13 +154,12 @@ class CourseImporter:
             sort_order=lesson_data.get("sort_order", 0),
         )
         self.db.add(lesson)
-        self.db.flush()  # Get lesson ID
+        self.db.flush()
         self.stats["lessons_created"] += 1
 
         preview_badge = " (preview)" if lesson.is_preview else ""
         print(f"         ✅ Created lesson: {lesson.title}{preview_badge}")
 
-        # Import attachments
         if not self.skip_attachments:
             attachments_data = lesson_data.get("attachments", [])
             for attachment_data in attachments_data:
@@ -180,23 +170,9 @@ class CourseImporter:
         file_path = attachment_data.get("file_path")
         title = attachment_data.get("title")
 
-        # Note: Actual file upload would happen here
-        # For now, we just create a placeholder record
         print(f"            ⚠️  Attachment '{title}' - file upload not implemented")
         print(f"               Expected file: {file_path}")
 
-        # Uncomment when file upload is implemented:
-        # attachment = Attachment(
-        #     lesson_id=lesson_id,
-        #     title=title,
-        #     file_name=Path(file_path).name,
-        #     file_path=f"/uploads/attachments/{uuid4()}.pdf",
-        #     file_size_bytes=0,  # Would be actual size
-        #     mime_type="application/pdf",
-        #     sort_order=attachment_data.get("sort_order", 0),
-        # )
-        # self.db.add(attachment)
-        # self.stats["attachments_created"] += 1
 
     def print_summary(self) -> None:
         """Print import summary."""
@@ -249,7 +225,6 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Resolve file path
     file_path = Path(args.file)
     if not file_path.is_absolute():
         file_path = Path.cwd() / file_path
@@ -267,7 +242,6 @@ def main() -> None:
     print("=" * 60)
     print()
 
-    # Load JSON
     try:
         with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
@@ -278,7 +252,6 @@ def main() -> None:
         print(f"❌ Error reading file: {e}")
         sys.exit(1)
 
-    # Import courses
     db = next(get_db())
     try:
         importer = CourseImporter(

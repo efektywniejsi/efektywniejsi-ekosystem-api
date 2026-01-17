@@ -63,7 +63,6 @@ app.include_router(
 )
 app.include_router(admin.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["admin"])
 
-# Course routes
 app.include_router(courses.router, prefix=settings.API_V1_PREFIX, tags=["courses"])
 app.include_router(enrollment.router, prefix=settings.API_V1_PREFIX, tags=["enrollments"])
 app.include_router(lessons.router, prefix=settings.API_V1_PREFIX, tags=["lessons"])

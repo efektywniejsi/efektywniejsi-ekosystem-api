@@ -23,7 +23,6 @@ class Attachment(Base):
     sort_order = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    # Relationships
     lesson = relationship("Lesson", back_populates="attachments")
 
     def __repr__(self) -> str:

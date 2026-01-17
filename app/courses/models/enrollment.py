@@ -27,7 +27,6 @@ class Enrollment(Base):
     certificate_issued_at = Column(DateTime, nullable=True)
     last_accessed_at = Column(DateTime, nullable=True)
 
-    # Relationships
     user = relationship("User", backref="enrollments")
     course = relationship("Course", back_populates="enrollments")
 

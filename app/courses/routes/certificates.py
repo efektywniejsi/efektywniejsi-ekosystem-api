@@ -98,21 +98,18 @@ async def download_certificate(
             detail="Certificate not found",
         )
 
-    # Check if user owns this certificate
     if certificate.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to download this certificate",
         )
 
-    # Check if file exists
     if not certificate.file_path or not os.path.exists(certificate.file_path):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Certificate file not found on server",
         )
 
-    # Get course for filename
     course = db.query(Course).filter(Course.id == certificate.course_id).first()
     filename = (
         f"certificate_{course.slug}_{certificate_code[:8]}.pdf"

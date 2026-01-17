@@ -11,7 +11,6 @@ class EnrollmentService:
     @staticmethod
     def enroll_user(user_id: UUID, course_id: UUID, db: Session) -> Enrollment:
         """Enroll a user in a course."""
-        # Check if course exists and is published
         course = db.query(Course).filter(Course.id == course_id).first()
         if not course:
             raise HTTPException(
@@ -25,7 +24,6 @@ class EnrollmentService:
                 detail="Course is not published",
             )
 
-        # Check if already enrolled
         existing_enrollment = (
             db.query(Enrollment)
             .filter(Enrollment.user_id == user_id, Enrollment.course_id == course_id)
@@ -38,7 +36,6 @@ class EnrollmentService:
                 detail="User already enrolled in this course",
             )
 
-        # Create enrollment
         enrollment = Enrollment(
             user_id=user_id,
             course_id=course_id,

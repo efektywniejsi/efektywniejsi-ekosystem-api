@@ -25,7 +25,6 @@ async def get_my_gamification_summary(
     current_user: User = Depends(get_current_user),
 ) -> GamificationSummaryResponse:
     """Get gamification summary for current user."""
-    # Get or create user points
     user_points = db.query(UserPoints).filter(UserPoints.user_id == current_user.id).first()
 
     if not user_points:
@@ -34,7 +33,6 @@ async def get_my_gamification_summary(
         db.commit()
         db.refresh(user_points)
 
-    # Get or create user streak
     user_streak = db.query(UserStreak).filter(UserStreak.user_id == current_user.id).first()
 
     if not user_streak:
@@ -48,7 +46,6 @@ async def get_my_gamification_summary(
         db.commit()
         db.refresh(user_streak)
 
-    # Get recent achievements (last 3)
     recent_achievements = (
         db.query(UserAchievement)
         .options(joinedload(UserAchievement.achievement))
@@ -58,13 +55,11 @@ async def get_my_gamification_summary(
         .all()
     )
 
-    # Count total achievements
     total_earned = (
         db.query(UserAchievement).filter(UserAchievement.user_id == current_user.id).count()
     )
-    total_available = db.query(Achievement).filter(Achievement.is_active == True).count()  # noqa: E712
+    total_available = db.query(Achievement).filter(Achievement.is_active == True).count()
 
-    # Calculate grace period availability
     grace_available = True
     days_until_grace = 0
 
@@ -74,7 +69,6 @@ async def get_my_gamification_summary(
             grace_available = False
             days_until_grace = 30 - days_since_grace
 
-    # Calculate points to next level
     points_to_next = GamificationService.points_to_next_level(user_points.total_points)
 
     return GamificationSummaryResponse(
@@ -129,7 +123,7 @@ async def get_all_achievements(
     current_user: User = Depends(get_current_user),
 ) -> list[AchievementResponse]:
     """Get all available achievements."""
-    achievements = db.query(Achievement).filter(Achievement.is_active == True).all()  # noqa: E712
+    achievements = db.query(Achievement).filter(Achievement.is_active == True).all()
 
     return [
         AchievementResponse(

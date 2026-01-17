@@ -3,7 +3,6 @@ from datetime import date, datetime
 from pydantic import BaseModel
 
 
-# Achievement Schemas
 class AchievementResponse(BaseModel):
     id: str
     code: str
@@ -31,7 +30,6 @@ class UserAchievementResponse(BaseModel):
         from_attributes = True
 
 
-# Streak Schemas
 class UserStreakResponse(BaseModel):
     id: str
     user_id: str
@@ -46,7 +44,6 @@ class UserStreakResponse(BaseModel):
         from_attributes = True
 
 
-# Points Schemas
 class UserPointsResponse(BaseModel):
     id: str
     user_id: str
@@ -73,7 +70,6 @@ class PointsHistoryResponse(BaseModel):
         from_attributes = True
 
 
-# Combined Gamification Response
 class GamificationSummaryResponse(BaseModel):
     points: UserPointsResponse
     streak: UserStreakResponse

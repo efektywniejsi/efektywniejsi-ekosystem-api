@@ -24,7 +24,6 @@ from app.db.session import get_db
 router = APIRouter()
 
 
-# ========== COURSE CRUD (Admin) ==========
 
 
 @router.post(
@@ -38,7 +37,6 @@ async def create_course(
     current_user: User = Depends(require_admin),
 ) -> CourseResponse:
     """Create a new course (admin only)."""
-    # Check if slug already exists
     existing = db.query(Course).filter(Course.slug == request.slug).first()
     if existing:
         raise HTTPException(
@@ -137,7 +135,6 @@ async def get_course(
             detail="Course not found",
         )
 
-    # Calculate totals
     total_lessons = sum(len(module.lessons) for module in course.modules)
     total_duration = sum(
         lesson.duration_seconds for module in course.modules for lesson in module.lessons
@@ -206,11 +203,9 @@ async def update_course(
             detail="Course not found",
         )
 
-    # Update fields
     if request.title is not None:
         course.title = request.title
     if request.slug is not None:
-        # Check if new slug conflicts with existing course
         existing = (
             db.query(Course).filter(Course.slug == request.slug, Course.id != course_id).first()
         )
@@ -276,7 +271,6 @@ async def delete_course(
     db.commit()
 
 
-# ========== MODULE CRUD (Admin) ==========
 
 
 @router.post(
@@ -291,7 +285,6 @@ async def create_module(
     current_user: User = Depends(require_admin),
 ) -> ModuleResponse:
     """Add a module to a course (admin only)."""
-    # Check if course exists
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
         raise HTTPException(
@@ -376,7 +369,6 @@ async def delete_module(
     db.commit()
 
 
-# ========== LESSON CRUD (Admin) ==========
 
 
 @router.post(
@@ -391,7 +383,6 @@ async def create_lesson(
     current_user: User = Depends(require_admin),
 ) -> LessonResponse:
     """Add a lesson to a module (admin only)."""
-    # Check if module exists
     module = db.query(Module).filter(Module.id == module_id).first()
     if not module:
         raise HTTPException(

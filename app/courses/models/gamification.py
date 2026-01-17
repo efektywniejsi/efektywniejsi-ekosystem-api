@@ -31,7 +31,6 @@ class Achievement(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    # Relationships
     user_achievements = relationship(
         "UserAchievement", back_populates="achievement", cascade="all, delete-orphan"
     )
@@ -57,7 +56,6 @@ class UserAchievement(Base):
     earned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     progress_value = Column(Integer, default=0, nullable=True)
 
-    # Relationships
     user = relationship("User", backref="achievements")
     achievement = relationship("Achievement", back_populates="user_achievements")
 
@@ -79,7 +77,6 @@ class UserStreak(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # Relationships
     user = relationship("User", backref="streak", uselist=False)
 
     def __repr__(self) -> str:
@@ -98,7 +95,6 @@ class UserPoints(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # Relationships
     user = relationship("User", backref="points", uselist=False)
 
     def __repr__(self) -> str:
@@ -118,7 +114,6 @@ class PointsHistory(Base):
     reference_id = Column(UUID(as_uuid=True), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 
-    # Relationships
     user = relationship("User", backref="points_history")
 
     def __repr__(self) -> str:

@@ -18,7 +18,7 @@ class Course(Base):
     thumbnail_url = Column(String(1000), nullable=True)
     difficulty = Column(
         String(50), nullable=False, default="beginner"
-    )  # beginner, intermediate, advanced
+    )
     estimated_hours = Column(Integer, nullable=False, default=0)
     is_published = Column(Boolean, default=False, nullable=False)
     is_featured = Column(Boolean, default=False, nullable=False)
@@ -27,7 +27,6 @@ class Course(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # Relationships
     modules = relationship("Module", back_populates="course", cascade="all, delete-orphan")
     enrollments = relationship("Enrollment", back_populates="course", cascade="all, delete-orphan")
     certificates = relationship(
@@ -51,7 +50,6 @@ class Module(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # Relationships
     course = relationship("Course", back_populates="modules")
     lessons = relationship("Lesson", back_populates="module", cascade="all, delete-orphan")
 
@@ -76,7 +74,6 @@ class Lesson(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # Relationships
     module = relationship("Module", back_populates="lessons")
     progress_records = relationship(
         "LessonProgress", back_populates="lesson", cascade="all, delete-orphan"

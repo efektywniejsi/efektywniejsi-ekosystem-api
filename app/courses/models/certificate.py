@@ -24,7 +24,6 @@ class Certificate(Base):
     file_path = Column(String(1000), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    # Relationships
     user = relationship("User", backref="certificates")
     course = relationship("Course", back_populates="certificates")
 

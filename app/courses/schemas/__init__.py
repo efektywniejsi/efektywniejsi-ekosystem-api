@@ -38,7 +38,6 @@ from app.courses.schemas.progress import (
 )
 
 __all__ = [
-    # Course schemas
     "CourseCreate",
     "CourseUpdate",
     "CourseResponse",
@@ -54,19 +53,16 @@ __all__ = [
     "LessonWithProgressResponse",
     "EnrollmentResponse",
     "EnrollmentWithCourseResponse",
-    # Progress schemas
     "ProgressUpdateRequest",
     "LessonProgressResponse",
     "CourseProgressSummary",
     "LessonProgressWithLesson",
-    # Gamification schemas
     "AchievementResponse",
     "UserAchievementResponse",
     "UserStreakResponse",
     "UserPointsResponse",
     "PointsHistoryResponse",
     "GamificationSummaryResponse",
-    # Certificate schemas
     "CertificateResponse",
     "CertificateWithCourseResponse",
     "CertificateVerifyResponse",

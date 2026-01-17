@@ -31,7 +31,6 @@ class LessonProgress(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
-    # Relationships
     user = relationship("User", backref="lesson_progress")
     lesson = relationship("Lesson", back_populates="progress_records")
 

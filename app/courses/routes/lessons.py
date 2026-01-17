@@ -30,14 +30,12 @@ async def get_lesson(
             detail="Lesson not found",
         )
 
-    # Get user progress
     progress = (
         db.query(LessonProgress)
         .filter(LessonProgress.user_id == current_user.id, LessonProgress.lesson_id == lesson_id)
         .first()
     )
 
-    # Update last accessed time
     module = db.query(Module).filter(Module.id == lesson.module_id).first()
     if module:
         EnrollmentService.update_last_accessed(current_user.id, module.course_id, db)
@@ -68,7 +66,6 @@ async def get_course_lessons(
     current_user: User = Depends(get_current_user),
 ) -> list[LessonResponse]:
     """Get all lessons for a course (requires enrollment)."""
-    # Get course
     course = db.query(Course).filter(Course.slug == slug).first()
 
     if not course:
@@ -77,10 +74,8 @@ async def get_course_lessons(
             detail="Course not found",
         )
 
-    # Check enrollment
     require_course_enrollment(course.id, db, current_user)
 
-    # Get all lessons
     lessons = (
         db.query(Lesson)
         .join(Module, Lesson.module_id == Module.id)

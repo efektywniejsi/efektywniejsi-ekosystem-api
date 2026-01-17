@@ -31,7 +31,6 @@ def require_lesson_enrollment(
     current_user: User = Depends(get_current_user),
 ) -> None:
     """Dependency to check if user is enrolled in the course containing this lesson."""
-    # Get lesson -> module -> course
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
     if not lesson:
         raise HTTPException(
@@ -53,11 +52,9 @@ def require_lesson_enrollment(
             detail="Course not found",
         )
 
-    # Check if lesson is preview (no enrollment required)
     if lesson.is_preview:
         return
 
-    # Check enrollment
     is_enrolled = EnrollmentService.check_enrollment(current_user.id, course.id, db)
 
     if not is_enrolled:
