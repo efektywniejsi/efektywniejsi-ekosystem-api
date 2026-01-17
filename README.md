@@ -464,6 +464,25 @@ uv run python app/scripts/verify_demo_course.py
 uv run python app/scripts/verify_imported_courses.py
 ```
 
+### Test Data Management
+
+```bash
+# Create test enrollments for user@test.pl (dry-run)
+uv run python app/scripts/seed_test_enrollments.py
+
+# Create test enrollments (execute)
+uv run python app/scripts/seed_test_enrollments.py --execute
+
+# Clear test data for user@test.pl (dry-run)
+uv run python app/scripts/clear_test_data.py
+
+# Clear test data (execute)
+uv run python app/scripts/clear_test_data.py --execute
+
+# Clear test data for specific user
+uv run python app/scripts/clear_test_data.py --user admin@efektywniejsi.pl --execute
+```
+
 ---
 
 ## 🚀 Deployment
