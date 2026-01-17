@@ -139,10 +139,19 @@ class ProgressService:
                 detail="Progress record not found",
             )
 
+        # Check if user watched at least 95% before allowing manual completion
+        if progress.completion_percentage < ProgressService.COMPLETION_THRESHOLD:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Must watch at least 95% of the lesson before marking complete",
+            )
+
+        # Always set to 100% when manually marking complete
+        progress.completion_percentage = 100
+
         if not progress.is_completed:
             progress.is_completed = True
             progress.completed_at = datetime.utcnow()
-            progress.completion_percentage = 100
 
             GamificationService.award_points(
                 user_id=user_id,
@@ -159,8 +168,8 @@ class ProgressService:
 
             GamificationService.update_streak(user_id, db)
 
-            db.commit()
-            db.refresh(progress)
+        db.commit()
+        db.refresh(progress)
 
         return cast(LessonProgress, progress)
 

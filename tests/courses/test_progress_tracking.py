@@ -159,6 +159,7 @@ async def test_cannot_mark_complete_without_95_percent(
 @pytest.mark.asyncio
 async def test_get_course_progress(
     test_client: AsyncClient,
+    test_user,
     test_user_token,
     test_course_with_modules,
     db_session,
@@ -170,7 +171,7 @@ async def test_get_course_progress(
 
     # Enroll user
     enrollment = Enrollment(
-        user_id=test_user_token,  # This should be test_user.id
+        user_id=test_user.id,
         course_id=test_course_with_modules.id,
         enrolled_at=datetime.utcnow(),
     )
