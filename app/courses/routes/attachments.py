@@ -16,7 +16,13 @@ from app.db.session import get_db
 
 router = APIRouter()
 
-ALLOWED_MIME_TYPES = ["application/pdf"]
+ALLOWED_MIME_TYPES = [
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # DOCX
+    "application/zip",
+    "image/png",
+    "image/jpeg",
+]
 
 
 @router.post(
@@ -30,7 +36,10 @@ async def upload_attachment(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ) -> dict:
-    """Upload a PDF attachment to a lesson (admin only)."""
+    """Upload an attachment to a lesson (admin only).
+
+    Supports PDF, DOCX, ZIP, PNG, JPG files up to 50MB.
+    """
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
     if not lesson:
         raise HTTPException(
@@ -41,7 +50,10 @@ async def upload_attachment(
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid file type. Only PDF files are allowed. Received: {file.content_type}",
+            detail=(
+                f"Invalid file type. Allowed types: PDF, DOCX, ZIP, PNG, JPG. "
+                f"Received: {file.content_type}"
+            ),
         )
 
     max_size_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
