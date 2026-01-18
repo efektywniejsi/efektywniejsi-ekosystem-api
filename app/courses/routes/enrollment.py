@@ -52,7 +52,45 @@ async def get_my_enrollments(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[EnrollmentWithCourseResponse]:
-    """Get all enrollments for the current user."""
+    """Get all enrollments for the current user. Admins automatically see all courses."""
+
+    # Admins see all courses automatically (no enrollment required)
+    if current_user.role == "admin":
+        from datetime import datetime
+
+        from app.courses.models import Course
+
+        courses = db.query(Course).order_by(Course.sort_order, Course.created_at.desc()).all()
+
+        return [
+            EnrollmentWithCourseResponse(
+                id=str(course.id),  # Use course ID as enrollment ID for admins
+                user_id=str(current_user.id),
+                course_id=str(course.id),
+                enrolled_at=datetime.utcnow(),
+                completed_at=None,
+                certificate_issued_at=None,
+                last_accessed_at=None,
+                course={
+                    "id": str(course.id),
+                    "title": course.title,
+                    "slug": course.slug,
+                    "description": course.description,
+                    "thumbnail_url": course.thumbnail_url,
+                    "difficulty": course.difficulty,
+                    "estimated_hours": course.estimated_hours,
+                    "is_published": course.is_published,
+                    "is_featured": course.is_featured,
+                    "category": course.category,
+                    "sort_order": course.sort_order,
+                    "created_at": course.created_at,
+                    "updated_at": course.updated_at,
+                },
+            )
+            for course in courses
+        ]
+
+    # Regular users see only their enrolled courses
     enrollments = (
         db.query(Enrollment)
         .options(joinedload(Enrollment.course))
