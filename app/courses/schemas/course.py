@@ -3,6 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+LessonStatusType = Literal["unavailable", "in_preparation", "available"]
+
 
 class CourseBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=500)
@@ -72,10 +74,11 @@ class ModuleResponse(ModuleBase):
 class LessonBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=500)
     description: str | None = None
-    mux_playback_id: str = Field(..., min_length=1, max_length=255)
+    mux_playback_id: str | None = Field(None, max_length=255)
     mux_asset_id: str | None = Field(None, max_length=255)
     duration_seconds: int = Field(default=0, ge=0)
     is_preview: bool = False
+    status: LessonStatusType = "available"
     sort_order: int = 0
 
 
@@ -90,6 +93,7 @@ class LessonUpdate(BaseModel):
     mux_asset_id: str | None = Field(None, max_length=255)
     duration_seconds: int | None = Field(None, ge=0)
     is_preview: bool | None = None
+    status: LessonStatusType | None = None
     sort_order: int | None = None
 
 
@@ -143,3 +147,11 @@ class EnrollmentResponse(BaseModel):
 
 class EnrollmentWithCourseResponse(EnrollmentResponse):
     course: CourseResponse
+
+
+class ModuleReorderRequest(BaseModel):
+    module_ids: list[str] = Field(..., min_length=1)
+
+
+class LessonReorderRequest(BaseModel):
+    lesson_ids: list[str] = Field(..., min_length=1)

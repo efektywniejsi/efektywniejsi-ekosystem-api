@@ -9,6 +9,9 @@ from app.auth.routes import admin, auth, password
 from app.core import redis as redis_module
 from app.core.config import settings
 from app.courses.routes import (
+    admin as courses_admin,
+)
+from app.courses.routes import (
     attachments,
     certificates,
     courses,
@@ -16,6 +19,7 @@ from app.courses.routes import (
     gamification,
     lessons,
     progress,
+    webhooks,
 )
 
 
@@ -70,6 +74,10 @@ app.include_router(progress.router, prefix=settings.API_V1_PREFIX, tags=["progre
 app.include_router(gamification.router, prefix=settings.API_V1_PREFIX, tags=["gamification"])
 app.include_router(attachments.router, prefix=settings.API_V1_PREFIX, tags=["attachments"])
 app.include_router(certificates.router, prefix=settings.API_V1_PREFIX, tags=["certificates"])
+app.include_router(
+    courses_admin.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["admin-courses"]
+)
+app.include_router(webhooks.router, prefix=settings.API_V1_PREFIX, tags=["webhooks"])
 
 
 @app.get("/")

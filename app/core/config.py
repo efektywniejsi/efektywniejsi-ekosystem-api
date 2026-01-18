@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./uploads"
     MAX_FILE_SIZE_MB: int = 50
 
+    MUX_TOKEN_ID: str = ""
+    MUX_TOKEN_SECRET: str = ""
+    MUX_WEBHOOK_SECRET: str | None = None
+
     class Config:
         env_file = ".env"
         case_sensitive = True

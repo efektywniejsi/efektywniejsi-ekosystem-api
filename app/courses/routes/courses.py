@@ -5,20 +5,23 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.auth.dependencies import get_current_user, require_admin
 from app.auth.models.user import User
-from app.courses.models import Course, Lesson, Module
+from app.courses.models import Course, Lesson, LessonStatus, Module
 from app.courses.schemas.course import (
     CourseCreate,
     CourseDetailResponse,
     CourseResponse,
     CourseUpdate,
     LessonCreate,
+    LessonReorderRequest,
     LessonResponse,
     LessonUpdate,
     ModuleCreate,
+    ModuleReorderRequest,
     ModuleResponse,
     ModuleUpdate,
     ModuleWithLessonsResponse,
 )
+from app.courses.services.mux_service import MuxService, get_mux_service
 from app.db.session import get_db
 
 router = APIRouter()
@@ -133,26 +136,20 @@ async def get_course(
             detail="Course not found",
         )
 
-    total_lessons = sum(len(module.lessons) for module in course.modules)
-    total_duration = sum(
-        lesson.duration_seconds for module in course.modules for lesson in module.lessons
-    )
+    # Check if user is admin
+    is_admin = current_user.role == "admin"
 
-    return CourseDetailResponse(
-        id=str(course.id),
-        title=course.title,
-        slug=course.slug,
-        description=course.description,
-        thumbnail_url=course.thumbnail_url,
-        difficulty=course.difficulty,
-        estimated_hours=course.estimated_hours,
-        is_published=course.is_published,
-        is_featured=course.is_featured,
-        category=course.category,
-        sort_order=course.sort_order,
-        created_at=course.created_at,
-        updated_at=course.updated_at,
-        modules=[
+    # Filter lessons based on user role
+    def filter_lessons(lessons: list[Lesson]) -> list[Lesson]:
+        if is_admin:
+            return lessons  # Admins see all lessons
+        return [lesson for lesson in lessons if lesson.status != LessonStatus.UNAVAILABLE]
+
+    # Build modules with filtered lessons
+    modules_data = []
+    for m in sorted(course.modules, key=lambda x: x.sort_order):
+        filtered_lessons = filter_lessons(sorted(m.lessons, key=lambda x: x.sort_order))
+        modules_data.append(
             ModuleWithLessonsResponse(
                 id=str(m.id),
                 course_id=str(m.course_id),
@@ -171,15 +168,34 @@ async def get_course(
                         mux_asset_id=lesson.mux_asset_id,
                         duration_seconds=lesson.duration_seconds,
                         is_preview=lesson.is_preview,
+                        status=lesson.status.value,
                         sort_order=lesson.sort_order,
                         created_at=lesson.created_at,
                         updated_at=lesson.updated_at,
                     )
-                    for lesson in sorted(m.lessons, key=lambda x: x.sort_order)
+                    for lesson in filtered_lessons
                 ],
             )
-            for m in sorted(course.modules, key=lambda x: x.sort_order)
-        ],
+        )
+
+    total_lessons = sum(len(m.lessons) for m in modules_data)
+    total_duration = sum(lesson.duration_seconds for m in modules_data for lesson in m.lessons)
+
+    return CourseDetailResponse(
+        id=str(course.id),
+        title=course.title,
+        slug=course.slug,
+        description=course.description,
+        thumbnail_url=course.thumbnail_url,
+        difficulty=course.difficulty,
+        estimated_hours=course.estimated_hours,
+        is_published=course.is_published,
+        is_featured=course.is_featured,
+        category=course.category,
+        sort_order=course.sort_order,
+        created_at=course.created_at,
+        updated_at=course.updated_at,
+        modules=modules_data,
         total_lessons=total_lessons,
         total_duration_seconds=total_duration,
     )
@@ -269,6 +285,38 @@ async def delete_course(
     db.commit()
 
 
+@router.get("/courses/{course_id}/modules", response_model=list[ModuleResponse])
+async def get_course_modules(
+    course_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> list[ModuleResponse]:
+    """Get all modules for a course (admin only)."""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found",
+        )
+
+    modules = (
+        db.query(Module).filter(Module.course_id == course_id).order_by(Module.sort_order).all()
+    )
+
+    return [
+        ModuleResponse(
+            id=str(m.id),
+            course_id=str(m.course_id),
+            title=m.title,
+            description=m.description,
+            sort_order=m.sort_order,
+            created_at=m.created_at,
+            updated_at=m.updated_at,
+        )
+        for m in modules
+    ]
+
+
 @router.post(
     "/courses/{course_id}/modules",
     response_model=ModuleResponse,
@@ -352,13 +400,24 @@ async def delete_module(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ) -> None:
-    """Delete a module (admin only)."""
-    module = db.query(Module).filter(Module.id == module_id).first()
+    """Delete a module (admin only). Module must be empty (no lessons)."""
+    module = (
+        db.query(Module).filter(Module.id == module_id).options(joinedload(Module.lessons)).first()
+    )
 
     if not module:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Module not found",
+        )
+
+    # Check if module has any lessons
+    if module.lessons:
+        lesson_count = len(module.lessons)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete module with {lesson_count} lesson(s). "
+            "Please delete all lessons first.",
         )
 
     db.delete(module)
@@ -392,6 +451,7 @@ async def create_lesson(
         mux_asset_id=request.mux_asset_id,
         duration_seconds=request.duration_seconds,
         is_preview=request.is_preview,
+        status=LessonStatus(request.status),
         sort_order=request.sort_order,
     )
     db.add(lesson)
@@ -407,6 +467,7 @@ async def create_lesson(
         mux_asset_id=lesson.mux_asset_id,
         duration_seconds=lesson.duration_seconds,
         is_preview=lesson.is_preview,
+        status=lesson.status.value,
         sort_order=lesson.sort_order,
         created_at=lesson.created_at,
         updated_at=lesson.updated_at,
@@ -441,6 +502,8 @@ async def update_lesson(
         lesson.duration_seconds = request.duration_seconds
     if request.is_preview is not None:
         lesson.is_preview = request.is_preview
+    if request.status is not None:
+        lesson.status = LessonStatus(request.status)
     if request.sort_order is not None:
         lesson.sort_order = request.sort_order
 
@@ -456,6 +519,7 @@ async def update_lesson(
         mux_asset_id=lesson.mux_asset_id,
         duration_seconds=lesson.duration_seconds,
         is_preview=lesson.is_preview,
+        status=lesson.status.value,
         sort_order=lesson.sort_order,
         created_at=lesson.created_at,
         updated_at=lesson.updated_at,
@@ -467,8 +531,9 @@ async def delete_lesson(
     lesson_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
+    mux_service: MuxService = Depends(get_mux_service),
 ) -> None:
-    """Delete a lesson (admin only)."""
+    """Delete a lesson (admin only). Also deletes associated Mux video asset if present."""
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
 
     if not lesson:
@@ -477,5 +542,100 @@ async def delete_lesson(
             detail="Lesson not found",
         )
 
+    # Delete Mux asset if present
+    if lesson.mux_asset_id:
+        try:
+            mux_service.delete_asset(lesson.mux_asset_id)
+        except Exception as e:
+            # Log warning but don't fail the deletion
+            # The asset might already be deleted or Mux might be unavailable
+            print(f"Warning: Failed to delete Mux asset {lesson.mux_asset_id}: {e}")
+
     db.delete(lesson)
     db.commit()
+
+
+@router.post("/courses/{course_id}/modules/reorder", status_code=status.HTTP_200_OK)
+async def reorder_modules(
+    course_id: UUID,
+    request: ModuleReorderRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> dict[str, str]:
+    """Reorder modules in a course (admin only)."""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found",
+        )
+
+    # Verify all module IDs belong to this course
+    module_ids = [UUID(mid) for mid in request.module_ids]
+    modules = db.query(Module).filter(Module.id.in_(module_ids)).all()
+
+    if len(modules) != len(module_ids):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="One or more module IDs are invalid",
+        )
+
+    # Verify all modules belong to this course
+    for module in modules:
+        if module.course_id != course_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Module {module.id} does not belong to this course",
+            )
+
+    # Update sort_order for each module
+    for index, module_id in enumerate(module_ids):
+        module = next(m for m in modules if m.id == module_id)
+        module.sort_order = index
+
+    db.commit()
+
+    return {"message": "Modules reordered successfully"}
+
+
+@router.post("/modules/{module_id}/lessons/reorder", status_code=status.HTTP_200_OK)
+async def reorder_lessons(
+    module_id: UUID,
+    request: LessonReorderRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> dict[str, str]:
+    """Reorder lessons in a module (admin only)."""
+    module = db.query(Module).filter(Module.id == module_id).first()
+    if not module:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Module not found",
+        )
+
+    # Verify all lesson IDs belong to this module
+    lesson_ids = [UUID(lid) for lid in request.lesson_ids]
+    lessons = db.query(Lesson).filter(Lesson.id.in_(lesson_ids)).all()
+
+    if len(lessons) != len(lesson_ids):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="One or more lesson IDs are invalid",
+        )
+
+    # Verify all lessons belong to this module
+    for lesson in lessons:
+        if lesson.module_id != module_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Lesson {lesson.id} does not belong to this module",
+            )
+
+    # Update sort_order for each lesson
+    for index, lesson_id in enumerate(lesson_ids):
+        lesson = next(les for les in lessons if les.id == lesson_id)
+        lesson.sort_order = index
+
+    db.commit()
+
+    return {"message": "Lessons reordered successfully"}

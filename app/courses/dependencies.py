@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.auth.models.user import User
-from app.courses.models import Course, Lesson, Module
+from app.courses.models import Course, Lesson, LessonStatus, Module
 from app.courses.services.enrollment_service import EnrollmentService
 from app.db.session import get_db
 
@@ -37,6 +37,21 @@ def require_lesson_enrollment(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Lesson not found",
         )
+
+    # Check lesson status for non-admin users
+    if current_user.role != "admin":
+        if lesson.status == LessonStatus.UNAVAILABLE:
+            # Pretend the lesson doesn't exist for non-admins
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Lesson not found",
+            )
+        if lesson.status == LessonStatus.IN_PREPARATION:
+            # Lesson exists but is not accessible
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This lesson is currently in preparation and not yet available",
+            )
 
     module = db.query(Module).filter(Module.id == lesson.module_id).first()
     if not module:
