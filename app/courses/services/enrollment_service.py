@@ -3,9 +3,10 @@ from typing import cast
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.courses.models import Course, Enrollment
+from app.courses.schemas.course import EnrollmentWithCourseResponse
 
 
 class EnrollmentService:
@@ -98,3 +99,89 @@ class EnrollmentService:
         if enrollment:
             enrollment.last_accessed_at = datetime.utcnow()
             db.commit()
+
+    @staticmethod
+    def _map_course_to_enrollment_response(
+        course: Course, user_id: UUID
+    ) -> EnrollmentWithCourseResponse:
+        """Map a Course object to EnrollmentWithCourseResponse (for admin access)."""
+        return EnrollmentWithCourseResponse(
+            id=str(course.id),
+            user_id=str(user_id),
+            course_id=str(course.id),
+            enrolled_at=datetime.utcnow(),
+            completed_at=None,
+            certificate_issued_at=None,
+            last_accessed_at=None,
+            course={
+                "id": str(course.id),
+                "title": course.title,
+                "slug": course.slug,
+                "description": course.description,
+                "thumbnail_url": course.thumbnail_url,
+                "difficulty": course.difficulty,
+                "estimated_hours": course.estimated_hours,
+                "is_published": course.is_published,
+                "is_featured": course.is_featured,
+                "category": course.category,
+                "sort_order": course.sort_order,
+                "created_at": course.created_at,
+                "updated_at": course.updated_at,
+            },
+        )
+
+    @staticmethod
+    def _map_enrollment_to_response(enrollment: Enrollment) -> EnrollmentWithCourseResponse:
+        """Map an Enrollment object to EnrollmentWithCourseResponse."""
+        return EnrollmentWithCourseResponse(
+            id=str(enrollment.id),
+            user_id=str(enrollment.user_id),
+            course_id=str(enrollment.course_id),
+            enrolled_at=enrollment.enrolled_at,
+            completed_at=enrollment.completed_at,
+            certificate_issued_at=enrollment.certificate_issued_at,
+            last_accessed_at=enrollment.last_accessed_at,
+            course={
+                "id": str(enrollment.course.id),
+                "title": enrollment.course.title,
+                "slug": enrollment.course.slug,
+                "description": enrollment.course.description,
+                "thumbnail_url": enrollment.course.thumbnail_url,
+                "difficulty": enrollment.course.difficulty,
+                "estimated_hours": enrollment.course.estimated_hours,
+                "is_published": enrollment.course.is_published,
+                "is_featured": enrollment.course.is_featured,
+                "category": enrollment.course.category,
+                "sort_order": enrollment.course.sort_order,
+                "created_at": enrollment.course.created_at,
+                "updated_at": enrollment.course.updated_at,
+            },
+        )
+
+    @staticmethod
+    def get_user_accessible_courses(
+        user_id: UUID, is_admin: bool, db: Session
+    ) -> list[EnrollmentWithCourseResponse]:
+        """
+        Get courses accessible to a user.
+        - Admins see all courses
+        - Regular users see only enrolled courses
+        """
+        if is_admin:
+            # Admins see all courses ordered by sort_order
+            courses = db.query(Course).order_by(Course.sort_order, Course.created_at.desc()).all()
+            return [
+                EnrollmentService._map_course_to_enrollment_response(course, user_id)
+                for course in courses
+            ]
+
+        # Regular users see only enrolled courses
+        enrollments = (
+            db.query(Enrollment)
+            .options(joinedload(Enrollment.course))
+            .filter(Enrollment.user_id == user_id)
+            .all()
+        )
+        return [
+            EnrollmentService._map_enrollment_to_response(enrollment) for enrollment in enrollments
+        ]
