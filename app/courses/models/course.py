@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import Enum, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -74,7 +74,10 @@ class Lesson(Base):
     mux_asset_id: Mapped[str | None] = mapped_column(default=None, index=True)
     duration_seconds: Mapped[int] = mapped_column(default=0)
     is_preview: Mapped[bool] = mapped_column(default=False)
-    status: Mapped[LessonStatus] = mapped_column(default=LessonStatus.AVAILABLE)
+    status: Mapped[LessonStatus] = mapped_column(
+        Enum(LessonStatus, values_callable=lambda obj: [e.value for e in obj]),
+        default=LessonStatus.AVAILABLE,
+    )
     sort_order: Mapped[int] = mapped_column(default=0)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
