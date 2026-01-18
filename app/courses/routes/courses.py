@@ -451,7 +451,7 @@ async def create_lesson(
         mux_asset_id=request.mux_asset_id,
         duration_seconds=request.duration_seconds,
         is_preview=request.is_preview,
-        status=request.status,
+        status=LessonStatus(request.status),
         sort_order=request.sort_order,
     )
     db.add(lesson)
@@ -503,7 +503,7 @@ async def update_lesson(
     if request.is_preview is not None:
         lesson.is_preview = request.is_preview
     if request.status is not None:
-        lesson.status = request.status
+        lesson.status = LessonStatus(request.status)
     if request.sort_order is not None:
         lesson.sort_order = request.sort_order
 
