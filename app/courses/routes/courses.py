@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.auth.dependencies import get_current_user, require_admin
 from app.auth.models.user import User
-from app.courses.models import Course, Lesson, Module
+from app.courses.models import Course, Lesson, LessonStatus, Module
 from app.courses.schemas.course import (
     CourseCreate,
     CourseDetailResponse,
@@ -136,26 +136,20 @@ async def get_course(
             detail="Course not found",
         )
 
-    total_lessons = sum(len(module.lessons) for module in course.modules)
-    total_duration = sum(
-        lesson.duration_seconds for module in course.modules for lesson in module.lessons
-    )
+    # Check if user is admin
+    is_admin = current_user.role == "admin"
 
-    return CourseDetailResponse(
-        id=str(course.id),
-        title=course.title,
-        slug=course.slug,
-        description=course.description,
-        thumbnail_url=course.thumbnail_url,
-        difficulty=course.difficulty,
-        estimated_hours=course.estimated_hours,
-        is_published=course.is_published,
-        is_featured=course.is_featured,
-        category=course.category,
-        sort_order=course.sort_order,
-        created_at=course.created_at,
-        updated_at=course.updated_at,
-        modules=[
+    # Filter lessons based on user role
+    def filter_lessons(lessons: list[Lesson]) -> list[Lesson]:
+        if is_admin:
+            return lessons  # Admins see all lessons
+        return [lesson for lesson in lessons if lesson.status != LessonStatus.UNAVAILABLE]
+
+    # Build modules with filtered lessons
+    modules_data = []
+    for m in sorted(course.modules, key=lambda x: x.sort_order):
+        filtered_lessons = filter_lessons(sorted(m.lessons, key=lambda x: x.sort_order))
+        modules_data.append(
             ModuleWithLessonsResponse(
                 id=str(m.id),
                 course_id=str(m.course_id),
@@ -174,15 +168,34 @@ async def get_course(
                         mux_asset_id=lesson.mux_asset_id,
                         duration_seconds=lesson.duration_seconds,
                         is_preview=lesson.is_preview,
+                        status=lesson.status.value,
                         sort_order=lesson.sort_order,
                         created_at=lesson.created_at,
                         updated_at=lesson.updated_at,
                     )
-                    for lesson in sorted(m.lessons, key=lambda x: x.sort_order)
+                    for lesson in filtered_lessons
                 ],
             )
-            for m in sorted(course.modules, key=lambda x: x.sort_order)
-        ],
+        )
+
+    total_lessons = sum(len(m.lessons) for m in modules_data)
+    total_duration = sum(lesson.duration_seconds for m in modules_data for lesson in m.lessons)
+
+    return CourseDetailResponse(
+        id=str(course.id),
+        title=course.title,
+        slug=course.slug,
+        description=course.description,
+        thumbnail_url=course.thumbnail_url,
+        difficulty=course.difficulty,
+        estimated_hours=course.estimated_hours,
+        is_published=course.is_published,
+        is_featured=course.is_featured,
+        category=course.category,
+        sort_order=course.sort_order,
+        created_at=course.created_at,
+        updated_at=course.updated_at,
+        modules=modules_data,
         total_lessons=total_lessons,
         total_duration_seconds=total_duration,
     )
@@ -270,6 +283,38 @@ async def delete_course(
 
     db.delete(course)
     db.commit()
+
+
+@router.get("/courses/{course_id}/modules", response_model=list[ModuleResponse])
+async def get_course_modules(
+    course_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> list[ModuleResponse]:
+    """Get all modules for a course (admin only)."""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found",
+        )
+
+    modules = (
+        db.query(Module).filter(Module.course_id == course_id).order_by(Module.sort_order).all()
+    )
+
+    return [
+        ModuleResponse(
+            id=str(m.id),
+            course_id=str(m.course_id),
+            title=m.title,
+            description=m.description,
+            sort_order=m.sort_order,
+            created_at=m.created_at,
+            updated_at=m.updated_at,
+        )
+        for m in modules
+    ]
 
 
 @router.post(
@@ -406,6 +451,7 @@ async def create_lesson(
         mux_asset_id=request.mux_asset_id,
         duration_seconds=request.duration_seconds,
         is_preview=request.is_preview,
+        status=request.status,
         sort_order=request.sort_order,
     )
     db.add(lesson)
@@ -421,6 +467,7 @@ async def create_lesson(
         mux_asset_id=lesson.mux_asset_id,
         duration_seconds=lesson.duration_seconds,
         is_preview=lesson.is_preview,
+        status=lesson.status.value,
         sort_order=lesson.sort_order,
         created_at=lesson.created_at,
         updated_at=lesson.updated_at,
@@ -455,6 +502,8 @@ async def update_lesson(
         lesson.duration_seconds = request.duration_seconds
     if request.is_preview is not None:
         lesson.is_preview = request.is_preview
+    if request.status is not None:
+        lesson.status = request.status
     if request.sort_order is not None:
         lesson.sort_order = request.sort_order
 
@@ -470,6 +519,7 @@ async def update_lesson(
         mux_asset_id=lesson.mux_asset_id,
         duration_seconds=lesson.duration_seconds,
         is_preview=lesson.is_preview,
+        status=lesson.status.value,
         sort_order=lesson.sort_order,
         created_at=lesson.created_at,
         updated_at=lesson.updated_at,
