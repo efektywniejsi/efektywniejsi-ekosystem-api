@@ -55,7 +55,6 @@ class MuxService:
             direct_uploads_api = mux_python.DirectUploadsApi(api_client)
 
             try:
-                # Create a direct upload with MP4 standard input
                 create_upload_request = mux_python.CreateUploadRequest(
                     cors_origin="*",
                     new_asset_settings=mux_python.CreateAssetRequest(
@@ -65,20 +64,25 @@ class MuxService:
 
                 upload_response = direct_uploads_api.create_direct_upload(create_upload_request)
 
+                upload_id = upload_response.data.id
+                asset_id = (
+                    upload_response.data.asset_id if upload_response.data.asset_id else upload_id
+                )
+
                 return MuxDirectUpload(
                     upload_url=upload_response.data.url,
-                    asset_id=upload_response.data.asset_id or "",
+                    asset_id=asset_id,
                 )
 
             except ApiException as e:
                 raise RuntimeError(f"Failed to create Mux direct upload: {e}") from e
 
-    def get_asset_status(self, asset_id: str) -> MuxAssetStatus:
+    def get_asset_status(self, upload_or_asset_id: str) -> MuxAssetStatus:
         """
-        Get the status of a Mux asset.
+        Get the status of a Mux upload/asset.
 
         Args:
-            asset_id: The Mux asset ID
+            upload_or_asset_id: The Mux upload ID or asset ID
 
         Returns:
             MuxAssetStatus with current status and metadata
@@ -87,20 +91,28 @@ class MuxService:
             ApiException: If Mux API call fails
         """
         with mux_python.ApiClient(self.configuration) as api_client:
+            direct_uploads_api = mux_python.DirectUploadsApi(api_client)
             assets_api = mux_python.AssetsApi(api_client)
 
             try:
+                upload = direct_uploads_api.get_direct_upload(upload_or_asset_id)
+
+                if upload.data.status != "asset_created":
+                    return MuxAssetStatus(status="preparing")
+
+                asset_id = upload.data.asset_id
+                if not asset_id:
+                    return MuxAssetStatus(status="preparing")
+
                 asset = assets_api.get_asset(asset_id)
 
-                # Map Mux status to our status
                 mux_status = asset.data.status
+
                 if mux_status == "ready":
-                    # Get playback ID (first public one)
                     playback_id = None
                     if asset.data.playback_ids:
                         playback_id = asset.data.playback_ids[0].id
 
-                    # Duration is in seconds
                     duration = asset.data.duration
 
                     return MuxAssetStatus(
@@ -117,11 +129,36 @@ class MuxService:
                         error_message=error_message,
                     )
                 else:
-                    # preparing or other status
                     return MuxAssetStatus(status="preparing")
 
             except ApiException as e:
-                raise RuntimeError(f"Failed to get Mux asset status: {e}") from e
+                try:
+                    asset = assets_api.get_asset(upload_or_asset_id)
+                    mux_status = asset.data.status
+
+                    if mux_status == "ready":
+                        playback_id = None
+                        if asset.data.playback_ids:
+                            playback_id = asset.data.playback_ids[0].id
+                        duration = asset.data.duration
+                        return MuxAssetStatus(
+                            status="ready",
+                            playback_id=playback_id,
+                            duration=duration,
+                        )
+                    elif mux_status == "errored":
+                        error_messages = asset.data.errors.messages if asset.data.errors else []
+                        error_message = (
+                            "; ".join(error_messages) if error_messages else "Unknown error"
+                        )
+                        return MuxAssetStatus(
+                            status="errored",
+                            error_message=error_message,
+                        )
+                    else:
+                        return MuxAssetStatus(status="preparing")
+                except ApiException as e2:
+                    raise RuntimeError(f"Failed to get Mux upload/asset status: {e}, {e2}") from e
 
     def delete_asset(self, asset_id: str) -> None:
         """
@@ -139,7 +176,6 @@ class MuxService:
             try:
                 assets_api.delete_asset(asset_id)
             except ApiException as e:
-                # Log but don't fail - asset might already be deleted
                 print(f"Warning: Failed to delete Mux asset {asset_id}: {e}")
 
 

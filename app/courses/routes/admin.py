@@ -57,8 +57,8 @@ async def create_upload_url(
             detail="Lesson not found",
         )
 
-    # Delete old asset if it exists
-    if lesson.mux_asset_id:
+    # Delete old asset if it exists (skip placeholders)
+    if lesson.mux_asset_id and not lesson.mux_asset_id.startswith("PLACEHOLDER_"):
         try:
             mux_service.delete_asset(lesson.mux_asset_id)
         except Exception as e:
@@ -71,7 +71,10 @@ async def create_upload_url(
 
         # Store the asset ID in the lesson
         lesson.mux_asset_id = upload.asset_id
+        lesson.mux_playback_id = None  # Clear old playback_id
         db.commit()
+
+        print(f"Created upload URL for lesson {lesson_id}, asset_id: {upload.asset_id}")
 
         return UploadURLResponse(
             upload_url=upload.upload_url,
@@ -79,6 +82,7 @@ async def create_upload_url(
         )
 
     except Exception as e:
+        db.rollback()  # Rollback on error
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create upload URL: {str(e)}",
@@ -108,7 +112,9 @@ async def get_upload_status(
             detail="Lesson not found",
         )
 
-    if not lesson.mux_asset_id:
+    print(f"Checking upload status for lesson {lesson_id}, mux_asset_id: {lesson.mux_asset_id}")
+
+    if not lesson.mux_asset_id or lesson.mux_asset_id.startswith("PLACEHOLDER_"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No video upload in progress for this lesson",
@@ -123,6 +129,7 @@ async def get_upload_status(
             if asset_status.duration:
                 lesson.duration_seconds = int(asset_status.duration)
             db.commit()
+            print(f"Updated lesson {lesson_id} with playback_id: {asset_status.playback_id}")
 
         return UploadStatusResponse(
             status=asset_status.status,
@@ -132,6 +139,7 @@ async def get_upload_status(
         )
 
     except Exception as e:
+        print(f"Error getting upload status: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get upload status: {str(e)}",
