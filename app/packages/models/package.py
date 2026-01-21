@@ -25,6 +25,7 @@ class Package(Base):
     difficulty: Mapped[str] = mapped_column()
     total_time_saved: Mapped[str | None] = mapped_column(default=None)
     tools: Mapped[str] = mapped_column()  # JSON array as string
+    video_url: Mapped[str | None] = mapped_column(default=None)  # YouTube/Vimeo embed URL
 
     # Publishing
     is_published: Mapped[bool] = mapped_column(default=False, index=True)
@@ -96,4 +97,8 @@ class PackageBundleItem(Base):
     child_package = relationship("Package", foreign_keys=[child_package_id])
 
     def __repr__(self) -> str:
-        return f"<PackageBundleItem(id={self.id}, bundle_id={self.bundle_id}, child_package_id={self.child_package_id})>"
+        return (
+            f"<PackageBundleItem(id={self.id}, "
+            f"bundle_id={self.bundle_id}, "
+            f"child_package_id={self.child_package_id})>"
+        )

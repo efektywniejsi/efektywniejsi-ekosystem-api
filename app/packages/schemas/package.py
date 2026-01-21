@@ -45,6 +45,7 @@ class PackageListResponse(BaseModel):
     currency: str
     difficulty: str
     total_time_saved: str | None
+    video_url: str | None
     is_featured: bool
     is_bundle: bool
     tools: list[str] = Field(default_factory=list)
@@ -53,7 +54,7 @@ class PackageListResponse(BaseModel):
         from_attributes = True
 
     @classmethod
-    def from_orm(cls, obj):
+    def from_orm(cls, obj: object) -> "PackageListResponse":
         """Custom from_orm to parse JSON tools field."""
         # Parse tools JSON string to list
         tools = json.loads(obj.tools) if isinstance(obj.tools, str) else obj.tools
@@ -68,6 +69,7 @@ class PackageListResponse(BaseModel):
             currency=obj.currency,
             difficulty=obj.difficulty,
             total_time_saved=obj.total_time_saved,
+            video_url=obj.video_url,
             is_featured=obj.is_featured,
             is_bundle=obj.is_bundle,
             tools=tools,
@@ -87,6 +89,7 @@ class PackageDetailResponse(BaseModel):
     currency: str
     difficulty: str
     total_time_saved: str | None
+    video_url: str | None
     is_featured: bool
     is_bundle: bool
     tools: list[str] = Field(default_factory=list)
@@ -99,7 +102,7 @@ class PackageDetailResponse(BaseModel):
         from_attributes = True
 
     @classmethod
-    def from_orm(cls, obj):
+    def from_orm(cls, obj: object) -> "PackageDetailResponse":
         """Custom from_orm to parse JSON tools field."""
         # Parse tools JSON string to list
         tools = json.loads(obj.tools) if isinstance(obj.tools, str) else obj.tools
@@ -114,6 +117,7 @@ class PackageDetailResponse(BaseModel):
             currency=obj.currency,
             difficulty=obj.difficulty,
             total_time_saved=obj.total_time_saved,
+            video_url=obj.video_url,
             is_featured=obj.is_featured,
             is_bundle=obj.is_bundle,
             tools=tools,
