@@ -81,7 +81,7 @@ class OrderService:
         user = self.db.query(User).filter(User.email == order.email).first()
 
         if user:
-            return user
+            return user  # type: ignore[no-any-return]
 
         # Create new user with unusable password
         raw_token, hashed_token, expiry = generate_reset_token()
@@ -106,7 +106,7 @@ class OrderService:
         # The raw token needs to be passed back for email
         user.password_reset_token = raw_token  # type: ignore  # Temporarily store raw token
 
-        return user
+        return user  # type: ignore[no-any-return]
 
     async def _create_enrollments(self, order: Order, user: User) -> list[PackageEnrollment]:
         """

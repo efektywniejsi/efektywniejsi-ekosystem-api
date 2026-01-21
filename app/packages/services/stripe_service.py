@@ -4,7 +4,7 @@ Stripe payment integration service.
 
 from typing import Any
 
-import stripe
+import stripe  # type: ignore[import-untyped]
 
 from app.core.config import settings
 from app.packages.models.order import Order
@@ -77,7 +77,7 @@ class StripeService(PaymentService):
             event = stripe.Webhook.construct_event(
                 payload, signature, settings.STRIPE_WEBHOOK_SECRET
             )
-            return event
+            return event  # type: ignore[no-any-return]
         except stripe.error.SignatureVerificationError as e:
             raise ValueError(f"Invalid signature: {e}") from e
         except Exception as e:

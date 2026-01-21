@@ -6,7 +6,7 @@ import hashlib
 import hmac
 from typing import Any
 
-import httpx
+import httpx  # type: ignore[import-not-found]
 
 from app.core.config import settings
 from app.packages.models.order import Order
@@ -36,7 +36,7 @@ class PayUService(PaymentService):
             )
             response.raise_for_status()
             data = response.json()
-            return data["access_token"]
+            return data["access_token"]  # type: ignore[no-any-return]
 
     async def create_payment_session(
         self, order: Order, success_url: str, cancel_url: str
@@ -121,6 +121,6 @@ class PayUService(PaymentService):
 
         try:
             event_data = json.loads(payload.decode("utf-8"))
-            return event_data
+            return event_data  # type: ignore[no-any-return]
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON payload: {e}") from e

@@ -5,6 +5,7 @@ Pydantic schemas for packages.
 import json
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -54,10 +55,10 @@ class PackageListResponse(BaseModel):
         from_attributes = True
 
     @classmethod
-    def from_orm(cls, obj: object) -> "PackageListResponse":
+    def from_orm(cls, obj: Any) -> "PackageListResponse":
         """Custom from_orm to parse JSON tools field."""
         # Parse tools JSON string to list
-        tools = json.loads(obj.tools) if isinstance(obj.tools, str) else obj.tools
+        tools = json.loads(obj.tools) if isinstance(obj.tools, str) else obj.tools  # type: ignore[attr-defined]
         return cls(
             id=obj.id,
             slug=obj.slug,
@@ -102,10 +103,10 @@ class PackageDetailResponse(BaseModel):
         from_attributes = True
 
     @classmethod
-    def from_orm(cls, obj: object) -> "PackageDetailResponse":
+    def from_orm(cls, obj: Any) -> "PackageDetailResponse":
         """Custom from_orm to parse JSON tools field."""
         # Parse tools JSON string to list
-        tools = json.loads(obj.tools) if isinstance(obj.tools, str) else obj.tools
+        tools = json.loads(obj.tools) if isinstance(obj.tools, str) else obj.tools  # type: ignore[attr-defined]
         return cls(
             id=obj.id,
             slug=obj.slug,

@@ -149,4 +149,4 @@ class CheckoutService:
         except ValueError:
             return None
 
-        return self.db.query(Order).filter(Order.id == order_uuid).first()
+        return self.db.query(Order).filter(Order.id == order_uuid).first()  # type: ignore[no-any-return]
