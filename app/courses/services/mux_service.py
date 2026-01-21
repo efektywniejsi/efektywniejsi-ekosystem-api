@@ -55,7 +55,6 @@ class MuxService:
             direct_uploads_api = mux_python.DirectUploadsApi(api_client)
 
             try:
-                # Create a direct upload with MP4 standard input
                 create_upload_request = mux_python.CreateUploadRequest(
                     cors_origin="*",
                     new_asset_settings=mux_python.CreateAssetRequest(
@@ -65,28 +64,14 @@ class MuxService:
 
                 upload_response = direct_uploads_api.create_direct_upload(create_upload_request)
 
-                # Debug: print full response structure
-                print(
-                    f"Mux upload response data: id={upload_response.data.id}, "
-                    f"asset_id={upload_response.data.asset_id}"
-                )
-                print(f"Full upload data attributes: {dir(upload_response.data)}")
-
-                # Mux returns upload ID, asset is created after upload starts
-                # We need to track by upload ID, not asset_id initially
                 upload_id = upload_response.data.id
                 asset_id = (
                     upload_response.data.asset_id if upload_response.data.asset_id else upload_id
                 )
 
-                print(
-                    f"Mux direct upload created: upload_id={upload_id}, "
-                    f"asset_id={asset_id}, url={upload_response.data.url[:50]}..."
-                )
-
                 return MuxDirectUpload(
                     upload_url=upload_response.data.url,
-                    asset_id=asset_id,  # This might be empty, use upload_id to track
+                    asset_id=asset_id,
                 )
 
             except ApiException as e:
@@ -106,42 +91,28 @@ class MuxService:
             ApiException: If Mux API call fails
         """
         with mux_python.ApiClient(self.configuration) as api_client:
-            # First try to get upload status (for direct uploads)
             direct_uploads_api = mux_python.DirectUploadsApi(api_client)
             assets_api = mux_python.AssetsApi(api_client)
 
             try:
-                # Try to get direct upload first
-                print(f"Checking direct upload status for ID: {upload_or_asset_id}")
                 upload = direct_uploads_api.get_direct_upload(upload_or_asset_id)
 
-                print(f"Upload status: {upload.data.status}, asset_id: {upload.data.asset_id}")
-
-                # If upload is not yet complete, return preparing
                 if upload.data.status != "asset_created":
-                    print(f"Upload not complete yet, status: {upload.data.status}")
                     return MuxAssetStatus(status="preparing")
 
-                # Upload complete, now check asset status
                 asset_id = upload.data.asset_id
                 if not asset_id:
-                    print("Upload complete but no asset_id yet")
                     return MuxAssetStatus(status="preparing")
 
-                print(f"Upload complete, checking asset {asset_id}")
                 asset = assets_api.get_asset(asset_id)
 
-                # Map Mux status to our status
                 mux_status = asset.data.status
-                print(f"Mux asset {asset_id} status: {mux_status}")
 
                 if mux_status == "ready":
-                    # Get playback ID (first public one)
                     playback_id = None
                     if asset.data.playback_ids:
                         playback_id = asset.data.playback_ids[0].id
 
-                    # Duration is in seconds
                     duration = asset.data.duration
 
                     return MuxAssetStatus(
@@ -158,17 +129,12 @@ class MuxService:
                         error_message=error_message,
                     )
                 else:
-                    # preparing or other status
                     return MuxAssetStatus(status="preparing")
 
             except ApiException as e:
-                print(f"Error checking status: {e}")
-                # If it's not a valid upload ID, might be an old asset ID
-                # Try to get asset directly
                 try:
                     asset = assets_api.get_asset(upload_or_asset_id)
                     mux_status = asset.data.status
-                    print(f"Found asset directly, status: {mux_status}")
 
                     if mux_status == "ready":
                         playback_id = None
@@ -210,7 +176,6 @@ class MuxService:
             try:
                 assets_api.delete_asset(asset_id)
             except ApiException as e:
-                # Log but don't fail - asset might already be deleted
                 print(f"Warning: Failed to delete Mux asset {asset_id}: {e}")
 
 
