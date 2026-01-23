@@ -43,9 +43,9 @@ class StripeService(PaymentService):
             )
 
         # Create Stripe Checkout session
-        session = stripe.checkout.Session.create(  # type: ignore[arg-type]
+        session = stripe.checkout.Session.create(
             payment_method_types=["card", "blik"],
-            line_items=line_items,
+            line_items=line_items,  # type: ignore[arg-type]
             mode="payment",
             success_url=f"{success_url}?order_id={order.id}",
             cancel_url=cancel_url,
