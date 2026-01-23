@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.auth.models.user import User
-from app.courses.dependencies import require_lesson_enrollment
+from app.courses.dependencies import RequireLessonEnrollment
 from app.courses.models import LessonProgress
 from app.courses.schemas.progress import (
     CourseProgressSummary,
@@ -18,13 +18,16 @@ from app.db.session import get_db
 router = APIRouter()
 
 
-@router.post("/progress/lessons/{lesson_id}", response_model=LessonProgressResponse)
+@router.post(
+    "/progress/lessons/{lesson_id}",
+    response_model=LessonProgressResponse,
+    dependencies=[Depends(RequireLessonEnrollment())],
+)
 async def update_lesson_progress(
     lesson_id: UUID,
     request: ProgressUpdateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_lesson_enrollment),
 ) -> LessonProgressResponse:
     """Update progress for a lesson."""
     progress = ProgressService.update_lesson_progress(
@@ -96,12 +99,12 @@ async def get_course_progress(
 @router.post(
     "/progress/lessons/{lesson_id}/complete",
     response_model=LessonProgressResponse,
+    dependencies=[Depends(RequireLessonEnrollment())],
 )
 async def mark_lesson_complete(
     lesson_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_lesson_enrollment),
 ) -> LessonProgressResponse:
     """Manually mark a lesson as complete."""
     progress = ProgressService.mark_lesson_complete(current_user.id, lesson_id, db)
