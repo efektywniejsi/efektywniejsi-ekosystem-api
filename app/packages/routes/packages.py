@@ -96,7 +96,7 @@ def get_package_bundle_contents(
     try:
         package_uuid = uuid.UUID(package_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid package ID format")
+        raise HTTPException(status_code=400, detail="Invalid package ID format") from None
 
     package = (
         db.query(Package)

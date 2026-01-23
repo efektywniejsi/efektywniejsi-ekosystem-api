@@ -78,7 +78,7 @@ def check_enrollment(
     try:
         package_uuid = uuid.UUID(package_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid package ID format")
+        raise HTTPException(status_code=400, detail="Invalid package ID format") from None
 
     enrollment = (
         db.query(PackageEnrollment)

@@ -84,7 +84,8 @@ def _build_welcome_package_email(
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
         <h2 style="color: #4CAF50;">Witaj w Efektywniejsi! 🎉</h2>
         <p>Cześć {name},</p>
-        <p>Dziękujemy za zakup! Twoje zamówienie <strong>{order.order_number}</strong> zostało zrealizowane.</p>
+        <p>Dziękujemy za zakup! Twoje zamówienie <strong>{order.order_number}</strong>
+        zostało zrealizowane.</p>
 
         <h3 style="color: #333; margin-top: 25px;">Zakupione pakiety:</h3>
         <ul style="line-height: 2;">
@@ -93,7 +94,8 @@ def _build_welcome_package_email(
 
         <div style="background-color: #f5f5f5; padding: 15px; border-radius: 4px; margin: 20px 0;">
             <p style="margin: 5px 0;"><strong>Kwota:</strong> {total_pln:.2f} PLN</p>
-            <p style="margin: 5px 0;"><strong>Data:</strong> {order.created_at.strftime("%d.%m.%Y %H:%M")}</p>
+            <p style="margin: 5px 0;">
+            <strong>Data:</strong> {order.created_at.strftime("%d.%m.%Y %H:%M")}</p>
         </div>
 
         <h3 style="color: #333; margin-top: 30px;">Ustaw hasło i zacznij pracę</h3>
@@ -101,7 +103,8 @@ def _build_welcome_package_email(
         <p style="margin: 20px 0;">
             <a href="{reset_url}"
                style="background-color: #4CAF50; color: white; padding: 14px 28px;
-                      text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">
+                      text-decoration: none; border-radius: 4px; display: inline-block;
+                      font-weight: bold;">
                 Ustaw hasło i zaloguj się
             </a>
         </p>
@@ -190,14 +193,16 @@ def _build_purchase_confirmation_email(
 
         <div style="background-color: #f5f5f5; padding: 15px; border-radius: 4px; margin: 20px 0;">
             <p style="margin: 5px 0;"><strong>Kwota:</strong> {total_pln:.2f} PLN</p>
-            <p style="margin: 5px 0;"><strong>Data:</strong> {order.created_at.strftime("%d.%m.%Y %H:%M")}</p>
+            <p style="margin: 5px 0;">
+            <strong>Data:</strong> {order.created_at.strftime("%d.%m.%Y %H:%M")}</p>
         </div>
 
         <p style="margin-top: 30px;">Wszystkie pakiety są już dostępne w Twoim panelu:</p>
         <p style="margin: 20px 0;">
             <a href="{dashboard_url}"
                style="background-color: #4CAF50; color: white; padding: 14px 28px;
-                      text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">
+                      text-decoration: none; border-radius: 4px; display: inline-block;
+                      font-weight: bold;">
                 Przejdź do panelu
             </a>
         </p>

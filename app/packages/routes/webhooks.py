@@ -65,7 +65,7 @@ async def stripe_webhook(
                 return {"status": "error", "message": "Order not found"}
 
             # Process payment
-            result = await _process_payment_webhook(order, db)
+            await _process_payment_webhook(order, db)
 
             return {"status": "success", "order_id": str(order.id)}
 
@@ -75,7 +75,7 @@ async def stripe_webhook(
 
     except ValueError as e:
         logger.error(f"Stripe webhook verification failed: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Stripe webhook processing error: {e}")
         # Return 200 to prevent retries
@@ -129,7 +129,7 @@ async def payu_webhook(
                 return {"status": "error", "message": "Order not found"}
 
             # Process payment
-            result = await _process_payment_webhook(order, db)
+            await _process_payment_webhook(order, db)
 
             return {"status": "success", "order_id": str(order.id)}
 
@@ -139,7 +139,7 @@ async def payu_webhook(
 
     except ValueError as e:
         logger.error(f"PayU webhook verification failed: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.error(f"PayU webhook processing error: {e}")
         # Return 200 to prevent retries

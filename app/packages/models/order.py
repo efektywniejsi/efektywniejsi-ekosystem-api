@@ -88,4 +88,7 @@ class OrderItem(Base):
     package = relationship("Package")
 
     def __repr__(self) -> str:
-        return f"<OrderItem(id={self.id}, order_id={self.order_id}, package_title={self.package_title})>"
+        return (
+            f"<OrderItem(id={self.id}, order_id={self.order_id}, "
+            f"package_title={self.package_title})>"
+        )

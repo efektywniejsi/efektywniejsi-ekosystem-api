@@ -76,7 +76,7 @@ def get_order_details(
     try:
         order_uuid = uuid.UUID(order_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid order ID format")
+        raise HTTPException(status_code=400, detail="Invalid order ID format") from None
 
     order = db.query(Order).filter(Order.id == order_uuid).first()
 

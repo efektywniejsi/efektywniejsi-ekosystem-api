@@ -34,4 +34,7 @@ class PackageEnrollment(Base):
     order = relationship("Order", backref="package_enrollments")
 
     def __repr__(self) -> str:
-        return f"<PackageEnrollment(id={self.id}, user_id={self.user_id}, package_id={self.package_id})>"
+        return (
+            f"<PackageEnrollment(id={self.id}, user_id={self.user_id}, "
+            f"package_id={self.package_id})>"
+        )

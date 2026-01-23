@@ -43,7 +43,7 @@ class StripeService(PaymentService):
             )
 
         # Create Stripe Checkout session
-        session = stripe.checkout.Session.create(
+        session = stripe.checkout.Session.create(  # type: ignore[arg-type]
             payment_method_types=["card", "blik"],
             line_items=line_items,
             mode="payment",
@@ -78,7 +78,7 @@ class StripeService(PaymentService):
                 payload, signature, settings.STRIPE_WEBHOOK_SECRET
             )
             return event  # type: ignore[no-any-return]
-        except stripe.error.SignatureVerificationError as e:
+        except stripe.error.SignatureVerificationError as e:  # type: ignore[attr-defined]
             raise ValueError(f"Invalid signature: {e}") from e
         except Exception as e:
             raise ValueError(f"Webhook verification failed: {e}") from e
