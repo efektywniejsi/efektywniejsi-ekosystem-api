@@ -10,70 +10,103 @@ from app.courses.services.enrollment_service import EnrollmentService
 from app.db.session import get_db
 
 
-def require_course_enrollment(
-    course_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-) -> None:
-    """Dependency to check if user is enrolled in a course."""
-    is_enrolled = EnrollmentService.check_enrollment(current_user.id, course_id, db)
-
-    if not is_enrolled:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You must be enrolled in this course to access it",
-        )
+def _is_admin(user: User) -> bool:
+    """Check if user has admin role."""
+    return bool(user.role == "admin")
 
 
-def require_lesson_enrollment(
-    lesson_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-) -> None:
-    """Dependency to check if user is enrolled in the course containing this lesson."""
-    lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
-    if not lesson:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Lesson not found",
-        )
+class RequireCourseEnrollment:
+    """Dependency class to check if user is enrolled in a course."""
 
-    # Check lesson status for non-admin users
-    if current_user.role != "admin":
-        if lesson.status == LessonStatus.UNAVAILABLE:
-            # Pretend the lesson doesn't exist for non-admins
+    def __init__(self, skip_for_admin: bool = True):
+        """
+        Initialize enrollment requirement.
+
+        Args:
+            skip_for_admin: If True, admins bypass enrollment check. Default True.
+        """
+        self.skip_for_admin = skip_for_admin
+
+    def __call__(
+        self,
+        course_id: UUID,
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db),
+    ) -> None:
+        if self.skip_for_admin and _is_admin(current_user):
+            return
+
+        is_enrolled = EnrollmentService.check_enrollment(current_user.id, course_id, db)
+        if not is_enrolled:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You must be enrolled in this course to access it",
+            )
+
+
+class RequireLessonEnrollment:
+    """Dependency class to check if user is enrolled in the course containing a lesson."""
+
+    def __init__(self, skip_for_admin: bool = True):
+        """
+        Initialize lesson enrollment requirement.
+
+        Args:
+            skip_for_admin: If True, admins bypass enrollment check. Default True.
+        """
+        self.skip_for_admin = skip_for_admin
+
+    def __call__(
+        self,
+        lesson_id: UUID,
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db),
+    ) -> None:
+        lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
+        if not lesson:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Lesson not found",
             )
-        if lesson.status == LessonStatus.IN_PREPARATION:
-            # Lesson exists but is not accessible
+
+        # Check lesson status for non-admin users
+        if not (self.skip_for_admin and _is_admin(current_user)):
+            if lesson.status == LessonStatus.UNAVAILABLE:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Lesson not found",
+                )
+            if lesson.status == LessonStatus.IN_PREPARATION:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="This lesson is currently in preparation and not yet available",
+                )
+
+        module = db.query(Module).filter(Module.id == lesson.module_id).first()
+        if not module:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="This lesson is currently in preparation and not yet available",
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Module not found",
             )
 
-    module = db.query(Module).filter(Module.id == lesson.module_id).first()
-    if not module:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Module not found",
-        )
+        course = db.query(Course).filter(Course.id == module.course_id).first()
+        if not course:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Course not found",
+            )
 
-    course = db.query(Course).filter(Course.id == module.course_id).first()
-    if not course:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found",
-        )
+        # Preview lessons are accessible to everyone
+        if lesson.is_preview:
+            return
 
-    if lesson.is_preview:
-        return
+        # Admins bypass enrollment check if configured
+        if self.skip_for_admin and _is_admin(current_user):
+            return
 
-    is_enrolled = EnrollmentService.check_enrollment(current_user.id, course.id, db)
-
-    if not is_enrolled:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You must be enrolled in this course to access this lesson",
-        )
+        is_enrolled = EnrollmentService.check_enrollment(current_user.id, course.id, db)
+        if not is_enrolled:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You must be enrolled in this course to access this lesson",
+            )

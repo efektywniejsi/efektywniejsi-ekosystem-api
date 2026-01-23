@@ -21,6 +21,13 @@ from app.courses.routes import (
     progress,
     webhooks,
 )
+from app.packages.routes import (
+    checkout_router,
+    enrollments_router,
+    orders_router,
+    packages_router,
+    webhooks_router,
+)
 
 
 @asynccontextmanager
@@ -78,6 +85,13 @@ app.include_router(
     courses_admin.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["admin-courses"]
 )
 app.include_router(webhooks.router, prefix=settings.API_V1_PREFIX, tags=["webhooks"])
+
+# Package commerce routes
+app.include_router(packages_router, prefix=settings.API_V1_PREFIX, tags=["packages"])
+app.include_router(checkout_router, prefix=settings.API_V1_PREFIX, tags=["checkout"])
+app.include_router(webhooks_router, prefix=settings.API_V1_PREFIX, tags=["payment-webhooks"])
+app.include_router(enrollments_router, prefix=settings.API_V1_PREFIX, tags=["package-enrollments"])
+app.include_router(orders_router, prefix=settings.API_V1_PREFIX, tags=["orders"])
 
 
 @app.get("/")

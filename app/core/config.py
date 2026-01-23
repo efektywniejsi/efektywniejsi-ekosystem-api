@@ -40,6 +40,17 @@ class Settings(BaseSettings):
     MUX_TOKEN_SECRET: str = ""
     MUX_WEBHOOK_SECRET: str | None = None
 
+    # Stripe Configuration
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_PUBLISHABLE_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+
+    # PayU Configuration
+    PAYU_MERCHANT_ID: str = ""
+    PAYU_SECRET_KEY: str = ""
+    PAYU_API_URL: str = "https://secure.payu.com"
+    PAYU_WEBHOOK_SECRET: str = ""
+
     class Config:
         env_file = ".env"
         case_sensitive = True

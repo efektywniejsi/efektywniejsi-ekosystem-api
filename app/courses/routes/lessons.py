@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.auth.models.user import User
-from app.courses.dependencies import require_course_enrollment, require_lesson_enrollment
+from app.courses.dependencies import RequireCourseEnrollment, RequireLessonEnrollment
 from app.courses.models import Course, Lesson, LessonProgress, Module
 from app.courses.schemas.course import LessonResponse, LessonWithProgressResponse
 from app.courses.services.enrollment_service import EnrollmentService
@@ -14,12 +14,15 @@ from app.db.session import get_db
 router = APIRouter()
 
 
-@router.get("/lessons/{lesson_id}", response_model=LessonWithProgressResponse)
+@router.get(
+    "/lessons/{lesson_id}",
+    response_model=LessonWithProgressResponse,
+    dependencies=[Depends(RequireLessonEnrollment())],
+)
 async def get_lesson(
     lesson_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_lesson_enrollment),
 ) -> LessonWithProgressResponse:
     """Get lesson details with user progress."""
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
@@ -74,7 +77,7 @@ async def get_course_lessons(
             detail="Course not found",
         )
 
-    require_course_enrollment(course.id, db, current_user)
+    RequireCourseEnrollment()(course_id=course.id, current_user=current_user, db=db)
 
     lessons = (
         db.query(Lesson)
