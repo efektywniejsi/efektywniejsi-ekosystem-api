@@ -2,9 +2,9 @@
 
 Complete API reference for Efektywniejsi Ekosystem API.
 
-**Base URL**: `http://localhost:8001/api/v1` (development)
+**Base URL**: `http://localhost:8000/api/v1` (development)
 
-**Interactive Docs**: http://localhost:8001/docs
+**Interactive Docs**: http://localhost:8000/docs
 
 ---
 
@@ -65,7 +65,7 @@ Login with email and password.
 
 **Example:**
 ```bash
-curl -X POST http://localhost:8001/api/v1/auth/login \
+curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"user@test.pl","password":"testuser123"}'
 ```
@@ -91,7 +91,7 @@ Refresh access token using refresh token.
 
 **Example:**
 ```bash
-curl -X POST http://localhost:8001/api/v1/auth/refresh \
+curl -X POST http://localhost:8000/api/v1/auth/refresh \
   --cookie "refresh_token=eyJ0eXAiOiJKV1Qi..."
 ```
 
@@ -112,7 +112,7 @@ Revoke refresh token.
 
 **Example:**
 ```bash
-curl -X POST http://localhost:8001/api/v1/auth/logout \
+curl -X POST http://localhost:8000/api/v1/auth/logout \
   --cookie "refresh_token=eyJ0eXAiOiJKV1Qi..."
 ```
 
@@ -137,7 +137,7 @@ Get current authenticated user.
 
 **Example:**
 ```bash
-curl -X GET http://localhost:8001/api/v1/auth/me \
+curl -X GET http://localhost:8000/api/v1/auth/me \
   --cookie "access_token=eyJ0eXAiOiJKV1Qi..."
 ```
 
@@ -167,7 +167,7 @@ Request password reset email.
 
 **Example:**
 ```bash
-curl -X POST http://localhost:8001/api/v1/password/request-reset \
+curl -X POST http://localhost:8000/api/v1/password/request-reset \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com"}'
 ```
@@ -269,7 +269,7 @@ List all users with pagination.
 
 **Example:**
 ```bash
-curl -X GET "http://localhost:8001/api/v1/admin/users?page=1&per_page=20&role=paid" \
+curl -X GET "http://localhost:8000/api/v1/admin/users?page=1&per_page=20&role=paid" \
   --cookie "access_token=eyJ0eXAiOiJKV1Qi..."
 ```
 
@@ -344,7 +344,7 @@ List all courses.
 
 **Example:**
 ```bash
-curl -X GET "http://localhost:8001/api/v1/courses?is_published=true&difficulty=intermediate"
+curl -X GET "http://localhost:8000/api/v1/courses?is_published=true&difficulty=intermediate"
 ```
 
 ---
@@ -452,7 +452,7 @@ Enroll in course.
 
 **Example:**
 ```bash
-curl -X POST http://localhost:8001/api/v1/courses/550e8400-e29b-41d4-a716-446655440001/enroll \
+curl -X POST http://localhost:8000/api/v1/courses/550e8400-e29b-41d4-a716-446655440001/enroll \
   --cookie "access_token=eyJ0eXAiOiJKV1Qi..."
 ```
 
@@ -670,7 +670,7 @@ Download attachment file.
 
 **Example:**
 ```bash
-curl -X GET http://localhost:8001/api/v1/attachments/550e8400-e29b-41d4-a716-446655440030/download \
+curl -X GET http://localhost:8000/api/v1/attachments/550e8400-e29b-41d4-a716-446655440030/download \
   --cookie "access_token=eyJ0eXAiOiJKV1Qi..." \
   -o checklist.pdf
 ```
@@ -827,7 +827,7 @@ Download certificate PDF.
 
 **Example:**
 ```bash
-curl -X GET http://localhost:8001/api/v1/certificates/EFKT-2026-ABCD1234/download \
+curl -X GET http://localhost:8000/api/v1/certificates/EFKT-2026-ABCD1234/download \
   --cookie "access_token=eyJ0eXAiOiJKV1Qi..." \
   -o certificate.pdf
 ```
@@ -862,7 +862,7 @@ Verify certificate authenticity.
 
 **Example:**
 ```bash
-curl -X GET http://localhost:8001/api/v1/certificates/EFKT-2026-ABCD1234/verify
+curl -X GET http://localhost:8000/api/v1/certificates/EFKT-2026-ABCD1234/verify
 ```
 
 ---
@@ -978,14 +978,14 @@ Body contains the requested resource or confirmation message.
 ### Cookie-based (Recommended for web)
 
 ```bash
-curl -X GET http://localhost:8001/api/v1/auth/me \
+curl -X GET http://localhost:8000/api/v1/auth/me \
   --cookie "access_token=eyJ0eXAiOiJKV1Qi..."
 ```
 
 ### Bearer Token
 
 ```bash
-curl -X GET http://localhost:8001/api/v1/auth/me \
+curl -X GET http://localhost:8000/api/v1/auth/me \
   -H "Authorization: Bearer eyJ0eXAiOiJKV1Qi..."
 ```
 

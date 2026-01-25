@@ -50,7 +50,7 @@ services:
       DEBUG: "True"
       BACKEND_CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000","http://localhost:3001"]'
     ports:
-      - "8001:8000"
+      - "8000:8000"
     volumes:
       - .:/app
       - uploads_data:/app/uploads

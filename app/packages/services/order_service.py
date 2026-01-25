@@ -112,8 +112,13 @@ class OrderService:
         """
         Create package enrollments from order items.
 
-        Handles bundle packages by enrolling in child packages instead.
+        Handles bundle packages by enrolling in:
+        - Child packages (via PackageBundleItem)
+        - Courses (via BundleCourseItem)
         """
+        from app.courses.models.enrollment import Enrollment
+        from app.packages.models.bundle import BundleCourseItem
+
         enrollments = []
 
         for order_item in order.items:
@@ -123,13 +128,38 @@ class OrderService:
                 continue
 
             if package.is_bundle:
-                # Bundle: enroll in all child packages
+                # 1. Enroll in all child packages
                 for bundle_item in package.bundle_items:
                     enrollment = self._create_single_enrollment(
                         user.id, bundle_item.child_package_id, order.id
                     )
                     if enrollment:
                         enrollments.append(enrollment)
+
+                # 2. Enroll in all courses (NEW!)
+                course_items = (
+                    self.db.query(BundleCourseItem)
+                    .filter(BundleCourseItem.bundle_id == package.id)
+                    .all()
+                )
+
+                for course_item in course_items:
+                    # Check if already enrolled
+                    existing = (
+                        self.db.query(Enrollment)
+                        .filter(
+                            Enrollment.user_id == user.id,
+                            Enrollment.course_id == course_item.course_id,
+                        )
+                        .first()
+                    )
+
+                    if not existing:
+                        course_enrollment = Enrollment(
+                            user_id=user.id,
+                            course_id=course_item.course_id,
+                        )
+                        self.db.add(course_enrollment)
             else:
                 # Regular package: enroll directly
                 enrollment = self._create_single_enrollment(user.id, package.id, order.id)

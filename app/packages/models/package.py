@@ -46,6 +46,12 @@ class Package(Base):
         back_populates="bundle",
         cascade="all, delete-orphan",
     )
+    course_items = relationship(
+        "BundleCourseItem",
+        foreign_keys="BundleCourseItem.bundle_id",
+        back_populates="bundle",
+        cascade="all, delete-orphan",
+    )
     enrollments = relationship(
         "PackageEnrollment", back_populates="package", cascade="all, delete-orphan"
     )
