@@ -40,8 +40,8 @@ def list_packages(
         List of packages with basic info
     """
     query = db.query(Package).filter(
-        Package.is_published == True,  # noqa: E712
-        Package.is_bundle == False,  # noqa: E712 - Exclude bundles
+        Package.is_published.is_(True),  # noqa: E712
+        Package.is_bundle.is_(False),  # noqa: E712 - Exclude bundles
     )
 
     if category:
@@ -72,7 +72,7 @@ def list_all_packages(
     """
     packages = (
         db.query(Package)
-        .filter(Package.is_bundle == False)  # noqa: E712 - Exclude bundles
+        .filter(Package.is_bundle.is_(False))  # noqa: E712 - Exclude bundles
         .order_by(Package.created_at.desc())
         .all()
     )
@@ -102,7 +102,7 @@ def get_package_by_slug(
     """
     package = (
         db.query(Package)
-        .filter(Package.slug == slug, Package.is_published == True)  # noqa: E712
+        .filter(Package.slug == slug, Package.is_published.is_(True))  # noqa: E712
         .first()
     )
 
@@ -140,7 +140,7 @@ def get_package_bundle_contents(
         db.query(Package)
         .filter(
             Package.id == package_uuid,
-            Package.is_published == True,  # noqa: E712
+            Package.is_published.is_(True),  # noqa: E712
             Package.is_bundle == True,  # noqa: E712
         )
         .first()
