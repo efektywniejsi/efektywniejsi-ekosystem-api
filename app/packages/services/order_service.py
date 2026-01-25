@@ -4,7 +4,7 @@ Order service for user creation and enrollment management.
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy.orm import Session
 
@@ -78,10 +78,12 @@ class OrderService:
     def _get_or_create_user(self, order: Order) -> User:
         """Get existing user or create a new one."""
         # Check if user exists
-        user = self.db.query(User).filter(User.email == order.email).first()
+        existing_user = cast(
+            User | None, self.db.query(User).filter(User.email == order.email).first()
+        )
 
-        if user:
-            return user  # type: ignore[no-any-return]
+        if existing_user:
+            return existing_user
 
         # Create new user with unusable password
         raw_token, hashed_token, expiry = generate_reset_token()
@@ -104,9 +106,11 @@ class OrderService:
 
         # Store raw token temporarily for email (it's already in user object as hashed)
         # The raw token needs to be passed back for email
-        user.password_reset_token = raw_token  # type: ignore  # Temporarily store raw token
+        # Note: This temporarily overwrites the hashed token with the raw one
+        # for email sending purposes. This is safe as it happens in-memory only.
+        user.password_reset_token = raw_token
 
-        return user  # type: ignore[no-any-return]
+        return user
 
     async def _create_enrollments(self, order: Order, user: User) -> list[PackageEnrollment]:
         """

@@ -4,6 +4,7 @@ Checkout service for order creation and payment initiation.
 
 import uuid
 from datetime import datetime
+from typing import cast
 
 from sqlalchemy.orm import Session
 
@@ -131,7 +132,7 @@ class CheckoutService:
 
             package = (
                 self.db.query(Package)
-                .filter(Package.id == package_uuid, Package.is_published == True)  # noqa: E712
+                .filter(Package.id == package_uuid, Package.is_published.is_(True))  # noqa: E712
                 .first()
             )
 
@@ -149,4 +150,4 @@ class CheckoutService:
         except ValueError:
             return None
 
-        return self.db.query(Order).filter(Order.id == order_uuid).first()  # type: ignore[no-any-return]
+        return cast(Order | None, self.db.query(Order).filter(Order.id == order_uuid).first())
