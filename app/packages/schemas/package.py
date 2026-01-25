@@ -147,3 +147,38 @@ class PackageWithChildrenResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PackageCreateRequest(BaseModel):
+    """Admin request to create package."""
+
+    slug: str
+    title: str
+    description: str
+    category: str
+    price: int  # In grosz
+    original_price: int | None = None
+    currency: str = "PLN"
+    difficulty: str
+    total_time_saved: str | None = None
+    tools: list[str] = Field(default_factory=list)
+    video_url: str | None = None
+    is_featured: bool = False
+    is_bundle: bool = False
+    package_ids: list[str] = Field(default_factory=list)  # Child packages if is_bundle=True
+
+
+class PackageUpdateRequest(BaseModel):
+    """Admin request to update package."""
+
+    title: str | None = None
+    description: str | None = None
+    category: str | None = None
+    price: int | None = None
+    original_price: int | None = None
+    difficulty: str | None = None
+    total_time_saved: str | None = None
+    tools: list[str] | None = None
+    video_url: str | None = None
+    is_featured: bool | None = None
+    package_ids: list[str] | None = None  # Update child packages if is_bundle=True

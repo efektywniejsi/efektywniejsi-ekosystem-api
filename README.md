@@ -119,14 +119,14 @@ uv run python -m app.scripts.seeds.seed_users
 
 ```bash
 # Development mode (auto-reload)
-uv run uvicorn app.main:app --reload --port 8001
+uv run uvicorn app.main:app --reload --port 8000
 
 # Production mode
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8001 --workers 4
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
-**API Documentation**: http://localhost:8001/docs
-**ReDoc**: http://localhost:8001/redoc
+**API Documentation**: http://localhost:8000/docs
+**ReDoc**: http://localhost:8000/redoc
 
 ---
 
@@ -496,7 +496,7 @@ docker build -t efektywniejsi-api:latest .
 # Run container
 docker run -d \
   --name efektywniejsi-api \
-  -p 8001:8001 \
+  -p 8000:8000 \
   --env-file .env.production \
   efektywniejsi-api:latest
 ```
@@ -641,8 +641,8 @@ pre-commit run --all-files
 ### Port Already in Use
 
 ```bash
-# Kill process on port 8001
-lsof -ti:8001 | xargs kill -9
+# Kill process on port 8000
+lsof -ti:8000 | xargs kill -9
 ```
 
 ### Database Connection Issues
@@ -684,7 +684,7 @@ uv run alembic heads
 For issues and questions:
 - **GitHub Issues**: [repository-url]/issues
 - **Documentation**: `/docs/` directory
-- **API Docs**: http://localhost:8001/docs
+- **API Docs**: http://localhost:8000/docs
 
 ---
 

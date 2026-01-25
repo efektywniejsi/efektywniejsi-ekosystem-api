@@ -206,13 +206,13 @@ USER appuser
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD python -c "import requests; requests.get('http://localhost:8001/health').raise_for_status()"
+  CMD python -c "import requests; requests.get('http://localhost:8000/health').raise_for_status()"
 
 # Expose port
-EXPOSE 8001
+EXPOSE 8000
 
 # Run application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "4"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
 ```
 
 ### docker-compose.production.yml
@@ -231,7 +231,7 @@ services:
     env_file:
       - .env.production
     ports:
-      - "8001:8001"
+      - "8000:8000"
     volumes:
       - uploads_data:/app/uploads
     depends_on:
@@ -292,7 +292,7 @@ docker-compose -f docker-compose.production.yml up -d
 docker-compose -f docker-compose.production.yml logs -f api
 
 # Check health
-curl http://localhost:8001/health
+curl http://localhost:8000/health
 ```
 
 ---
@@ -385,7 +385,7 @@ sudo nano /etc/nginx/sites-available/efektywniejsi-api
 
 ```nginx
 upstream api_backend {
-    server localhost:8001;
+    server localhost:8000;
 }
 
 server {
@@ -731,10 +731,10 @@ services:
 ```nginx
 upstream api_backend {
     least_conn;  # Load balancing algorithm
-    server api1:8001;
-    server api2:8001;
-    server api3:8001;
-    server api4:8001;
+    server api1:8000;
+    server api2:8000;
+    server api3:8000;
+    server api4:8000;
 }
 ```
 
@@ -786,7 +786,7 @@ docker ps
 docker-compose logs -f api
 
 # Check health
-curl http://localhost:8001/health
+curl http://localhost:8000/health
 
 # Restart container
 docker-compose restart api

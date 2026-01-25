@@ -22,10 +22,12 @@ from app.courses.routes import (
     webhooks,
 )
 from app.packages.routes import (
+    bundles_router,
     checkout_router,
     enrollments_router,
     orders_router,
     packages_router,
+    sales_windows_router,
     webhooks_router,
 )
 
@@ -87,11 +89,15 @@ app.include_router(
 app.include_router(webhooks.router, prefix=settings.API_V1_PREFIX, tags=["webhooks"])
 
 # Package commerce routes
+app.include_router(bundles_router, prefix=settings.API_V1_PREFIX, tags=["bundles"])
 app.include_router(packages_router, prefix=settings.API_V1_PREFIX, tags=["packages"])
 app.include_router(checkout_router, prefix=settings.API_V1_PREFIX, tags=["checkout"])
 app.include_router(webhooks_router, prefix=settings.API_V1_PREFIX, tags=["payment-webhooks"])
 app.include_router(enrollments_router, prefix=settings.API_V1_PREFIX, tags=["package-enrollments"])
 app.include_router(orders_router, prefix=settings.API_V1_PREFIX, tags=["orders"])
+app.include_router(
+    sales_windows_router, prefix=f"{settings.API_V1_PREFIX}/sales-windows", tags=["sales-windows"]
+)
 
 
 @app.get("/")
