@@ -1,6 +1,7 @@
 """Service layer for Sales Window operations."""
 
 from datetime import datetime
+from typing import cast
 
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
@@ -19,7 +20,10 @@ class SalesWindowService:
         Returns:
             List of all sales windows ordered by created_at descending
         """
-        return db.query(SalesWindow).order_by(SalesWindow.created_at.desc()).all()  # type: ignore[no-any-return]
+        return cast(
+            list[SalesWindow],
+            db.query(SalesWindow).order_by(SalesWindow.created_at.desc()).all(),
+        )
 
     @staticmethod
     def get_sales_window_by_id(db: Session, window_id: str) -> SalesWindow | None:
@@ -33,7 +37,10 @@ class SalesWindowService:
         Returns:
             SalesWindow if found, None otherwise
         """
-        return db.query(SalesWindow).filter(SalesWindow.id == window_id).first()  # type: ignore[no-any-return]
+        return cast(
+            SalesWindow | None,
+            db.query(SalesWindow).filter(SalesWindow.id == window_id).first(),
+        )
 
     @staticmethod
     def get_active_sales_window(db: Session) -> SalesWindow | None:
@@ -49,7 +56,8 @@ class SalesWindowService:
         """
         now = datetime.utcnow()
 
-        return (  # type: ignore[no-any-return]
+        return cast(
+            SalesWindow | None,
             db.query(SalesWindow)
             .filter(
                 and_(
@@ -59,7 +67,7 @@ class SalesWindowService:
                 )
             )
             .order_by(SalesWindow.starts_at.desc())
-            .first()
+            .first(),
         )
 
     @staticmethod
@@ -72,7 +80,8 @@ class SalesWindowService:
         """
         now = datetime.utcnow()
 
-        return (  # type: ignore[no-any-return]
+        return cast(
+            SalesWindow | None,
             db.query(SalesWindow)
             .filter(
                 and_(
@@ -81,5 +90,5 @@ class SalesWindowService:
                 )
             )
             .order_by(SalesWindow.starts_at.asc())
-            .first()
+            .first(),
         )

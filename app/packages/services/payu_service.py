@@ -4,7 +4,7 @@ PayU payment integration service.
 
 import hashlib
 import hmac
-from typing import Any
+from typing import Any, cast
 
 import httpx  # type: ignore[import-not-found]
 
@@ -36,7 +36,7 @@ class PayUService(PaymentService):
             )
             response.raise_for_status()
             data = response.json()
-            return data["access_token"]  # type: ignore[no-any-return]
+            return cast(str, data["access_token"])
 
     async def create_payment_session(
         self, order: Order, success_url: str, cancel_url: str
@@ -121,6 +121,6 @@ class PayUService(PaymentService):
 
         try:
             event_data = json.loads(payload.decode("utf-8"))
-            return event_data  # type: ignore[no-any-return]
+            return cast(dict[str, Any], event_data)
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON payload: {e}") from e

@@ -58,7 +58,8 @@ class PackageListResponse(BaseModel):
     def from_orm(cls, obj: Any) -> "PackageListResponse":
         """Custom from_orm to parse JSON tools field."""
         # Parse tools JSON string to list
-        tools = json.loads(obj.tools) if isinstance(obj.tools, str) else obj.tools  # type: ignore[attr-defined]
+        tools_raw = getattr(obj, "tools", "[]")
+        tools = json.loads(tools_raw) if isinstance(tools_raw, str) else tools_raw
         return cls(
             id=obj.id,
             slug=obj.slug,
@@ -106,7 +107,8 @@ class PackageDetailResponse(BaseModel):
     def from_orm(cls, obj: Any) -> "PackageDetailResponse":
         """Custom from_orm to parse JSON tools field."""
         # Parse tools JSON string to list
-        tools = json.loads(obj.tools) if isinstance(obj.tools, str) else obj.tools  # type: ignore[attr-defined]
+        tools_raw = getattr(obj, "tools", "[]")
+        tools = json.loads(tools_raw) if isinstance(tools_raw, str) else tools_raw
         return cls(
             id=obj.id,
             slug=obj.slug,

@@ -33,8 +33,8 @@ def list_bundles(
     bundles = (
         db.query(Package)
         .filter(
-            Package.is_published == True,  # noqa: E712
-            Package.is_bundle == True,  # noqa: E712
+            Package.is_published.is_(True),  # noqa: E712
+            Package.is_bundle.is_(True),  # noqa: E712
         )
         .order_by(Package.is_featured.desc(), Package.created_at.desc())
         .all()
@@ -64,8 +64,8 @@ def get_bundle_by_slug(
         db.query(Package)
         .filter(
             Package.slug == slug,
-            Package.is_published == True,  # noqa: E712
-            Package.is_bundle == True,  # noqa: E712
+            Package.is_published.is_(True),  # noqa: E712
+            Package.is_bundle.is_(True),  # noqa: E712
         )
         .first()
     )
@@ -153,8 +153,8 @@ def get_bundle_detail(
         db.query(Package)
         .filter(
             Package.id == bundle_uuid,
-            Package.is_published == True,  # noqa: E712
-            Package.is_bundle == True,  # noqa: E712
+            Package.is_published.is_(True),  # noqa: E712
+            Package.is_bundle.is_(True),  # noqa: E712
         )
         .first()
     )
@@ -274,7 +274,7 @@ def update_bundle(
 
     bundle = (
         db.query(Package)
-        .filter(Package.id == bundle_uuid, Package.is_bundle == True)  # noqa: E712
+        .filter(Package.id == bundle_uuid, Package.is_bundle.is_(True))  # noqa: E712
         .first()
     )
 
@@ -347,7 +347,7 @@ def delete_bundle(
 
     bundle = (
         db.query(Package)
-        .filter(Package.id == bundle_uuid, Package.is_bundle == True)  # noqa: E712
+        .filter(Package.id == bundle_uuid, Package.is_bundle.is_(True))  # noqa: E712
         .first()
     )
 
