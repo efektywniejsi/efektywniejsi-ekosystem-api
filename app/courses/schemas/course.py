@@ -14,7 +14,6 @@ class CourseBase(BaseModel):
     difficulty: Literal["beginner", "intermediate", "advanced"] = "beginner"
     estimated_hours: int = Field(default=0, ge=0)
     is_published: bool = False
-    is_featured: bool = False
     category: str | None = None
     sort_order: int = 0
 
@@ -31,7 +30,6 @@ class CourseUpdate(BaseModel):
     difficulty: Literal["beginner", "intermediate", "advanced"] | None = None
     estimated_hours: int | None = Field(None, ge=0)
     is_published: bool | None = None
-    is_featured: bool | None = None
     category: str | None = None
     sort_order: int | None = None
 
