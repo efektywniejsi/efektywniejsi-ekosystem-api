@@ -1,10 +1,15 @@
+import os
+import uuid as uuid_lib
+from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 
 from app.auth.dependencies import require_admin
 from app.auth.models.user import User
+from app.core.config import settings
 from app.courses.models import Course, Lesson, LessonStatus, Module
 from app.courses.schemas.course import (
     CourseCreate,
@@ -71,6 +76,9 @@ async def create_course(
         is_published=course.is_published,
         category=course.category,
         sort_order=course.sort_order,
+        learning_title=course.learning_title,
+        learning_description=course.learning_description,
+        learning_thumbnail_url=course.learning_thumbnail_url,
         created_at=course.created_at,
         updated_at=course.updated_at,
     )
@@ -101,6 +109,9 @@ async def list_courses(
             is_published=c.is_published,
             category=c.category,
             sort_order=c.sort_order,
+            learning_title=c.learning_title,
+            learning_description=c.learning_description,
+            learning_thumbnail_url=c.learning_thumbnail_url,
             created_at=c.created_at,
             updated_at=c.updated_at,
         )
@@ -138,6 +149,9 @@ async def list_all_courses(
             is_published=c.is_published,
             category=c.category,
             sort_order=c.sort_order,
+            learning_title=c.learning_title,
+            learning_description=c.learning_description,
+            learning_thumbnail_url=c.learning_thumbnail_url,
             created_at=c.created_at,
             updated_at=c.updated_at,
         )
@@ -215,6 +229,9 @@ async def get_course(
         is_published=course.is_published,
         category=course.category,
         sort_order=course.sort_order,
+        learning_title=course.learning_title,
+        learning_description=course.learning_description,
+        learning_thumbnail_url=course.learning_thumbnail_url,
         created_at=course.created_at,
         updated_at=course.updated_at,
         modules=modules_data,
@@ -265,6 +282,12 @@ async def update_course(
         course.category = request.category
     if request.sort_order is not None:
         course.sort_order = request.sort_order
+    if request.learning_title is not None:
+        course.learning_title = request.learning_title or None
+    if request.learning_description is not None:
+        course.learning_description = request.learning_description or None
+    if request.learning_thumbnail_url is not None:
+        course.learning_thumbnail_url = request.learning_thumbnail_url or None
 
     db.commit()
     db.refresh(course)
@@ -280,6 +303,9 @@ async def update_course(
         is_published=course.is_published,
         category=course.category,
         sort_order=course.sort_order,
+        learning_title=course.learning_title,
+        learning_description=course.learning_description,
+        learning_thumbnail_url=course.learning_thumbnail_url,
         created_at=course.created_at,
         updated_at=course.updated_at,
     )
@@ -658,3 +684,89 @@ async def reorder_lessons(
     db.commit()
 
     return {"message": "Lessons reordered successfully"}
+
+
+THUMBNAIL_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"]
+
+
+@router.post("/courses/{course_id}/learning-thumbnail")
+async def upload_learning_thumbnail(
+    course_id: UUID,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> dict:
+    """Upload a learning thumbnail image for a course (admin only)."""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found",
+        )
+
+    if file.content_type not in THUMBNAIL_MIME_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid file type. Allowed: PNG, JPG, WebP. Received: {file.content_type}",
+        )
+
+    max_size_bytes = 5 * 1024 * 1024  # 5 MB
+    file_content = await file.read()
+    if len(file_content) > max_size_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="File size exceeds maximum allowed size of 5MB",
+        )
+
+    file_extension = Path(file.filename or "image.jpg").suffix
+    unique_filename = f"{uuid_lib.uuid4()}{file_extension}"
+
+    upload_dir = Path(settings.UPLOAD_DIR) / "thumbnails"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    # Remove old thumbnail file if it exists
+    if course.learning_thumbnail_url:
+        old_path = upload_dir / Path(course.learning_thumbnail_url).name
+        if old_path.exists():
+            os.remove(old_path)
+
+    file_path = upload_dir / unique_filename
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+
+    thumbnail_url = (
+        f"{settings.API_V1_PREFIX}/courses/{course_id}/learning-thumbnail/{unique_filename}"
+    )
+    course.learning_thumbnail_url = thumbnail_url
+
+    db.commit()
+    db.refresh(course)
+
+    return {
+        "learning_thumbnail_url": thumbnail_url,
+    }
+
+
+@router.get("/courses/{course_id}/learning-thumbnail/{filename}")
+async def serve_learning_thumbnail(
+    course_id: UUID,
+    filename: str,
+    db: Session = Depends(get_db),
+) -> FileResponse:
+    """Serve a learning thumbnail image."""
+    file_path = Path(settings.UPLOAD_DIR) / "thumbnails" / filename
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Thumbnail not found",
+        )
+
+    media_type = "image/jpeg"
+    suffix = file_path.suffix.lower()
+    if suffix == ".png":
+        media_type = "image/png"
+    elif suffix == ".webp":
+        media_type = "image/webp"
+
+    return FileResponse(path=str(file_path), media_type=media_type)

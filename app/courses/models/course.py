@@ -28,6 +28,9 @@ class Course(Base):
     is_featured: Mapped[bool] = mapped_column(default=False)
     category: Mapped[str | None] = mapped_column(default=None, index=True)
     sort_order: Mapped[int] = mapped_column(default=0)
+    learning_title: Mapped[str | None] = mapped_column(default=None)
+    learning_description: Mapped[str | None] = mapped_column(default=None)
+    learning_thumbnail_url: Mapped[str | None] = mapped_column(default=None)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
 
