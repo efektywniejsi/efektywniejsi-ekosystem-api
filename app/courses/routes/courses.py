@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, joinedload
 
-from app.auth.dependencies import get_current_user, require_admin
+from app.auth.dependencies import require_admin
 from app.auth.models.user import User
 from app.courses.models import Course, Lesson, LessonStatus, Module
 from app.courses.schemas.course import (
@@ -53,7 +53,6 @@ async def create_course(
         difficulty=request.difficulty,
         estimated_hours=request.estimated_hours,
         is_published=request.is_published,
-        is_featured=request.is_featured,
         category=request.category,
         sort_order=request.sort_order,
     )
@@ -70,7 +69,6 @@ async def create_course(
         difficulty=course.difficulty,
         estimated_hours=course.estimated_hours,
         is_published=course.is_published,
-        is_featured=course.is_featured,
         category=course.category,
         sort_order=course.sort_order,
         created_at=course.created_at,
@@ -80,12 +78,44 @@ async def create_course(
 
 @router.get("/courses", response_model=list[CourseResponse])
 async def list_courses(
+    category: str | None = Query(None, description="Filter by category"),
+    db: Session = Depends(get_db),
+) -> list[CourseResponse]:
+    """List published courses (public endpoint)."""
+    query = db.query(Course).filter(Course.is_published.is_(True))
+
+    if category:
+        query = query.filter(Course.category == category)
+
+    courses = query.order_by(Course.sort_order, Course.created_at).all()
+
+    return [
+        CourseResponse(
+            id=str(c.id),
+            title=c.title,
+            slug=c.slug,
+            description=c.description,
+            thumbnail_url=c.thumbnail_url,
+            difficulty=c.difficulty,
+            estimated_hours=c.estimated_hours,
+            is_published=c.is_published,
+            category=c.category,
+            sort_order=c.sort_order,
+            created_at=c.created_at,
+            updated_at=c.updated_at,
+        )
+        for c in courses
+    ]
+
+
+@router.get("/courses/all", response_model=list[CourseResponse])
+async def list_all_courses(
     is_published: bool | None = Query(None, description="Filter by published status"),
     category: str | None = Query(None, description="Filter by category"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
 ) -> list[CourseResponse]:
-    """List all courses (with optional filters)."""
+    """List all courses including unpublished (admin only)."""
     query = db.query(Course)
 
     if is_published is not None:
@@ -106,7 +136,6 @@ async def list_courses(
             difficulty=c.difficulty,
             estimated_hours=c.estimated_hours,
             is_published=c.is_published,
-            is_featured=c.is_featured,
             category=c.category,
             sort_order=c.sort_order,
             created_at=c.created_at,
@@ -120,13 +149,12 @@ async def list_courses(
 async def get_course(
     slug: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ) -> CourseDetailResponse:
-    """Get course details with modules and lessons."""
+    """Get published course details with modules and lessons (public endpoint)."""
     course = (
         db.query(Course)
         .options(joinedload(Course.modules).joinedload(Module.lessons))
-        .filter(Course.slug == slug)
+        .filter(Course.slug == slug, Course.is_published.is_(True))
         .first()
     )
 
@@ -136,19 +164,14 @@ async def get_course(
             detail="Course not found",
         )
 
-    # Check if user is admin
-    is_admin = current_user.role == "admin"
-
-    # Filter lessons based on user role
-    def filter_lessons(lessons: list[Lesson]) -> list[Lesson]:
-        if is_admin:
-            return lessons  # Admins see all lessons
-        return [lesson for lesson in lessons if lesson.status != LessonStatus.UNAVAILABLE]
-
-    # Build modules with filtered lessons
+    # Public endpoint: filter out UNAVAILABLE lessons
     modules_data = []
     for m in sorted(course.modules, key=lambda x: x.sort_order):
-        filtered_lessons = filter_lessons(sorted(m.lessons, key=lambda x: x.sort_order))
+        filtered_lessons = [
+            lesson
+            for lesson in sorted(m.lessons, key=lambda x: x.sort_order)
+            if lesson.status != LessonStatus.UNAVAILABLE
+        ]
         modules_data.append(
             ModuleWithLessonsResponse(
                 id=str(m.id),
@@ -190,7 +213,6 @@ async def get_course(
         difficulty=course.difficulty,
         estimated_hours=course.estimated_hours,
         is_published=course.is_published,
-        is_featured=course.is_featured,
         category=course.category,
         sort_order=course.sort_order,
         created_at=course.created_at,
@@ -239,8 +261,6 @@ async def update_course(
         course.estimated_hours = request.estimated_hours
     if request.is_published is not None:
         course.is_published = request.is_published
-    if request.is_featured is not None:
-        course.is_featured = request.is_featured
     if request.category is not None:
         course.category = request.category
     if request.sort_order is not None:
@@ -258,7 +278,6 @@ async def update_course(
         difficulty=course.difficulty,
         estimated_hours=course.estimated_hours,
         is_published=course.is_published,
-        is_featured=course.is_featured,
         category=course.category,
         sort_order=course.sort_order,
         created_at=course.created_at,
