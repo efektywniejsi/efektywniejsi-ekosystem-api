@@ -32,10 +32,16 @@ class CourseUpdate(BaseModel):
     is_published: bool | None = None
     category: str | None = None
     sort_order: int | None = None
+    learning_title: str | None = None
+    learning_description: str | None = None
+    learning_thumbnail_url: str | None = None
 
 
 class CourseResponse(CourseBase):
     id: str
+    learning_title: str | None = None
+    learning_description: str | None = None
+    learning_thumbnail_url: str | None = None
     created_at: datetime
     updated_at: datetime
 
