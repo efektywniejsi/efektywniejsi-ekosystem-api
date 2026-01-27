@@ -36,11 +36,16 @@ class RequireCourseEnrollment:
         if self.skip_for_admin and _is_admin(current_user):
             return
 
-        is_enrolled = EnrollmentService.check_enrollment(current_user.id, course_id, db)
-        if not is_enrolled:
+        enrollment = EnrollmentService.get_user_enrollment(current_user.id, course_id, db)
+        if not enrollment:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You must be enrolled in this course to access it",
+            )
+        if enrollment.is_expired:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your access to this course has expired",
             )
 
 
@@ -104,9 +109,14 @@ class RequireLessonEnrollment:
         if self.skip_for_admin and _is_admin(current_user):
             return
 
-        is_enrolled = EnrollmentService.check_enrollment(current_user.id, course.id, db)
-        if not is_enrolled:
+        enrollment = EnrollmentService.get_user_enrollment(current_user.id, course.id, db)
+        if not enrollment:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You must be enrolled in this course to access this lesson",
+            )
+        if enrollment.is_expired:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your access to this course has expired",
             )
