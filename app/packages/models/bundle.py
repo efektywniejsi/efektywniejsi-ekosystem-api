@@ -25,6 +25,7 @@ class BundleCourseItem(Base):
         ForeignKey("courses.id", ondelete="CASCADE"), index=True
     )
     sort_order: Mapped[int] = mapped_column(default=0)
+    access_duration_days: Mapped[int | None] = mapped_column(default=None)
 
     # Relationships
     bundle = relationship("Package", foreign_keys=[bundle_id], back_populates="course_items")
