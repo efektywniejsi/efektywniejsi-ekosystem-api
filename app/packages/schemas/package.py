@@ -97,6 +97,7 @@ class PackageDetailResponse(BaseModel):
     tools: list[str] = Field(default_factory=list)
     processes: list[PackageProcessResponse] = Field(default_factory=list)
     bundle_items: list[PackageBundleItemResponse] = Field(default_factory=list)
+    sales_page_sections: dict[str, Any] | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -126,6 +127,7 @@ class PackageDetailResponse(BaseModel):
             tools=tools,
             processes=[PackageProcessResponse.from_orm(p) for p in obj.processes],
             bundle_items=[PackageBundleItemResponse.from_orm(b) for b in obj.bundle_items],
+            sales_page_sections=obj.sales_page_sections,
             created_at=obj.created_at,
             updated_at=obj.updated_at,
         )

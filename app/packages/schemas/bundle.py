@@ -116,6 +116,9 @@ class BundleDetailResponse(BaseModel):
     packages: list[Any] = Field(default_factory=list)  # Will be PackageListResponse
     courses: list[BundleCourseDetailItem] = Field(default_factory=list)
 
+    # Sales page builder
+    sales_page_sections: dict[str, Any] | None = None
+
     @field_validator("id", mode="before")
     @classmethod
     def validate_id(cls, v: Any) -> str:
