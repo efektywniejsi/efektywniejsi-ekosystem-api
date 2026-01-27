@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import ForeignKey, Index, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -31,6 +32,9 @@ class Package(Base):
     is_published: Mapped[bool] = mapped_column(default=False, index=True)
     is_featured: Mapped[bool] = mapped_column(default=False, index=True)
     is_bundle: Mapped[bool] = mapped_column(default=False, index=True)
+
+    # Sales page builder
+    sales_page_sections: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)

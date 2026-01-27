@@ -142,6 +142,7 @@ def _build_bundle_detail_response(db: Session, bundle: Package) -> BundleDetailR
         badge=badge,
         packages=packages,
         courses=courses,
+        sales_page_sections=bundle.sales_page_sections,
     )
 
 
