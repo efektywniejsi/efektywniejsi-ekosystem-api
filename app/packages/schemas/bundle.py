@@ -68,12 +68,30 @@ class BundleListResponse(BaseModel):
         )
 
 
+class BundleCourseInput(BaseModel):
+    """Input schema for a course item within a bundle."""
+
+    course_id: str
+    access_duration_days: int | None = None
+
+
+class BundleCourseDetailItem(BaseModel):
+    """Course item in bundle detail response, including access duration."""
+
+    id: str
+    slug: str
+    title: str
+    category: str | None = None
+    access_duration_days: int | None = None
+
+
 class BundleCourseItemResponse(BaseModel):
     """Bundle course item response."""
 
     id: str
     course_id: str
     sort_order: int
+    access_duration_days: int | None = None
 
     @field_validator("id", "course_id", mode="before")
     @classmethod
@@ -96,7 +114,7 @@ class BundleDetailResponse(BaseModel):
 
     # Content
     packages: list[Any] = Field(default_factory=list)  # Will be PackageListResponse
-    courses: list[Any] = Field(default_factory=list)  # Will be CourseResponse
+    courses: list[BundleCourseDetailItem] = Field(default_factory=list)
 
     @field_validator("id", mode="before")
     @classmethod
@@ -123,11 +141,13 @@ class BundleCreateRequest(BaseModel):
     # Content IDs
     package_ids: list[str] = Field(default_factory=list)
     course_ids: list[str] = Field(default_factory=list)
+    course_items: list[BundleCourseInput] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_not_empty(self) -> "BundleCreateRequest":
         """Validate that bundle contains at least one package or course."""
-        if not self.package_ids and not self.course_ids:
+        has_courses = bool(self.course_items) or bool(self.course_ids)
+        if not self.package_ids and not has_courses:
             raise ValueError("Bundle must contain at least one package or course")
         return self
 
@@ -142,3 +162,4 @@ class BundleUpdateRequest(BaseModel):
     is_featured: bool | None = None
     package_ids: list[str] | None = None
     course_ids: list[str] | None = None
+    course_items: list[BundleCourseInput] | None = None

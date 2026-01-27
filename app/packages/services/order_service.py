@@ -3,7 +3,7 @@ Order service for user creation and enrollment management.
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, cast
 
 from sqlalchemy.orm import Session
@@ -159,9 +159,16 @@ class OrderService:
                     )
 
                     if not existing:
+                        expires_at = None
+                        if course_item.access_duration_days is not None:
+                            expires_at = datetime.utcnow() + timedelta(
+                                days=course_item.access_duration_days
+                            )
+
                         course_enrollment = Enrollment(
                             user_id=user.id,
                             course_id=course_item.course_id,
+                            expires_at=expires_at,
                         )
                         self.db.add(course_enrollment)
             else:

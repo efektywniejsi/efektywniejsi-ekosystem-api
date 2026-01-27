@@ -11,6 +11,7 @@ from app.db.session import get_db
 from app.packages.models.bundle import BundleCourseItem
 from app.packages.models.package import Package, PackageBundleItem
 from app.packages.schemas.bundle import (
+    BundleCourseDetailItem,
     BundleCreateRequest,
     BundleDetailResponse,
     BundleListResponse,
@@ -82,7 +83,6 @@ def get_bundle_by_slug(
 def _build_bundle_detail_response(db: Session, bundle: Package) -> BundleDetailResponse:
     """Build BundleDetailResponse with packages and courses."""
     from app.courses.models.course import Course
-    from app.courses.schemas.course import CourseResponse
     from app.packages.schemas.package import PackageListResponse
 
     # Get child packages
@@ -107,11 +107,19 @@ def _build_bundle_detail_response(db: Session, bundle: Package) -> BundleDetailR
         .all()
     )
 
-    courses = []
+    courses: list[BundleCourseDetailItem] = []
     for item in course_items:
         course = db.query(Course).filter(Course.id == item.course_id).first()
         if course:
-            courses.append(CourseResponse.model_validate(course))
+            courses.append(
+                BundleCourseDetailItem(
+                    id=str(course.id),
+                    slug=course.slug,
+                    title=course.title,
+                    category=course.category,
+                    access_duration_days=item.access_duration_days,
+                )
+            )
 
     # Calculate badge
     badge = None
@@ -180,7 +188,7 @@ def create_bundle(
 
     Bundle can contain:
     - Packages (via package_ids)
-    - Courses (via course_ids)
+    - Courses (via course_items or course_ids for backward compatibility)
     - Or both
     """
     # Check if slug already exists
@@ -230,26 +238,45 @@ def create_bundle(
         )
         db.add(bundle_item)
 
-    # Add course items
+    # Add course items — prefer course_items, fallback to course_ids
     from app.courses.models.course import Course
 
-    for idx, course_id in enumerate(bundle_data.course_ids):
-        try:
-            course_uuid = uuid.UUID(course_id)
-        except ValueError:
-            raise HTTPException(400, f"Invalid course ID: {course_id}") from None
+    if bundle_data.course_items:
+        for idx, ci in enumerate(bundle_data.course_items):
+            try:
+                course_uuid = uuid.UUID(ci.course_id)
+            except ValueError:
+                raise HTTPException(400, f"Invalid course ID: {ci.course_id}") from None
 
-        # Verify course exists
-        course = db.query(Course).filter(Course.id == course_uuid).first()
-        if not course:
-            raise HTTPException(404, f"Course {course_id} not found")
+            course = db.query(Course).filter(Course.id == course_uuid).first()
+            if not course:
+                raise HTTPException(404, f"Course {ci.course_id} not found")
 
-        course_item = BundleCourseItem(
-            bundle_id=new_bundle.id,
-            course_id=course_uuid,
-            sort_order=idx,
-        )
-        db.add(course_item)
+            course_item = BundleCourseItem(
+                bundle_id=new_bundle.id,
+                course_id=course_uuid,
+                sort_order=idx,
+                access_duration_days=ci.access_duration_days,
+            )
+            db.add(course_item)
+    else:
+        # Backward compatibility: use course_ids with no duration
+        for idx, course_id in enumerate(bundle_data.course_ids):
+            try:
+                course_uuid = uuid.UUID(course_id)
+            except ValueError:
+                raise HTTPException(400, f"Invalid course ID: {course_id}") from None
+
+            course = db.query(Course).filter(Course.id == course_uuid).first()
+            if not course:
+                raise HTTPException(404, f"Course {course_id} not found")
+
+            course_item = BundleCourseItem(
+                bundle_id=new_bundle.id,
+                course_id=course_uuid,
+                sort_order=idx,
+            )
+            db.add(course_item)
 
     db.commit()
     db.refresh(new_bundle)
@@ -308,12 +335,23 @@ def update_bundle(
             )
             db.add(bundle_item)
 
-    # Update course items
-    if bundle_data.course_ids is not None:
-        # Remove old items
+    # Update course items — prefer course_items, fallback to course_ids
+    if bundle_data.course_items is not None:
         db.query(BundleCourseItem).filter(BundleCourseItem.bundle_id == bundle_uuid).delete()
 
-        # Add new items
+        for idx, ci in enumerate(bundle_data.course_items):
+            course_uuid = uuid.UUID(ci.course_id)
+            course_item = BundleCourseItem(
+                bundle_id=bundle_uuid,
+                course_id=course_uuid,
+                sort_order=idx,
+                access_duration_days=ci.access_duration_days,
+            )
+            db.add(course_item)
+    elif bundle_data.course_ids is not None:
+        # Backward compatibility: use course_ids with no duration
+        db.query(BundleCourseItem).filter(BundleCourseItem.bundle_id == bundle_uuid).delete()
+
         for idx, course_id in enumerate(bundle_data.course_ids):
             course_uuid = uuid.UUID(course_id)
             course_item = BundleCourseItem(
