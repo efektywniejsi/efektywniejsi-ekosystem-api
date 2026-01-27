@@ -25,9 +25,16 @@ class Enrollment(Base):
     completed_at: Mapped[datetime | None] = mapped_column(default=None)
     certificate_issued_at: Mapped[datetime | None] = mapped_column(default=None)
     last_accessed_at: Mapped[datetime | None] = mapped_column(default=None)
+    expires_at: Mapped[datetime | None] = mapped_column(default=None)
 
     user = relationship("User", backref="enrollments")
     course = relationship("Course", back_populates="enrollments")
+
+    @property
+    def is_expired(self) -> bool:
+        if self.expires_at is None:
+            return False
+        return bool(datetime.utcnow() > self.expires_at)
 
     def __repr__(self) -> str:
         return f"<Enrollment(id={self.id}, user_id={self.user_id}, course_id={self.course_id})>"

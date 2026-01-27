@@ -144,6 +144,7 @@ class EnrollmentResponse(BaseModel):
     completed_at: datetime | None = None
     certificate_issued_at: datetime | None = None
     last_accessed_at: datetime | None = None
+    expires_at: datetime | None = None
 
     class Config:
         from_attributes = True

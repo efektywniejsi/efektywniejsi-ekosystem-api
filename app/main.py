@@ -12,6 +12,7 @@ from app.courses.routes import (
     admin as courses_admin,
 )
 from app.courses.routes import (
+    admin_enrollments,
     attachments,
     certificates,
     courses,
@@ -85,6 +86,11 @@ app.include_router(attachments.router, prefix=settings.API_V1_PREFIX, tags=["att
 app.include_router(certificates.router, prefix=settings.API_V1_PREFIX, tags=["certificates"])
 app.include_router(
     courses_admin.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["admin-courses"]
+)
+app.include_router(
+    admin_enrollments.router,
+    prefix=f"{settings.API_V1_PREFIX}/admin",
+    tags=["admin-enrollments"],
 )
 app.include_router(webhooks.router, prefix=settings.API_V1_PREFIX, tags=["webhooks"])
 
