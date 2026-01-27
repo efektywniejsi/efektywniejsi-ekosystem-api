@@ -20,6 +20,7 @@ from app.courses.routes import (
     gamification,
     lessons,
     progress,
+    sales_page,
     webhooks,
 )
 from app.packages.routes import (
@@ -93,6 +94,7 @@ app.include_router(
     tags=["admin-enrollments"],
 )
 app.include_router(webhooks.router, prefix=settings.API_V1_PREFIX, tags=["webhooks"])
+app.include_router(sales_page.router, prefix=settings.API_V1_PREFIX, tags=["sales-page"])
 
 # Package commerce routes
 app.include_router(bundles_router, prefix=settings.API_V1_PREFIX, tags=["bundles"])

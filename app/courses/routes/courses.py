@@ -60,6 +60,7 @@ async def create_course(
         is_published=request.is_published,
         category=request.category,
         sort_order=request.sort_order,
+        content_type=request.content_type,
     )
     db.add(course)
     db.commit()
@@ -76,9 +77,11 @@ async def create_course(
         is_published=course.is_published,
         category=course.category,
         sort_order=course.sort_order,
+        content_type=course.content_type,
         learning_title=course.learning_title,
         learning_description=course.learning_description,
         learning_thumbnail_url=course.learning_thumbnail_url,
+        sales_page_sections=course.sales_page_sections,
         created_at=course.created_at,
         updated_at=course.updated_at,
     )
@@ -87,6 +90,7 @@ async def create_course(
 @router.get("/courses", response_model=list[CourseResponse])
 async def list_courses(
     category: str | None = Query(None, description="Filter by category"),
+    content_type: str | None = Query(None, description="Filter by content type"),
     db: Session = Depends(get_db),
 ) -> list[CourseResponse]:
     """List published courses (public endpoint)."""
@@ -94,6 +98,9 @@ async def list_courses(
 
     if category:
         query = query.filter(Course.category == category)
+
+    if content_type:
+        query = query.filter(Course.content_type == content_type)
 
     courses = query.order_by(Course.sort_order, Course.created_at).all()
 
@@ -109,9 +116,11 @@ async def list_courses(
             is_published=c.is_published,
             category=c.category,
             sort_order=c.sort_order,
+            content_type=c.content_type,
             learning_title=c.learning_title,
             learning_description=c.learning_description,
             learning_thumbnail_url=c.learning_thumbnail_url,
+            sales_page_sections=c.sales_page_sections,
             created_at=c.created_at,
             updated_at=c.updated_at,
         )
@@ -123,6 +132,7 @@ async def list_courses(
 async def list_all_courses(
     is_published: bool | None = Query(None, description="Filter by published status"),
     category: str | None = Query(None, description="Filter by category"),
+    content_type: str | None = Query(None, description="Filter by content type"),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ) -> list[CourseResponse]:
@@ -135,6 +145,9 @@ async def list_all_courses(
     if category:
         query = query.filter(Course.category == category)
 
+    if content_type:
+        query = query.filter(Course.content_type == content_type)
+
     courses = query.order_by(Course.sort_order, Course.created_at).all()
 
     return [
@@ -149,9 +162,11 @@ async def list_all_courses(
             is_published=c.is_published,
             category=c.category,
             sort_order=c.sort_order,
+            content_type=c.content_type,
             learning_title=c.learning_title,
             learning_description=c.learning_description,
             learning_thumbnail_url=c.learning_thumbnail_url,
+            sales_page_sections=c.sales_page_sections,
             created_at=c.created_at,
             updated_at=c.updated_at,
         )
@@ -229,9 +244,11 @@ async def get_course(
         is_published=course.is_published,
         category=course.category,
         sort_order=course.sort_order,
+        content_type=course.content_type,
         learning_title=course.learning_title,
         learning_description=course.learning_description,
         learning_thumbnail_url=course.learning_thumbnail_url,
+        sales_page_sections=course.sales_page_sections,
         created_at=course.created_at,
         updated_at=course.updated_at,
         modules=modules_data,
@@ -282,6 +299,8 @@ async def update_course(
         course.category = request.category
     if request.sort_order is not None:
         course.sort_order = request.sort_order
+    if request.content_type is not None:
+        course.content_type = request.content_type
     if request.learning_title is not None:
         course.learning_title = request.learning_title or None
     if request.learning_description is not None:
@@ -303,9 +322,11 @@ async def update_course(
         is_published=course.is_published,
         category=course.category,
         sort_order=course.sort_order,
+        content_type=course.content_type,
         learning_title=course.learning_title,
         learning_description=course.learning_description,
         learning_thumbnail_url=course.learning_thumbnail_url,
+        sales_page_sections=course.sales_page_sections,
         created_at=course.created_at,
         updated_at=course.updated_at,
     )
