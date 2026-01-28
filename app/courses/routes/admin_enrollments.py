@@ -3,18 +3,21 @@ from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import require_admin
 from app.auth.models.user import User
 from app.auth.services.email_service import build_welcome_email, get_email_service
 from app.core import security
-from app.courses.models import Course, Enrollment
+from app.courses.models import Course, Enrollment, Lesson, LessonProgress, Module
 from app.courses.schemas.enrollment import (
     AdminCreateEnrollmentRequest,
     AdminEnrollmentListResponse,
     AdminEnrollmentResponse,
     AdminUpdateEnrollmentRequest,
+    UserCourseProgress,
+    UserProgressListResponse,
 )
 from app.db.session import get_db
 
@@ -185,3 +188,128 @@ async def delete_enrollment(
 
     db.delete(enrollment)
     db.commit()
+
+
+@router.get(
+    "/courses/{course_id}/user-progress",
+    response_model=UserProgressListResponse,
+)
+async def get_course_user_progress(
+    course_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> UserProgressListResponse:
+    """Get progress statistics for all users enrolled in a course."""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found",
+        )
+
+    # Get all lesson IDs for this course
+    lesson_ids = (
+        db.query(Lesson.id)
+        .join(Module, Module.id == Lesson.module_id)
+        .filter(Module.course_id == course_id)
+        .all()
+    )
+    lesson_id_list = [lid[0] for lid in lesson_ids]
+    total_lessons = len(lesson_id_list)
+
+    # Get all enrollments for this course
+    enrollments = db.query(Enrollment).filter(Enrollment.course_id == course_id).all()
+
+    users_progress: list[UserCourseProgress] = []
+
+    for enrollment in enrollments:
+        user = enrollment.user
+        user_id = enrollment.user_id
+
+        if not lesson_id_list:
+            # No lessons in course
+            users_progress.append(
+                UserCourseProgress(
+                    user_id=str(user_id),
+                    user_name=user.name if user else None,
+                    user_email=user.email if user else "",
+                    progress_percentage=0,
+                    completed_lessons=0,
+                    total_lessons=0,
+                    session_count=0,
+                    first_activity_at=None,
+                    last_activity_at=None,
+                    total_watch_time_seconds=0,
+                    is_completed=False,
+                )
+            )
+            continue
+
+        # Get lesson progress for this user in this course
+        progress_records = (
+            db.query(LessonProgress)
+            .filter(
+                LessonProgress.user_id == user_id,
+                LessonProgress.lesson_id.in_(lesson_id_list),
+            )
+            .all()
+        )
+
+        completed_lessons = sum(1 for p in progress_records if p.is_completed)
+        total_watch_time = sum(p.watched_seconds for p in progress_records)
+
+        # Calculate progress percentage
+        if total_lessons > 0:
+            progress_percentage = int((completed_lessons / total_lessons) * 100)
+        else:
+            progress_percentage = 0
+
+        # Calculate session count (distinct days with activity)
+        session_count_result = (
+            db.query(func.count(func.distinct(func.date(LessonProgress.last_updated_at))))
+            .filter(
+                LessonProgress.user_id == user_id,
+                LessonProgress.lesson_id.in_(lesson_id_list),
+            )
+            .scalar()
+        )
+        session_count = session_count_result or 0
+
+        # Get first and last activity dates
+        activity_dates = (
+            db.query(
+                func.min(LessonProgress.last_updated_at),
+                func.max(LessonProgress.last_updated_at),
+            )
+            .filter(
+                LessonProgress.user_id == user_id,
+                LessonProgress.lesson_id.in_(lesson_id_list),
+            )
+            .first()
+        )
+
+        first_activity_at = activity_dates[0] if activity_dates else None
+        last_activity_at = activity_dates[1] if activity_dates else None
+
+        is_completed = completed_lessons == total_lessons and total_lessons > 0
+
+        users_progress.append(
+            UserCourseProgress(
+                user_id=str(user_id),
+                user_name=user.name if user else None,
+                user_email=user.email if user else "",
+                progress_percentage=progress_percentage,
+                completed_lessons=completed_lessons,
+                total_lessons=total_lessons,
+                session_count=session_count,
+                first_activity_at=first_activity_at,
+                last_activity_at=last_activity_at,
+                total_watch_time_seconds=total_watch_time,
+                is_completed=is_completed,
+            )
+        )
+
+    return UserProgressListResponse(
+        total=len(users_progress),
+        users=users_progress,
+    )
