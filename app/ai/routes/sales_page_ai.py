@@ -12,6 +12,7 @@ from app.ai.schemas.ai_generation import (
     AiGenerateRequest,
     AiTaskCreatedResponse,
     AiTaskStatusResponse,
+    EntityType,
 )
 from app.ai.tasks import generate_sales_page_task
 from app.auth.dependencies import require_admin
@@ -33,7 +34,7 @@ def _check_api_key() -> None:
         )
 
 
-def _get_or_create_session(db: Session, entity_type: str, entity_id: UUID) -> AiChatSession:
+def _get_or_create_session(db: Session, entity_type: EntityType, entity_id: UUID) -> AiChatSession:
     session: AiChatSession | None = (
         db.query(AiChatSession)
         .filter(
@@ -55,7 +56,7 @@ def _get_or_create_session(db: Session, entity_type: str, entity_id: UUID) -> Ai
 
 def _dispatch_task(
     db: Session,
-    entity_type: str,
+    entity_type: EntityType,
     entity_id: UUID,
     request: AiGenerateRequest,
 ) -> AiTaskCreatedResponse:
@@ -106,7 +107,7 @@ async def ai_generate_course_sales_page(
     if not course:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Course not found")
 
-    return _dispatch_task(db, "course", course_id, request)
+    return _dispatch_task(db, EntityType.COURSE, course_id, request)
 
 
 @router.post(
@@ -127,7 +128,7 @@ async def ai_generate_bundle_sales_page(
     if not bundle:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Bundle not found")
 
-    return _dispatch_task(db, "bundle", bundle_id, request)
+    return _dispatch_task(db, EntityType.BUNDLE, bundle_id, request)
 
 
 # --- Task polling ---
@@ -174,7 +175,7 @@ async def get_course_ai_chat(
     current_user: User = Depends(require_admin),
 ) -> AiChatSessionResponse:
     """Get AI chat session for a course."""
-    return _get_chat_response(db, "course", course_id)
+    return _get_chat_response(db, EntityType.COURSE, course_id)
 
 
 @router.get(
@@ -187,7 +188,7 @@ async def get_bundle_ai_chat(
     current_user: User = Depends(require_admin),
 ) -> AiChatSessionResponse:
     """Get AI chat session for a bundle."""
-    return _get_chat_response(db, "bundle", bundle_id)
+    return _get_chat_response(db, EntityType.BUNDLE, bundle_id)
 
 
 @router.delete(
@@ -200,7 +201,7 @@ async def clear_course_ai_chat(
     current_user: User = Depends(require_admin),
 ) -> None:
     """Clear AI chat session for a course."""
-    _clear_chat(db, "course", course_id)
+    _clear_chat(db, EntityType.COURSE, course_id)
 
 
 @router.delete(
@@ -213,7 +214,7 @@ async def clear_bundle_ai_chat(
     current_user: User = Depends(require_admin),
 ) -> None:
     """Clear AI chat session for a bundle."""
-    _clear_chat(db, "bundle", bundle_id)
+    _clear_chat(db, EntityType.BUNDLE, bundle_id)
 
 
 @router.post(
@@ -226,7 +227,7 @@ async def dismiss_course_ai_response(
     current_user: User = Depends(require_admin),
 ) -> None:
     """Dismiss (apply/reject) the pending AI response for a course."""
-    _dismiss_pending(db, "course", course_id)
+    _dismiss_pending(db, EntityType.COURSE, course_id)
 
 
 @router.post(
@@ -239,13 +240,15 @@ async def dismiss_bundle_ai_response(
     current_user: User = Depends(require_admin),
 ) -> None:
     """Dismiss (apply/reject) the pending AI response for a bundle."""
-    _dismiss_pending(db, "bundle", bundle_id)
+    _dismiss_pending(db, EntityType.BUNDLE, bundle_id)
 
 
 # --- Helpers ---
 
 
-def _get_chat_response(db: Session, entity_type: str, entity_id: UUID) -> AiChatSessionResponse:
+def _get_chat_response(
+    db: Session, entity_type: EntityType, entity_id: UUID
+) -> AiChatSessionResponse:
     session = (
         db.query(AiChatSession)
         .filter(
@@ -269,7 +272,7 @@ def _get_chat_response(db: Session, entity_type: str, entity_id: UUID) -> AiChat
     )
 
 
-def _clear_chat(db: Session, entity_type: str, entity_id: UUID) -> None:
+def _clear_chat(db: Session, entity_type: EntityType, entity_id: UUID) -> None:
     db.query(AiChatSession).filter(
         AiChatSession.entity_type == entity_type,
         AiChatSession.entity_id == entity_id,
@@ -277,7 +280,7 @@ def _clear_chat(db: Session, entity_type: str, entity_id: UUID) -> None:
     db.commit()
 
 
-def _dismiss_pending(db: Session, entity_type: str, entity_id: UUID) -> None:
+def _dismiss_pending(db: Session, entity_type: EntityType, entity_id: UUID) -> None:
     session = (
         db.query(AiChatSession)
         .filter(

@@ -1,6 +1,12 @@
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, Field
+
+
+class EntityType(StrEnum):
+    COURSE = "course"
+    BUNDLE = "bundle"
 
 
 class AiChatMessage(BaseModel):
@@ -43,7 +49,7 @@ class AiChatSessionMessage(BaseModel):
 
 
 class AiChatSessionResponse(BaseModel):
-    entity_type: str
+    entity_type: EntityType
     entity_id: str
     messages: list[AiChatSessionMessage] = Field(default_factory=list)
     pending_task_id: str | None = None
