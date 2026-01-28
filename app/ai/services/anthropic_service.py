@@ -1,11 +1,12 @@
 import anthropic
+from anthropic.types import MessageParam
 
 from app.core.config import settings
 
 
 def call_anthropic(
     system_prompt: str,
-    messages: list[dict[str, str]],
+    messages: list[MessageParam],
     max_tokens: int | None = None,
     temperature: float | None = None,
 ) -> tuple[str, int | None, str]:
