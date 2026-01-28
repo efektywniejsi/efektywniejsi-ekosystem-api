@@ -4,8 +4,9 @@ import json
 import logging
 import re
 import uuid
-from typing import Any
+from typing import Any, cast
 
+from anthropic.types import MessageParam
 from sqlalchemy.orm import Session, joinedload
 
 from app.ai.models.brand_guidelines import BrandGuidelines
@@ -311,11 +312,11 @@ def generate_sales_page(
     )
 
     # 5. Build messages array
-    messages: list[dict[str, str]] = []
+    messages: list[MessageParam] = []
 
     # Add chat history
     for msg in request.chat_history:
-        messages.append({"role": msg.role, "content": msg.content})
+        messages.append(cast(MessageParam, {"role": msg.role, "content": msg.content}))
 
     # Build current user message
     # For iterative mode (has chat history), prepend current page state
@@ -331,7 +332,7 @@ def generate_sales_page(
                 break
 
     user_message = build_iterative_user_message(request.prompt, current_page_data)
-    messages.append({"role": "user", "content": user_message})
+    messages.append(cast(MessageParam, {"role": "user", "content": user_message}))
 
     # 6. Call Anthropic API
     response_text, tokens_used, model = call_anthropic(
@@ -349,17 +350,20 @@ def generate_sales_page(
     except (ValueError, json.JSONDecodeError) as e:
         # Retry once with error feedback
         logger.warning(f"First AI response parsing failed: {e}. Retrying with feedback.")
-        messages.append({"role": "assistant", "content": response_text})
+        messages.append(cast(MessageParam, {"role": "assistant", "content": response_text}))
         messages.append(
-            {
-                "role": "user",
-                "content": (
-                    f"Twoja poprzednia odpowiedź nie zawierała poprawnego JSON. "
-                    f"Błąd: {e}. "
-                    f"Proszę, odpowiedz ponownie z poprawnym blokiem JSON ```json ... ``` "
-                    f"zawierającym kompletny obiekt SalesPageData."
-                ),
-            }
+            cast(
+                MessageParam,
+                {
+                    "role": "user",
+                    "content": (
+                        f"Twoja poprzednia odpowiedź nie zawierała poprawnego JSON. "
+                        f"Błąd: {e}. "
+                        f"Proszę, odpowiedz ponownie z poprawnym blokiem JSON ```json ... ``` "
+                        f"zawierającym kompletny obiekt SalesPageData."
+                    ),
+                },
+            )
         )
 
         retry_text, retry_tokens, model = call_anthropic(
