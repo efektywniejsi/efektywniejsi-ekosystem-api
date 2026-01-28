@@ -58,6 +58,26 @@ services:
     networks:
       - ekosystem_network
 
+  worker:
+    build: .
+    container_name: efektywniejsi_ekosystem_worker
+    command: uv run celery -A app.core.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      DATABASE_URL: postgresql://efektywniejsi:devpassword123@postgres:5432/efektywniejsi_ekosystem_db
+      REDIS_URL: redis://redis:6379/0
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-20250514}
+      ANTHROPIC_MAX_TOKENS: ${ANTHROPIC_MAX_TOKENS:-8192}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    networks:
+      - ekosystem_network
+
 volumes:
   postgres_data:
   redis_data:
