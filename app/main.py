@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from redis.asyncio import Redis
 
+from app.admin.routes import admin_statistics
 from app.ai.routes import brand_guidelines as brand_guidelines_routes
 from app.ai.routes import sales_page_ai
 from app.auth.routes import admin, auth, password
@@ -80,6 +81,9 @@ app.include_router(
     password.router, prefix=f"{settings.API_V1_PREFIX}/password", tags=["password-reset"]
 )
 app.include_router(admin.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["admin"])
+app.include_router(
+    admin_statistics.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["admin-statistics"]
+)
 
 app.include_router(courses.router, prefix=settings.API_V1_PREFIX, tags=["courses"])
 app.include_router(enrollment.router, prefix=settings.API_V1_PREFIX, tags=["enrollments"])
