@@ -68,6 +68,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-20250514}
       ANTHROPIC_MAX_TOKENS: ${ANTHROPIC_MAX_TOKENS:-8192}
+      UV_PROJECT_ENVIRONMENT: /app/.venv-worker
     depends_on:
       redis:
         condition: service_healthy

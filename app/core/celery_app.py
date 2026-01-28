@@ -1,5 +1,6 @@
 from celery import Celery
 
+import app.db.base  # noqa: F401 — register all models so relationships resolve
 from app.core.config import settings
 
 celery_app = Celery(
