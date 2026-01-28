@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     STRIPE_PUBLISHABLE_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
 
+    # Anthropic AI Configuration
+    ANTHROPIC_API_KEY: str = ""
+    ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
+    ANTHROPIC_MAX_TOKENS: int = 8192
+
     # PayU Configuration
     PAYU_MERCHANT_ID: str = ""
     PAYU_SECRET_KEY: str = ""
