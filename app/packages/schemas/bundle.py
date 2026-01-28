@@ -60,6 +60,7 @@ class BundleListResponse(BaseModel):
             shortDescription=package.description,  # description -> shortDescription
             pricing={
                 "regular": package.price / 100,  # Convert grosz to PLN
+                "original": package.original_price / 100 if package.original_price else None,
                 "currency": package.currency,
             },
             features=features,
@@ -115,6 +116,9 @@ class BundleDetailResponse(BaseModel):
     # Content
     packages: list[Any] = Field(default_factory=list)  # Will be PackageListResponse
     courses: list[BundleCourseDetailItem] = Field(default_factory=list)
+
+    # Sales page builder
+    sales_page_sections: dict[str, Any] | None = None
 
     @field_validator("id", mode="before")
     @classmethod

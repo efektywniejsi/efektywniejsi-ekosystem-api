@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from redis.asyncio import Redis
 
+from app.ai.routes import brand_guidelines as brand_guidelines_routes
+from app.ai.routes import sales_page_ai
 from app.auth.routes import admin, auth, password
 from app.core import redis as redis_module
 from app.core.config import settings
@@ -20,9 +22,11 @@ from app.courses.routes import (
     gamification,
     lessons,
     progress,
+    sales_page,
     webhooks,
 )
 from app.packages.routes import (
+    bundle_sales_page_router,
     bundles_router,
     checkout_router,
     enrollments_router,
@@ -93,8 +97,12 @@ app.include_router(
     tags=["admin-enrollments"],
 )
 app.include_router(webhooks.router, prefix=settings.API_V1_PREFIX, tags=["webhooks"])
+app.include_router(sales_page.router, prefix=settings.API_V1_PREFIX, tags=["sales-page"])
 
 # Package commerce routes
+app.include_router(
+    bundle_sales_page_router, prefix=settings.API_V1_PREFIX, tags=["bundle-sales-page"]
+)
 app.include_router(bundles_router, prefix=settings.API_V1_PREFIX, tags=["bundles"])
 app.include_router(packages_router, prefix=settings.API_V1_PREFIX, tags=["packages"])
 app.include_router(checkout_router, prefix=settings.API_V1_PREFIX, tags=["checkout"])
@@ -103,6 +111,12 @@ app.include_router(enrollments_router, prefix=settings.API_V1_PREFIX, tags=["pac
 app.include_router(orders_router, prefix=settings.API_V1_PREFIX, tags=["orders"])
 app.include_router(
     sales_windows_router, prefix=f"{settings.API_V1_PREFIX}/sales-windows", tags=["sales-windows"]
+)
+
+# AI routes
+app.include_router(sales_page_ai.router, prefix=settings.API_V1_PREFIX, tags=["ai-sales-page"])
+app.include_router(
+    brand_guidelines_routes.router, prefix=settings.API_V1_PREFIX, tags=["brand-guidelines"]
 )
 
 

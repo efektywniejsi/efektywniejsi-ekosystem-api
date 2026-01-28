@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class PackageProcessResponse(BaseModel):
@@ -54,28 +54,13 @@ class PackageListResponse(BaseModel):
     class Config:
         from_attributes = True
 
+    @field_validator("tools", mode="before")
     @classmethod
-    def from_orm(cls, obj: Any) -> "PackageListResponse":
-        """Custom from_orm to parse JSON tools field."""
-        # Parse tools JSON string to list
-        tools_raw = getattr(obj, "tools", "[]")
-        tools = json.loads(tools_raw) if isinstance(tools_raw, str) else tools_raw
-        return cls(
-            id=obj.id,
-            slug=obj.slug,
-            title=obj.title,
-            description=obj.description,
-            category=obj.category,
-            price=obj.price,
-            original_price=obj.original_price,
-            currency=obj.currency,
-            difficulty=obj.difficulty,
-            total_time_saved=obj.total_time_saved,
-            video_url=obj.video_url,
-            is_featured=obj.is_featured,
-            is_bundle=obj.is_bundle,
-            tools=tools,
-        )
+    def parse_tools_json(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            parsed: list[str] = json.loads(v)
+            return parsed
+        return list(v)
 
 
 class PackageDetailResponse(BaseModel):
@@ -97,38 +82,20 @@ class PackageDetailResponse(BaseModel):
     tools: list[str] = Field(default_factory=list)
     processes: list[PackageProcessResponse] = Field(default_factory=list)
     bundle_items: list[PackageBundleItemResponse] = Field(default_factory=list)
+    sales_page_sections: dict[str, Any] | None = None
     created_at: datetime
     updated_at: datetime
 
     class Config:
         from_attributes = True
 
+    @field_validator("tools", mode="before")
     @classmethod
-    def from_orm(cls, obj: Any) -> "PackageDetailResponse":
-        """Custom from_orm to parse JSON tools field."""
-        # Parse tools JSON string to list
-        tools_raw = getattr(obj, "tools", "[]")
-        tools = json.loads(tools_raw) if isinstance(tools_raw, str) else tools_raw
-        return cls(
-            id=obj.id,
-            slug=obj.slug,
-            title=obj.title,
-            description=obj.description,
-            category=obj.category,
-            price=obj.price,
-            original_price=obj.original_price,
-            currency=obj.currency,
-            difficulty=obj.difficulty,
-            total_time_saved=obj.total_time_saved,
-            video_url=obj.video_url,
-            is_featured=obj.is_featured,
-            is_bundle=obj.is_bundle,
-            tools=tools,
-            processes=[PackageProcessResponse.from_orm(p) for p in obj.processes],
-            bundle_items=[PackageBundleItemResponse.from_orm(b) for b in obj.bundle_items],
-            created_at=obj.created_at,
-            updated_at=obj.updated_at,
-        )
+    def parse_tools_json(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            parsed: list[str] = json.loads(v)
+            return parsed
+        return list(v)
 
 
 class PackageWithChildrenResponse(BaseModel):

@@ -23,6 +23,8 @@ dependencies = [
     "mux-python==3.20.0",
     "stripe==11.1.0",
     "httpx==0.28.1",
+    "anthropic==0.42.0",
+    "celery[redis]>=5.4",
 ]
 
 [project.optional-dependencies]
@@ -62,6 +64,9 @@ ignore = [
     "N815",  # mixedCase variable names (needed for frontend compatibility)
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"app/ai/services/prompt_builder.py" = ["E501"]  # prompt text has long lines by design
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
@@ -97,6 +102,8 @@ module = [
     "aiosmtplib.*",
     "reportlab.*",
     "mux_python.*",
+    "anthropic.*",
+    "celery.*",
 ]
 ignore_missing_imports = true
 

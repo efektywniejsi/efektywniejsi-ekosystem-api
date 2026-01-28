@@ -136,12 +136,14 @@ def _build_bundle_detail_response(db: Session, bundle: Package) -> BundleDetailR
         shortDescription=bundle.description,
         pricing={
             "regular": bundle.price / 100,
+            "original": bundle.original_price / 100 if bundle.original_price else None,
             "currency": bundle.currency,
         },
         popular=bundle.is_featured,
         badge=badge,
         packages=packages,
         courses=courses,
+        sales_page_sections=bundle.sales_page_sections,
     )
 
 
@@ -315,7 +317,9 @@ def update_bundle(
         bundle.description = bundle_data.description
     if bundle_data.price is not None:
         bundle.price = bundle_data.price
-    if bundle_data.original_price is not None:
+    # Always update original_price if it's in the request body
+    # (allows clearing by sending null)
+    if "original_price" in (bundle_data.model_dump(exclude_unset=True) or {}):
         bundle.original_price = bundle_data.original_price
     if bundle_data.is_featured is not None:
         bundle.is_featured = bundle_data.is_featured
