@@ -6,7 +6,7 @@ from typing import Any
 from uuid import UUID
 
 from app.ai.models.ai_chat_session import AiChatSession
-from app.ai.schemas.ai_generation import AiGenerateRequest
+from app.ai.schemas.ai_generation import AiGenerateRequest, EntityType
 from app.ai.services.sales_page_generator import generate_sales_page
 from app.core.celery_app import celery_app
 from app.db.session import SessionLocal
@@ -76,7 +76,7 @@ def generate_sales_page_task(
     db = SessionLocal()
     try:
         request = AiGenerateRequest(**request_data)
-        result = generate_sales_page(db, entity_type, UUID(entity_id), request)
+        result = generate_sales_page(db, EntityType(entity_type), UUID(entity_id), request)
         result_dict = result.model_dump()
 
         # Persist assistant response to chat session
