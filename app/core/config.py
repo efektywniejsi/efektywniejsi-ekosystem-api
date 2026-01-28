@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
     ANTHROPIC_MAX_TOKENS: int = 8192
+    ANTHROPIC_TEMPERATURE: float = 0.7
+    ANTHROPIC_MAX_TOKENS_SALES_PAGE: int = 16384
 
     # PayU Configuration
     PAYU_MERCHANT_ID: str = ""

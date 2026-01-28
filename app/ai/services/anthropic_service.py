@@ -7,6 +7,7 @@ def call_anthropic(
     system_prompt: str,
     messages: list[dict[str, str]],
     max_tokens: int | None = None,
+    temperature: float | None = None,
 ) -> tuple[str, int | None, str]:
     """Call Anthropic Messages API.
 
@@ -18,6 +19,7 @@ def call_anthropic(
     response = client.messages.create(
         model=settings.ANTHROPIC_MODEL,
         max_tokens=max_tokens or settings.ANTHROPIC_MAX_TOKENS,
+        temperature=temperature if temperature is not None else 1.0,
         system=system_prompt,
         messages=messages,
     )

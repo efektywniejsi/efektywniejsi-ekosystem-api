@@ -64,6 +64,9 @@ ignore = [
     "N815",  # mixedCase variable names (needed for frontend compatibility)
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"app/ai/services/prompt_builder.py" = ["E501"]  # prompt text has long lines by design
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

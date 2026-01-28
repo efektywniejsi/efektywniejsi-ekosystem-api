@@ -9,13 +9,14 @@ from typing import Any
 from sqlalchemy.orm import Session, joinedload
 
 from app.ai.models.brand_guidelines import BrandGuidelines
-from app.ai.schemas.ai_generation import AiGenerateRequest, AiGenerateResponse
+from app.ai.schemas.ai_generation import AiGenerateRequest, AiGenerateResponse, EntityType
 from app.ai.services.anthropic_service import call_anthropic
 from app.ai.services.brand_guidelines_service import get_brand_guidelines
 from app.ai.services.prompt_builder import (
     build_iterative_user_message,
     build_system_prompt,
 )
+from app.core.config import settings
 from app.courses.models.course import Course, Module
 from app.courses.schemas.sales_page import SECTION_CONFIG_MAP, SalesPageData
 from app.packages.models.package import Package
@@ -118,14 +119,14 @@ def _fetch_bundle_data(db: Session, bundle_id: uuid.UUID) -> dict[str, Any]:
 
 def _fetch_few_shot_examples(
     db: Session,
-    entity_type: str,
+    entity_type: EntityType,
     exclude_id: uuid.UUID,
     limit: int = 2,
 ) -> list[dict[str, Any]]:
     """Fetch existing sales pages as few-shot examples."""
     examples: list[dict[str, Any]] = []
 
-    if entity_type == "course":
+    if entity_type == EntityType.COURSE:
         courses = (
             db.query(Course)
             .filter(
@@ -155,7 +156,7 @@ def _fetch_few_shot_examples(
     # Also check the other entity type if we don't have enough
     if len(examples) < limit:
         remaining = limit - len(examples)
-        if entity_type == "course":
+        if entity_type == EntityType.COURSE:
             packages = (
                 db.query(Package)
                 .filter(Package.sales_page_sections.isnot(None))
@@ -233,6 +234,16 @@ def _validate_and_fix(data: dict[str, Any]) -> dict[str, Any]:
     if "custom_css" not in data["settings"]:
         data["settings"]["custom_css"] = ""
 
+    # Force all AI-generated sections to custom_html — drop predefined types
+    original_count = len(data["sections"])
+    data["sections"] = [s for s in data["sections"] if s.get("type") == "custom_html"]
+    dropped = original_count - len(data["sections"])
+    if dropped:
+        logger.warning(
+            f"Dropped {dropped} non-custom_html sections from AI response "
+            f"(kept {len(data['sections'])})"
+        )
+
     # Fix each section
     for i, section in enumerate(data["sections"]):
         # Assign UUID if missing or invalid
@@ -271,13 +282,13 @@ def _validate_and_fix(data: dict[str, Any]) -> dict[str, Any]:
 
 def generate_sales_page(
     db: Session,
-    entity_type: str,
+    entity_type: EntityType,
     entity_id: uuid.UUID,
     request: AiGenerateRequest,
 ) -> AiGenerateResponse:
     """Main orchestrator for AI sales page generation."""
     # 1. Fetch product data
-    if entity_type == "course":
+    if entity_type == EntityType.COURSE:
         product_data = _fetch_course_data(db, entity_id)
     else:
         product_data = _fetch_bundle_data(db, entity_id)
@@ -323,7 +334,12 @@ def generate_sales_page(
     messages.append({"role": "user", "content": user_message})
 
     # 6. Call Anthropic API
-    response_text, tokens_used, model = call_anthropic(system_prompt, messages)
+    response_text, tokens_used, model = call_anthropic(
+        system_prompt,
+        messages,
+        max_tokens=settings.ANTHROPIC_MAX_TOKENS_SALES_PAGE,
+        temperature=settings.ANTHROPIC_TEMPERATURE,
+    )
 
     # 7. Parse and validate response
     try:
@@ -346,7 +362,12 @@ def generate_sales_page(
             }
         )
 
-        retry_text, retry_tokens, model = call_anthropic(system_prompt, messages)
+        retry_text, retry_tokens, model = call_anthropic(
+            system_prompt,
+            messages,
+            max_tokens=settings.ANTHROPIC_MAX_TOKENS_SALES_PAGE,
+            temperature=settings.ANTHROPIC_TEMPERATURE,
+        )
         if retry_tokens and tokens_used:
             tokens_used += retry_tokens
 
