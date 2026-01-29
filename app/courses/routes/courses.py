@@ -412,6 +412,14 @@ async def create_module(
     db.commit()
     db.refresh(module)
 
+    from app.notifications.tasks import send_course_update_notification
+
+    send_course_update_notification.delay(
+        course_id=str(course_id),
+        update_type="new_module",
+        item_title=module.title,
+    )
+
     return ModuleResponse(
         id=str(module.id),
         course_id=str(module.course_id),
@@ -523,6 +531,14 @@ async def create_lesson(
     db.add(lesson)
     db.commit()
     db.refresh(lesson)
+
+    from app.notifications.tasks import send_course_update_notification
+
+    send_course_update_notification.delay(
+        course_id=str(module.course_id),
+        update_type="new_lesson",
+        item_title=lesson.title,
+    )
 
     return LessonResponse(
         id=str(lesson.id),

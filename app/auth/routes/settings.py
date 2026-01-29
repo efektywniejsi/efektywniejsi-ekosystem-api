@@ -243,13 +243,16 @@ async def get_payment_methods(
 
     result = []
     for pm in methods.data:
+        card = pm.card
+        if card is None:
+            continue
         result.append(
             PaymentMethodResponse(
                 id=pm.id,
-                brand=pm.card.brand,
-                last4=pm.card.last4,
-                exp_month=pm.card.exp_month,
-                exp_year=pm.card.exp_year,
+                brand=card.brand,
+                last4=card.last4,
+                exp_month=card.exp_month,
+                exp_year=card.exp_year,
                 is_default=pm.id == default_pm_id,
             )
         )
@@ -287,7 +290,7 @@ async def delete_payment_method(
                 detail="Payment method does not belong to this user",
             )
         stripe.PaymentMethod.detach(method_id)
-    except stripe.error.InvalidRequestError as exc:
+    except stripe.InvalidRequestError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Payment method not found",
