@@ -7,6 +7,15 @@ import aiosmtplib
 
 from app.core.config import settings
 
+# Brand colors
+_VIOLET = "#A855F7"
+_CYAN = "#06B6D4"
+_BG_DARK = "#0F172A"
+_CARD_BG = "#1E293B"
+_TEXT_LIGHT = "#F0F9FF"
+_TEXT_MUTED = "#94A3B8"
+_BORDER = "#334155"
+
 
 @dataclass
 class EmailMessage:
@@ -25,7 +34,7 @@ class EmailService(ABC):
 class ConsoleEmailService(EmailService):
     async def send_email(self, message: EmailMessage) -> bool:
         print("\n" + "=" * 80)
-        print("📧 EMAIL (Console Output - Development Mode)")
+        print("EMAIL (Console Output - Development Mode)")
         print("=" * 80)
         print(f"To: {message.to}")
         print(f"Subject: {message.subject}")
@@ -92,34 +101,78 @@ def get_email_service() -> EmailService:
     return ConsoleEmailService()
 
 
+def _wrap_html(inner: str) -> str:
+    """Wrap email content in the branded dark template."""
+    return f"""\
+<html>
+<body style="margin: 0; padding: 0; background-color: {_BG_DARK}; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: {_BG_DARK}; padding: 32px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding: 0 0 32px 0;">
+              <img src="{settings.FRONTEND_URL}/logo/efektywniejsi-logo-white.png"
+                   alt="Efektywniejsi" height="36"
+                   style="height: 36px; width: auto;" />
+            </td>
+          </tr>
+          <!-- Card -->
+          <tr>
+            <td style="background-color: {_CARD_BG}; border: 1px solid {_BORDER}; border-radius: 12px; padding: 40px 36px;">
+              {inner}
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding: 24px 0 0 0;">
+              <p style="margin: 0; font-size: 12px; color: {_TEXT_MUTED}; line-height: 1.5;">
+                &copy; 2026 Efektywniejsi. Wszystkie prawa zastrzeżone.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
+
 def build_password_reset_email(name: str, email: str, token: str) -> EmailMessage:
     reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
 
-    html_body = f"""
-    <html>
-    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h2 style="color: #4CAF50;">Reset hasła - Efektywniejsi</h2>
-        <p>Cześć {name},</p>
-        <p>Otrzymaliśmy prośbę o reset hasła do Twojego konta.</p>
-        <p>Kliknij poniższy link, aby ustawić nowe hasło:</p>
-        <p style="margin: 20px 0;">
-            <a href="{reset_url}"
-               style="background-color: #4CAF50; color: white; padding: 12px 24px;
-                      text-decoration: none; border-radius: 4px; display: inline-block;">
-                Zresetuj hasło
-            </a>
-        </p>
-        <p><strong>Link wygasa za 1 godzinę.</strong></p>
-        <p>Jeśli nie prosiłeś o reset hasła, zignoruj tę wiadomość.</p>
-        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-        <p style="font-size: 12px; color: #999;">
-            © 2026 Efektywniejsi. Wszystkie prawa zastrzeżone.
-        </p>
-    </body>
-    </html>
-    """
+    inner = f"""\
+<h2 style="margin: 0 0 24px 0; font-size: 22px; font-weight: 700; color: {_TEXT_LIGHT};">
+  Reset hasła
+</h2>
+<p style="margin: 0 0 16px 0; font-size: 15px; color: {_TEXT_MUTED}; line-height: 1.6;">
+  Cześć {name},
+</p>
+<p style="margin: 0 0 20px 0; font-size: 15px; color: {_TEXT_MUTED}; line-height: 1.6;">
+  Otrzymaliśmy prośbę o reset hasła do Twojego konta.
+  Kliknij poniższy przycisk, aby ustawić nowe hasło:
+</p>
+<table cellpadding="0" cellspacing="0" style="margin: 0 0 24px 0;">
+  <tr>
+    <td style="border-radius: 8px; background: linear-gradient(135deg, {_VIOLET}, {_CYAN});">
+      <a href="{reset_url}"
+         style="display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600;
+                color: #ffffff; text-decoration: none; border-radius: 8px;">
+        Zresetuj hasło
+      </a>
+    </td>
+  </tr>
+</table>
+<p style="margin: 0 0 8px 0; font-size: 14px; color: {_TEXT_LIGHT}; font-weight: 600;">
+  Link wygasa za 1 godzinę.
+</p>
+<p style="margin: 0; font-size: 14px; color: {_TEXT_MUTED}; line-height: 1.6;">
+  Jeśli nie prosiłeś o reset hasła, zignoruj tę wiadomość.
+</p>"""
 
-    text_body = f"""
+    text_body = f"""\
 Reset hasła - Efektywniejsi
 
 Cześć {name},
@@ -134,13 +187,12 @@ Link wygasa za 1 godzinę.
 Jeśli nie prosiłeś o reset hasła, zignoruj tę wiadomość.
 
 ---
-© 2026 Efektywniejsi. Wszystkie prawa zastrzeżone.
-    """
+© 2026 Efektywniejsi. Wszystkie prawa zastrzeżone."""
 
     return EmailMessage(
         to=email,
         subject="Reset hasła - Efektywniejsi",
-        body_html=html_body,
+        body_html=_wrap_html(inner),
         body_text=text_body,
     )
 
@@ -148,33 +200,40 @@ Jeśli nie prosiłeś o reset hasła, zignoruj tę wiadomość.
 def build_welcome_email(name: str, email: str, temp_password: str) -> EmailMessage:
     login_url = f"{settings.FRONTEND_URL}/login"
 
-    html_body = f"""
-    <html>
-    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h2 style="color: #4CAF50;">Witaj w Efektywniejsi!</h2>
-        <p>Cześć {name},</p>
-        <p>Twoje konto zostało utworzone. Oto Twoje dane logowania:</p>
-        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 4px; margin: 20px 0;">
-            <p><strong>Email:</strong> {email}</p>
-            <p><strong>Hasło tymczasowe:</strong> {temp_password}</p>
-        </div>
-        <p>
-            <a href="{login_url}"
-               style="background-color: #4CAF50; color: white; padding: 12px 24px;
-                      text-decoration: none; border-radius: 4px; display: inline-block;">
-                Zaloguj się teraz
-            </a>
-        </p>
-        <p><strong>Ważne:</strong> Zmień hasło po pierwszym logowaniu.</p>
-        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-        <p style="font-size: 12px; color: #999;">
-            © 2026 Efektywniejsi. Wszystkie prawa zastrzeżone.
-        </p>
-    </body>
-    </html>
-    """
+    inner = f"""\
+<h2 style="margin: 0 0 24px 0; font-size: 22px; font-weight: 700; color: {_TEXT_LIGHT};">
+  Witaj w Efektywniejsi!
+</h2>
+<p style="margin: 0 0 16px 0; font-size: 15px; color: {_TEXT_MUTED}; line-height: 1.6;">
+  Cześć {name},
+</p>
+<p style="margin: 0 0 20px 0; font-size: 15px; color: {_TEXT_MUTED}; line-height: 1.6;">
+  Twoje konto zostało utworzone. Oto Twoje dane logowania:
+</p>
+<div style="background-color: {_BG_DARK}; border: 1px solid {_BORDER}; border-radius: 8px; padding: 16px 20px; margin: 0 0 24px 0;">
+  <p style="margin: 0 0 8px 0; font-size: 14px; color: {_TEXT_MUTED};">
+    <strong style="color: {_TEXT_LIGHT};">Email:</strong> {email}
+  </p>
+  <p style="margin: 0; font-size: 14px; color: {_TEXT_MUTED};">
+    <strong style="color: {_TEXT_LIGHT};">Hasło tymczasowe:</strong> {temp_password}
+  </p>
+</div>
+<table cellpadding="0" cellspacing="0" style="margin: 0 0 24px 0;">
+  <tr>
+    <td style="border-radius: 8px; background: linear-gradient(135deg, {_VIOLET}, {_CYAN});">
+      <a href="{login_url}"
+         style="display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600;
+                color: #ffffff; text-decoration: none; border-radius: 8px;">
+        Zaloguj się teraz
+      </a>
+    </td>
+  </tr>
+</table>
+<p style="margin: 0; font-size: 14px; color: {_TEXT_LIGHT}; font-weight: 600;">
+  Ważne: Zmień hasło po pierwszym logowaniu.
+</p>"""
 
-    text_body = f"""
+    text_body = f"""\
 Witaj w Efektywniejsi!
 
 Cześć {name},
@@ -189,12 +248,11 @@ Zaloguj się: {login_url}
 Ważne: Zmień hasło po pierwszym logowaniu.
 
 ---
-© 2026 Efektywniejsi. Wszystkie prawa zastrzeżone.
-    """
+© 2026 Efektywniejsi. Wszystkie prawa zastrzeżone."""
 
     return EmailMessage(
         to=email,
         subject="Witaj w Efektywniejsi",
-        body_html=html_body,
+        body_html=_wrap_html(inner),
         body_text=text_body,
     )
