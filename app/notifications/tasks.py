@@ -13,6 +13,7 @@ from app.courses.models.course import Course
 from app.courses.models.enrollment import Enrollment
 from app.db.session import SessionLocal
 from app.notifications.email_templates import build_announcement_email, build_course_update_email
+from app.notifications.models.announcement_log import AnnouncementLog
 from app.notifications.models.notification import Notification, NotificationStatus, NotificationType
 
 logger = logging.getLogger(__name__)
@@ -116,15 +117,32 @@ def send_announcement_notification(
     subject: str,
     body_html: str,
     body_text: str,
+    announcement_log_id: str | None = None,
 ) -> dict[str, int]:
     """Send an announcement email to all active users who opted in."""
     db = SessionLocal()
     try:
+        log: AnnouncementLog | None = None
+        if announcement_log_id:
+            log = (
+                db.query(AnnouncementLog)
+                .filter(AnnouncementLog.id == UUID(announcement_log_id))
+                .first()
+            )
+            if log:
+                log.status = "in_progress"
+                db.commit()
+
         users = db.query(User).filter(User.is_active.is_(True)).all()
+
+        if log:
+            log.total_recipients = len(users)
+            db.commit()
 
         email_service = get_email_service()
         sent = 0
         skipped = 0
+        failed = 0
 
         for user in users:
             prefs = user.notification_preferences or {}
@@ -145,6 +163,7 @@ def send_announcement_notification(
                 notification_type=NotificationType.ANNOUNCEMENT.value,
                 subject=subject,
                 status=NotificationStatus.PENDING.value,
+                announcement_log_id=UUID(announcement_log_id) if announcement_log_id else None,
             )
             db.add(notification)
 
@@ -157,20 +176,37 @@ def send_announcement_notification(
                 else:
                     notification.status = NotificationStatus.FAILED.value
                     notification.error_message = "Email service returned False"
-                    skipped += 1
+                    failed += 1
             except Exception as exc:
                 notification.status = NotificationStatus.FAILED.value
                 notification.error_message = str(exc)[:500]
-                skipped += 1
+                failed += 1
                 logger.exception("Failed to send announcement email to %s", user.email)
 
             db.commit()
 
-        logger.info("Announcement notifications: sent=%d, skipped=%d", sent, skipped)
-        return {"sent": sent, "skipped": skipped}
+        if log:
+            log.sent_count = sent
+            log.skipped_count = skipped
+            log.failed_count = failed
+            log.status = "completed"
+            log.completed_at = datetime.utcnow()
+            db.commit()
+
+        logger.info(
+            "Announcement notifications: sent=%d, skipped=%d, failed=%d", sent, skipped, failed
+        )
+        return {"sent": sent, "skipped": skipped, "failed": failed}
     except Exception as exc:
         logger.exception("send_announcement_notification failed: %s", exc)
-        db.rollback()
+        if log:
+            try:
+                log.status = "failed"
+                db.commit()
+            except Exception:
+                db.rollback()
+        else:
+            db.rollback()
         if self.request.retries < self.max_retries:
             raise self.retry(exc=exc) from exc
         raise

@@ -86,11 +86,15 @@ def build_announcement_email(
     body_text: str,
 ) -> EmailMessage:
     """Build an announcement email from the admin."""
-    # Re-style the admin-provided HTML paragraphs for dark theme
-    styled_body = body_html.replace(
-        "<p>",
-        f'<p style="margin: 0 0 12px 0; font-size: 15px; color: {_TEXT_MUTED}; line-height: 1.6;">',
-    )
+    # If the HTML already contains inline styles, use it as-is (admin wrote raw HTML).
+    # Otherwise, re-style bare <p> tags for the dark theme.
+    if "style=" in body_html:
+        styled_body = body_html
+    else:
+        styled_body = body_html.replace(
+            "<p>",
+            f'<p style="margin: 0 0 12px 0; font-size: 15px; color: {_TEXT_MUTED}; line-height: 1.6;">',
+        )
 
     inner = f"""\
 <h2 style="margin: 0 0 24px 0; font-size: 22px; font-weight: 700; color: {_TEXT_LIGHT};">

@@ -13,6 +13,7 @@ from app.courses.models.attachment import Attachment
 from app.courses.models.certificate import Certificate
 from app.courses.models.course import Course, Lesson, Module
 from app.courses.models.enrollment import Enrollment
+from app.notifications.models.announcement_log import AnnouncementLog
 from app.notifications.models.notification import Notification
 from app.packages.models.enrollment import PackageEnrollment
 from app.packages.models.order import Order, OrderItem
@@ -36,4 +37,5 @@ __all__ = [
     "PackageBundleItem",
     "PackageProcess",
     "Notification",
+    "AnnouncementLog",
 ]
