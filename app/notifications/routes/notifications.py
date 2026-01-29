@@ -2,13 +2,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import require_admin
 from app.auth.models.user import User
 from app.db.session import get_db
 from app.notifications.models.announcement_log import AnnouncementLog
-from app.notifications.models.notification import Notification
+from app.notifications.models.notification import Notification, NotificationType
 from app.notifications.tasks import send_announcement_notification
 
 router = APIRouter()
@@ -98,6 +99,23 @@ async def get_announcement_recipients(
         .order_by(Notification.created_at.desc())
         .all()
     )
+
+    # Fallback for notifications created before announcement_log_id existed
+    if not rows and log.completed_at:
+        rows = (
+            db.query(Notification, User.name, User.email)
+            .join(User, Notification.user_id == User.id)
+            .filter(
+                and_(
+                    Notification.notification_type == NotificationType.ANNOUNCEMENT.value,
+                    Notification.subject == log.subject,
+                    Notification.created_at >= log.created_at,
+                    Notification.created_at <= log.completed_at,
+                )
+            )
+            .order_by(Notification.created_at.desc())
+            .all()
+        )
 
     return [
         {
