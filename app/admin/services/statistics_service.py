@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 
-from sqlalchemy import func
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.admin.schemas.admin_statistics import (
@@ -106,6 +106,8 @@ class StatisticsService:
             )
             .first()
         )
+        if result is None:
+            return 0, 0
         return result[0] or 0, result[1] or 0
 
     # ============ Dashboard Summary ============
@@ -585,7 +587,7 @@ class StatisticsService:
                 SalesWindowStats(
                     id=str(w.id),
                     name=w.name,
-                    status=w.status if isinstance(w.status, str) else w.status.value,
+                    status=w.status,
                     starts_at=w.starts_at,
                     ends_at=w.ends_at,
                     total_orders=total_orders,
@@ -776,17 +778,16 @@ class StatisticsService:
 
         if user_type == "active":
             # Get users who had activity (accessed courses) on this day
-            active_user_ids = (
-                db.query(Enrollment.user_id)
+            active_subq = (
+                select(Enrollment.user_id)
                 .filter(
                     Enrollment.last_accessed_at >= day_start,
                     Enrollment.last_accessed_at < day_end,
                 )
                 .distinct()
-                .subquery()
             )
 
-            users = db.query(User).filter(User.id.in_(active_user_ids)).limit(limit).all()
+            users = db.query(User).filter(User.id.in_(active_subq)).limit(limit).all()
 
             # Get last activity for each user
             for user in users:
