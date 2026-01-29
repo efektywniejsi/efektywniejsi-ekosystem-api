@@ -6,10 +6,14 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.admin.schemas.admin_statistics import (
+    CertificatesListResponse,
+    CompletionsListResponse,
     DailyUserDetailsResponse,
     DashboardSummaryResponse,
     EducationStatisticsResponse,
     Granularity,
+    MonthlyUsersResponse,
+    OrderDetailsListResponse,
     OrderStatisticsResponse,
     RankingsResponse,
     RevenueStatisticsResponse,
@@ -151,6 +155,75 @@ async def get_education_statistics(
     - Per-course statistics with progress metrics
     """
     return StatisticsService.get_education_statistics(db)
+
+
+@router.get("/orders/details", response_model=OrderDetailsListResponse)
+async def get_order_details(
+    period: str | None = Query(
+        None, description="Period: 'today', 'this_month', or omit for all time"
+    ),
+    status: str | None = Query(None, description="Filter by status (e.g. 'completed', 'pending')"),
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of orders to return"),
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+) -> OrderDetailsListResponse:
+    """
+    Get detailed order list with items for the KPI modal.
+
+    Returns:
+    - List of orders with their items
+    - Total count
+    - Total revenue (completed orders only)
+    """
+    return StatisticsService.get_order_details(db, period, status, limit)
+
+
+@router.get("/users/monthly", response_model=MonthlyUsersResponse)
+async def get_monthly_new_users(
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of users to return"),
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+) -> MonthlyUsersResponse:
+    """
+    Get new users registered in the current month.
+
+    Returns:
+    - Total count
+    - List of users with their details
+    """
+    return StatisticsService.get_monthly_new_users(db, limit)
+
+
+@router.get("/education/completions", response_model=CompletionsListResponse)
+async def get_completions(
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of completions to return"),
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+) -> CompletionsListResponse:
+    """
+    Get all course completions (most recent first).
+
+    Returns:
+    - Total count
+    - List of completions with user and course details
+    """
+    return StatisticsService.get_completions(db, limit)
+
+
+@router.get("/education/certificates", response_model=CertificatesListResponse)
+async def get_certificates(
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of certificates to return"),
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+) -> CertificatesListResponse:
+    """
+    Get all issued certificates (most recent first).
+
+    Returns:
+    - Total count
+    - List of certificates with user and course details
+    """
+    return StatisticsService.get_certificates(db, limit)
 
 
 @router.get("/users/daily-details", response_model=DailyUserDetailsResponse)

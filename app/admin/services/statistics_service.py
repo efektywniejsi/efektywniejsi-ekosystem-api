@@ -6,6 +6,10 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.admin.schemas.admin_statistics import (
+    CertificateDetail,
+    CertificatesListResponse,
+    CompletionDetail,
+    CompletionsListResponse,
     CourseProgressStats,
     CourseRanking,
     DailyUserDetailsResponse,
@@ -13,6 +17,10 @@ from app.admin.schemas.admin_statistics import (
     EducationKPI,
     EducationStatisticsResponse,
     Granularity,
+    MonthlyUsersResponse,
+    OrderDetailItem,
+    OrderDetailResponse,
+    OrderDetailsListResponse,
     OrderProviderCount,
     OrdersKPI,
     OrderStatisticsResponse,
@@ -869,3 +877,159 @@ class StatisticsService:
             total=total,
             users=users_list,
         )
+
+    # ============ Order Details (Modal) ============
+
+    @staticmethod
+    def get_order_details(
+        db: Session,
+        period: str | None = "this_month",
+        status: str | None = None,
+        limit: int = 50,
+    ) -> OrderDetailsListResponse:
+        """Get detailed order list with items for the modal view."""
+        query = db.query(Order)
+
+        if period:
+            start, end = StatisticsService._get_period_boundaries(period)
+            query = query.filter(
+                Order.created_at >= start,
+                Order.created_at <= end,
+            )
+
+        if status:
+            query = query.filter(Order.status == status)
+
+        total_count = query.count()
+
+        # Total revenue (completed only within the same filters)
+        revenue_query = db.query(func.sum(Order.total)).filter(
+            Order.status == OrderStatus.COMPLETED,
+        )
+        if period:
+            revenue_query = revenue_query.filter(
+                Order.created_at >= start,
+                Order.created_at <= end,
+            )
+        total_revenue = revenue_query.scalar() or 0
+
+        orders = query.order_by(Order.created_at.desc()).limit(limit).all()
+
+        order_responses = []
+        for order in orders:
+            items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
+            order_responses.append(
+                OrderDetailResponse(
+                    id=str(order.id),
+                    order_number=order.order_number,
+                    email=order.email,
+                    name=order.name,
+                    status=order.status.value
+                    if hasattr(order.status, "value")
+                    else str(order.status),
+                    total=order.total,
+                    created_at=order.created_at,
+                    items=[
+                        OrderDetailItem(package_title=item.package_title, price=item.price)
+                        for item in items
+                    ],
+                )
+            )
+
+        return OrderDetailsListResponse(
+            orders=order_responses,
+            total_count=total_count,
+            total_revenue=total_revenue,
+        )
+
+    # ============ Monthly Users (Modal) ============
+
+    @staticmethod
+    def get_monthly_new_users(db: Session, limit: int = 50) -> MonthlyUsersResponse:
+        """Get new users registered in the current month."""
+        now = datetime.utcnow()
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        total = db.query(User).filter(User.created_at >= month_start).count()
+
+        users = (
+            db.query(User)
+            .filter(User.created_at >= month_start)
+            .order_by(User.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+
+        users_list = []
+        for user in users:
+            last_activity = (
+                db.query(func.max(Enrollment.last_accessed_at))
+                .filter(Enrollment.user_id == user.id)
+                .scalar()
+            )
+            users_list.append(
+                UserDetail(
+                    id=str(user.id),
+                    email=user.email,
+                    full_name=user.name,
+                    created_at=user.created_at,
+                    last_activity=last_activity,
+                )
+            )
+
+        return MonthlyUsersResponse(total=total, users=users_list)
+
+    # ============ Completions (Modal) ============
+
+    @staticmethod
+    def get_completions(db: Session, limit: int = 50) -> CompletionsListResponse:
+        """Get all course completions (most recent first)."""
+        total = db.query(Enrollment).filter(Enrollment.completed_at.isnot(None)).count()
+
+        enrollments = (
+            db.query(Enrollment)
+            .filter(Enrollment.completed_at.isnot(None))
+            .order_by(Enrollment.completed_at.desc())
+            .limit(limit)
+            .all()
+        )
+
+        completions = []
+        for e in enrollments:
+            user = db.query(User).filter(User.id == e.user_id).first()
+            course = db.query(Course).filter(Course.id == e.course_id).first()
+            completions.append(
+                CompletionDetail(
+                    user_email=user.email if user else "",
+                    user_name=user.name if user else None,
+                    course_title=course.title if course else "",
+                    completed_at=e.completed_at,
+                )
+            )
+
+        return CompletionsListResponse(total=total, completions=completions)
+
+    # ============ Certificates (Modal) ============
+
+    @staticmethod
+    def get_certificates(db: Session, limit: int = 50) -> CertificatesListResponse:
+        """Get all issued certificates (most recent first)."""
+        total = db.query(Certificate).count()
+
+        certs = db.query(Certificate).order_by(Certificate.issued_at.desc()).limit(limit).all()
+
+        certificates = []
+        for c in certs:
+            user = db.query(User).filter(User.id == c.user_id).first()
+            course = db.query(Course).filter(Course.id == c.course_id).first()
+            certificates.append(
+                CertificateDetail(
+                    user_email=user.email if user else "",
+                    user_name=user.name if user else None,
+                    course_title=course.title if course else "",
+                    certificate_code=c.certificate_code,
+                    issued_at=c.issued_at,
+                )
+            )
+
+        return CertificatesListResponse(total=total, certificates=certificates)

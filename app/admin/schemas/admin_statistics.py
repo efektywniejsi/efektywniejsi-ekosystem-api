@@ -281,3 +281,80 @@ class DailyUserDetailsResponse(BaseModel):
     type: str = Field(description="Type: 'active' or 'new'")
     total: int = Field(description="Total count of users")
     users: list[UserDetail] = Field(description="List of users")
+
+
+# ============ Order Details (Modal) ============
+
+
+class OrderDetailItem(BaseModel):
+    """Single item within an order."""
+
+    package_title: str
+    price: int = Field(description="Price in grosz")
+
+
+class OrderDetailResponse(BaseModel):
+    """Detailed order for the modal view."""
+
+    id: str
+    order_number: str
+    email: str
+    name: str
+    status: str
+    total: int = Field(description="Total in grosz")
+    created_at: datetime
+    items: list[OrderDetailItem]
+
+
+class OrderDetailsListResponse(BaseModel):
+    """Response for order details list endpoint."""
+
+    orders: list[OrderDetailResponse]
+    total_count: int
+    total_revenue: int = Field(description="Total revenue in grosz")
+
+
+# ============ Monthly Users (Modal) ============
+
+
+class MonthlyUsersResponse(BaseModel):
+    """Response for monthly new users endpoint."""
+
+    total: int
+    users: list[UserDetail]
+
+
+# ============ Completions & Certificates (Modal) ============
+
+
+class CompletionDetail(BaseModel):
+    """Single course completion entry."""
+
+    user_email: str
+    user_name: str | None
+    course_title: str
+    completed_at: datetime
+
+
+class CompletionsListResponse(BaseModel):
+    """Response for monthly completions endpoint."""
+
+    total: int
+    completions: list[CompletionDetail]
+
+
+class CertificateDetail(BaseModel):
+    """Single certificate entry."""
+
+    user_email: str
+    user_name: str | None
+    course_title: str
+    certificate_code: str
+    issued_at: datetime
+
+
+class CertificatesListResponse(BaseModel):
+    """Response for monthly certificates endpoint."""
+
+    total: int
+    certificates: list[CertificateDetail]
