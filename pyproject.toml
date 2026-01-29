@@ -25,6 +25,7 @@ dependencies = [
     "httpx==0.28.1",
     "anthropic==0.42.0",
     "celery[redis]>=5.4",
+    "pyotp==2.9.0",
 ]
 
 [project.optional-dependencies]
@@ -104,6 +105,8 @@ module = [
     "mux_python.*",
     "anthropic.*",
     "celery.*",
+    "pyotp.*",
+    "stripe.*",
 ]
 ignore_missing_imports = true
 

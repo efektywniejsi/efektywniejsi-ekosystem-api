@@ -59,6 +59,12 @@ async def login(
         name=user.name,
         role=user.role,
         is_active=user.is_active,
+        avatar_url=user.avatar_url,
+        totp_enabled=user.totp_enabled,
+        password_changed_at=user.password_changed_at.isoformat()
+        if user.password_changed_at
+        else None,
+        notification_preferences=user.notification_preferences,
     )
 
     return LoginResponse(user=user_response)
@@ -126,6 +132,12 @@ async def get_current_user_info(
         name=current_user.name,
         role=current_user.role,
         is_active=current_user.is_active,
+        avatar_url=current_user.avatar_url,
+        totp_enabled=current_user.totp_enabled,
+        password_changed_at=current_user.password_changed_at.isoformat()
+        if current_user.password_changed_at
+        else None,
+        notification_preferences=current_user.notification_preferences,
     )
 
     return user_response
