@@ -37,8 +37,7 @@ class EmailService(ABC):
 class ConsoleEmailService(EmailService):
     async def send_email(self, message: EmailMessage) -> bool:
         logger.warning(
-            "EMAIL (Console Output - SMTP not configured)\n"
-            "To: %s\nSubject: %s\nBody:\n%s",
+            "EMAIL (Console Output - SMTP not configured)\nTo: %s\nSubject: %s\nBody:\n%s",
             message.to,
             message.subject,
             message.body_text,

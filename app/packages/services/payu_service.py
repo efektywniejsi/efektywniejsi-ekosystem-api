@@ -96,9 +96,7 @@ class PayUService(PaymentService):
             raise ValueError("Could not parse signature from OpenPayu-Signature header")
 
         # PayU notification signature: md5(json_body + secondKey)
-        expected_signature = hashlib.md5(
-            payload + self.webhook_secret.encode()
-        ).hexdigest()
+        expected_signature = hashlib.md5(payload + self.webhook_secret.encode()).hexdigest()
 
         if signature_value != expected_signature:
             raise ValueError("Invalid webhook signature")
