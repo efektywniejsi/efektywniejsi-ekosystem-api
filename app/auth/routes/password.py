@@ -1,12 +1,13 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from app.auth.models.user import User
 from app.auth.services.email_service import build_password_reset_email, get_email_service
 from app.core import security
+from app.core.rate_limit import limiter
 from app.db.session import get_db
 
 router = APIRouter()
@@ -26,10 +27,13 @@ class MessageResponse(BaseModel):
 
 
 @router.post("/request-reset", response_model=MessageResponse)
+@limiter.limit("3/minute")
 async def request_password_reset(
-    request: PasswordResetRequest, db: Session = Depends(get_db)
+    request: Request,
+    reset_request: PasswordResetRequest,
+    db: Session = Depends(get_db),
 ) -> MessageResponse:
-    user = db.query(User).filter(User.email == request.email).first()
+    user = db.query(User).filter(User.email == reset_request.email).first()
 
     generic_message = "If the email exists, a password reset link has been sent"
 
