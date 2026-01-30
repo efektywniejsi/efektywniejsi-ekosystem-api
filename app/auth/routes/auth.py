@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import (
@@ -16,14 +16,19 @@ from app.auth.schemas.auth import (
 from app.auth.schemas.user import UserResponse
 from app.auth.services.token_service import token_service
 from app.core import security
+from app.core.rate_limit import limiter
 from app.db.session import get_db
 
 router = APIRouter()
 
 
 @router.post("/login", response_model=LoginResponse)
+@limiter.limit("5/minute")
 async def login(
-    credentials: LoginRequest, response: Response, db: Session = Depends(get_db)
+    request: Request,
+    credentials: LoginRequest,
+    response: Response,
+    db: Session = Depends(get_db),
 ) -> LoginResponse:
     user = db.query(User).filter(User.email == credentials.email).first()
 
@@ -126,7 +131,7 @@ async def logout(
 async def get_current_user_info(
     current_user: User = Depends(get_current_user),
 ) -> UserResponse:
-    user_response = UserResponse(
+    return UserResponse(
         id=str(current_user.id),
         email=current_user.email,
         name=current_user.name,
@@ -139,5 +144,3 @@ async def get_current_user_info(
         else None,
         notification_preferences=current_user.notification_preferences,
     )
-
-    return user_response

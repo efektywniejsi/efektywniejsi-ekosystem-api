@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid as uuid_lib
 from pathlib import Path
@@ -28,6 +29,8 @@ from app.courses.schemas.course import (
 )
 from app.courses.services.mux_service import MuxService, get_mux_service
 from app.db.session import get_db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -631,7 +634,7 @@ async def delete_lesson(
         except Exception as e:
             # Log warning but don't fail the deletion
             # The asset might already be deleted or Mux might be unavailable
-            print(f"Warning: Failed to delete Mux asset {lesson.mux_asset_id}: {e}")
+            logger.warning("Failed to delete Mux asset %s: %s", lesson.mux_asset_id, e)
 
     db.delete(lesson)
     db.commit()
@@ -791,7 +794,14 @@ async def serve_learning_thumbnail(
     db: Session = Depends(get_db),
 ) -> FileResponse:
     """Serve a learning thumbnail image."""
-    file_path = Path(settings.UPLOAD_DIR) / "thumbnails" / filename
+    upload_root = (Path(settings.UPLOAD_DIR) / "thumbnails").resolve()
+    file_path = (upload_root / filename).resolve()
+
+    if not str(file_path).startswith(str(upload_root)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid filename",
+        )
 
     if not file_path.exists():
         raise HTTPException(

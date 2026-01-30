@@ -6,18 +6,6 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
-class TimePeriod(str, Enum):
-    """Time period for statistics filtering."""
-
-    TODAY = "today"
-    THIS_WEEK = "this_week"
-    THIS_MONTH = "this_month"
-    LAST_30_DAYS = "last_30_days"
-    LAST_90_DAYS = "last_90_days"
-    THIS_YEAR = "this_year"
-    CUSTOM = "custom"
-
-
 class Granularity(str, Enum):
     """Data point granularity for charts."""
 

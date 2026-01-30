@@ -31,9 +31,3 @@ class CourseProgressSummary(BaseModel):
     progress_percentage: int
     total_watch_time_seconds: int
     last_accessed_at: datetime | None = None
-
-
-class LessonProgressWithLesson(LessonProgressResponse):
-    lesson_title: str
-    lesson_duration_seconds: int
-    module_title: str

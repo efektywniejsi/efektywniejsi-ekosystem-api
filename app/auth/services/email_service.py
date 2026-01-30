@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from email.mime.multipart import MIMEMultipart
@@ -6,6 +7,8 @@ from email.mime.text import MIMEText
 import aiosmtplib
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 # Brand colors
 _VIOLET = "#A855F7"
@@ -33,16 +36,13 @@ class EmailService(ABC):
 
 class ConsoleEmailService(EmailService):
     async def send_email(self, message: EmailMessage) -> bool:
-        print("\n" + "=" * 80)
-        print("EMAIL (Console Output - SMTP not configured)")
-        print("=" * 80)
-        print(f"To: {message.to}")
-        print(f"Subject: {message.subject}")
-        print("-" * 80)
-        print("Text Body:")
-        print(message.body_text)
-        print("=" * 80 + "\n")
-        raise RuntimeError("SMTP nie jest skonfigurowany (EMAIL_BACKEND != 'smtp')")
+        logger.warning(
+            "EMAIL (Console Output - SMTP not configured)\nTo: %s\nSubject: %s\nBody:\n%s",
+            message.to,
+            message.subject,
+            message.body_text,
+        )
+        return False
 
 
 class SMTPEmailService(EmailService):
@@ -84,7 +84,7 @@ class SMTPEmailService(EmailService):
             )
             return True
         except Exception as e:
-            print(f"Failed to send email: {e}")
+            logger.error("Failed to send email: %s", e, exc_info=True)
             return False
 
 

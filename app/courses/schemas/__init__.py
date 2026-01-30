@@ -10,7 +10,6 @@ from app.courses.schemas.course import (
     CourseDetailResponse,
     CourseResponse,
     CourseUpdate,
-    CourseWithProgressResponse,
     EnrollmentResponse,
     EnrollmentWithCourseResponse,
     LessonCreate,
@@ -25,7 +24,6 @@ from app.courses.schemas.course import (
 from app.courses.schemas.gamification import (
     AchievementResponse,
     GamificationSummaryResponse,
-    PointsHistoryResponse,
     UserAchievementResponse,
     UserPointsResponse,
     UserStreakResponse,
@@ -33,7 +31,6 @@ from app.courses.schemas.gamification import (
 from app.courses.schemas.progress import (
     CourseProgressSummary,
     LessonProgressResponse,
-    LessonProgressWithLesson,
     ProgressUpdateRequest,
 )
 
@@ -42,7 +39,6 @@ __all__ = [
     "CourseUpdate",
     "CourseResponse",
     "CourseDetailResponse",
-    "CourseWithProgressResponse",
     "ModuleCreate",
     "ModuleUpdate",
     "ModuleResponse",
@@ -56,12 +52,10 @@ __all__ = [
     "ProgressUpdateRequest",
     "LessonProgressResponse",
     "CourseProgressSummary",
-    "LessonProgressWithLesson",
     "AchievementResponse",
     "UserAchievementResponse",
     "UserStreakResponse",
     "UserPointsResponse",
-    "PointsHistoryResponse",
     "GamificationSummaryResponse",
     "CertificateResponse",
     "CertificateWithCourseResponse",

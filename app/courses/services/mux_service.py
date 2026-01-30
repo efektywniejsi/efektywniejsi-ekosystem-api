@@ -1,11 +1,14 @@
 """Mux video service for direct uploads and asset management."""
 
+import logging
 from typing import Literal
 
 import mux_python
 from mux_python.rest import ApiException
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class MuxAssetStatus:
@@ -56,7 +59,7 @@ class MuxService:
 
             try:
                 create_upload_request = mux_python.CreateUploadRequest(
-                    cors_origin="*",
+                    cors_origin=settings.FRONTEND_URL,
                     new_asset_settings=mux_python.CreateAssetRequest(
                         playback_policy=[mux_python.PlaybackPolicy.PUBLIC],
                     ),
@@ -176,7 +179,7 @@ class MuxService:
             try:
                 assets_api.delete_asset(asset_id)
             except ApiException as e:
-                print(f"Warning: Failed to delete Mux asset {asset_id}: {e}")
+                logger.warning("Failed to delete Mux asset %s: %s", asset_id, e)
 
 
 def get_mux_service() -> MuxService:

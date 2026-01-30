@@ -1,3 +1,4 @@
+import logging
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -6,6 +7,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from redis.asyncio import Redis
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.admin.routes import admin_statistics
 from app.ai.routes import brand_guidelines as brand_guidelines_routes
@@ -14,6 +17,7 @@ from app.auth.routes import admin, auth, password
 from app.auth.routes import settings as settings_routes
 from app.core import redis as redis_module
 from app.core.config import settings
+from app.core.rate_limit import limiter
 from app.courses.routes import (
     admin as courses_admin,
 )
@@ -41,10 +45,12 @@ from app.packages.routes import (
     webhooks_router,
 )
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    print("Connecting to Redis...")
+    logger.info("Connecting to Redis...")
     redis_module.redis_client = Redis.from_url(
         settings.REDIS_URL, decode_responses=True, encoding="utf-8"
     )
@@ -52,16 +58,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         if redis_module.redis_client:
             await redis_module.redis_client.ping()
-            print("✓ Connected to Redis successfully")
+            logger.info("Connected to Redis successfully")
     except Exception as e:
-        print(f"✗ Failed to connect to Redis: {e}")
+        logger.error("Failed to connect to Redis: %s", e)
 
     yield
 
-    print("Closing Redis connection...")
+    logger.info("Closing Redis connection...")
     if redis_module.redis_client:
         await redis_module.redis_client.close()
-    print("✓ Redis connection closed")
+    logger.info("Redis connection closed")
 
 
 app = FastAPI(
@@ -72,6 +78,9 @@ app = FastAPI(
     version="1.0.0",
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -80,7 +89,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve uploaded files (avatars, etc.)
 uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(uploads_dir, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
@@ -117,7 +125,6 @@ app.include_router(
 app.include_router(webhooks.router, prefix=settings.API_V1_PREFIX, tags=["webhooks"])
 app.include_router(sales_page.router, prefix=settings.API_V1_PREFIX, tags=["sales-page"])
 
-# Package commerce routes
 app.include_router(
     bundle_sales_page_router, prefix=settings.API_V1_PREFIX, tags=["bundle-sales-page"]
 )
@@ -131,14 +138,12 @@ app.include_router(
     sales_windows_router, prefix=f"{settings.API_V1_PREFIX}/sales-windows", tags=["sales-windows"]
 )
 
-# Notification routes
 app.include_router(
     notifications_routes.router,
     prefix=f"{settings.API_V1_PREFIX}/admin",
     tags=["admin-notifications"],
 )
 
-# AI routes
 app.include_router(sales_page_ai.router, prefix=settings.API_V1_PREFIX, tags=["ai-sales-page"])
 app.include_router(
     brand_guidelines_routes.router, prefix=settings.API_V1_PREFIX, tags=["brand-guidelines"]

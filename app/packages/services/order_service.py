@@ -3,7 +3,7 @@ Order service for user creation and enrollment management.
 """
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
 from sqlalchemy.orm import Session
@@ -49,7 +49,7 @@ class OrderService:
         try:
             # 2. Create or find user
             user = self._get_or_create_user(order)
-            is_new_user = user.hashed_password == ""
+            is_new_user = user.hashed_password == "!"
 
             # 3. Create enrollments
             enrollments = await self._create_enrollments(order, user)
@@ -57,7 +57,7 @@ class OrderService:
             # 4. Update order
             order.user_id = user.id
             order.status = OrderStatus.COMPLETED
-            order.payment_completed_at = datetime.utcnow()
+            order.payment_completed_at = datetime.now(UTC)
             order.webhook_processed = True
 
             self.db.commit()
@@ -68,7 +68,7 @@ class OrderService:
                 "order": order,
                 "enrollments": enrollments,
                 "is_new_user": is_new_user,
-                "reset_token": user.password_reset_token if is_new_user else None,
+                "reset_token": getattr(user, "_raw_reset_token", None) if is_new_user else None,
             }
 
         except Exception as e:
@@ -92,23 +92,21 @@ class OrderService:
             id=uuid.uuid4(),
             email=order.email,
             name=order.name,
-            hashed_password="",  # Unusable - forces password reset
+            hashed_password="!",  # Unusable hash - forces password reset
             role="paid",
             is_active=True,
             password_reset_token=hashed_token,
             password_reset_token_expires=expiry,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
 
         self.db.add(user)
         self.db.flush()  # Get user.id
 
-        # Store raw token temporarily for email (it's already in user object as hashed)
-        # The raw token needs to be passed back for email
-        # Note: This temporarily overwrites the hashed token with the raw one
-        # for email sending purposes. This is safe as it happens in-memory only.
-        user.password_reset_token = raw_token
+        # Store raw token as a transient attribute for email sending
+        # Do NOT overwrite the hashed token on the model to avoid persisting it
+        user._raw_reset_token = raw_token  # type: ignore[attr-defined]
 
         return user
 
@@ -161,7 +159,7 @@ class OrderService:
                     if not existing:
                         expires_at = None
                         if course_item.access_duration_days is not None:
-                            expires_at = datetime.utcnow() + timedelta(
+                            expires_at = datetime.now(UTC) + timedelta(
                                 days=course_item.access_duration_days
                             )
 
@@ -205,7 +203,7 @@ class OrderService:
             user_id=user_id,
             package_id=package_id,
             order_id=order_id,
-            enrolled_at=datetime.utcnow(),
+            enrolled_at=datetime.now(UTC),
         )
 
         self.db.add(enrollment)

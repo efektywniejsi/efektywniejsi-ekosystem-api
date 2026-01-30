@@ -1,10 +1,11 @@
+import logging
 import secrets
 from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.auth.dependencies import require_admin
 from app.auth.models.user import User
@@ -20,6 +21,8 @@ from app.courses.schemas.enrollment import (
     UserProgressListResponse,
 )
 from app.db.session import get_db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -55,8 +58,12 @@ async def list_course_enrollments(
             detail="Course not found",
         )
 
-    query = db.query(Enrollment).filter(Enrollment.course_id == course_id)
-    total = query.count()
+    query = (
+        db.query(Enrollment)
+        .options(joinedload(Enrollment.user))
+        .filter(Enrollment.course_id == course_id)
+    )
+    total = db.query(Enrollment).filter(Enrollment.course_id == course_id).count()
     enrollments = query.offset(skip).limit(limit).all()
 
     return AdminEnrollmentListResponse(
@@ -131,7 +138,7 @@ async def create_enrollment(
             )
             await email_service.send_email(email_message)
         except Exception as e:
-            print(f"Warning: Could not send welcome email: {e}")
+            logger.warning("Could not send welcome email: %s", e)
 
     return _enrollment_to_response(enrollment)
 
@@ -199,7 +206,6 @@ async def get_course_user_progress(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ) -> UserProgressListResponse:
-    """Get progress statistics for all users enrolled in a course."""
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
         raise HTTPException(
@@ -207,7 +213,6 @@ async def get_course_user_progress(
             detail="Course not found",
         )
 
-    # Get all lesson IDs for this course
     lesson_ids = (
         db.query(Lesson.id)
         .join(Module, Module.id == Lesson.module_id)
@@ -217,8 +222,12 @@ async def get_course_user_progress(
     lesson_id_list = [lid[0] for lid in lesson_ids]
     total_lessons = len(lesson_id_list)
 
-    # Get all enrollments for this course
-    enrollments = db.query(Enrollment).filter(Enrollment.course_id == course_id).all()
+    enrollments = (
+        db.query(Enrollment)
+        .options(joinedload(Enrollment.user))
+        .filter(Enrollment.course_id == course_id)
+        .all()
+    )
 
     users_progress: list[UserCourseProgress] = []
 
@@ -227,7 +236,6 @@ async def get_course_user_progress(
         user_id = enrollment.user_id
 
         if not lesson_id_list:
-            # No lessons in course
             users_progress.append(
                 UserCourseProgress(
                     user_id=str(user_id),
@@ -245,7 +253,6 @@ async def get_course_user_progress(
             )
             continue
 
-        # Get lesson progress for this user in this course
         progress_records = (
             db.query(LessonProgress)
             .filter(
@@ -258,13 +265,10 @@ async def get_course_user_progress(
         completed_lessons = sum(1 for p in progress_records if p.is_completed)
         total_watch_time = sum(p.watched_seconds for p in progress_records)
 
-        # Calculate progress percentage
-        if total_lessons > 0:
-            progress_percentage = int((completed_lessons / total_lessons) * 100)
-        else:
-            progress_percentage = 0
+        progress_percentage = (
+            int((completed_lessons / total_lessons) * 100) if total_lessons > 0 else 0
+        )
 
-        # Calculate session count (distinct days with activity)
         session_count_result = (
             db.query(func.count(func.distinct(func.date(LessonProgress.last_updated_at))))
             .filter(
@@ -275,7 +279,6 @@ async def get_course_user_progress(
         )
         session_count = session_count_result or 0
 
-        # Get first and last activity dates
         activity_dates = (
             db.query(
                 func.min(LessonProgress.last_updated_at),
