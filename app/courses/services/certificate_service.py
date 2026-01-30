@@ -9,7 +9,7 @@ from fastapi import HTTPException, status
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import cm
 from reportlab.pdfgen import canvas
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.auth.models.user import User
 from app.core.config import settings
@@ -19,12 +19,10 @@ from app.courses.models import Certificate, Course, Enrollment
 class CertificateService:
     @staticmethod
     def generate_certificate_code() -> str:
-        """Generate a unique certificate code."""
         return secrets.token_urlsafe(16)
 
     @staticmethod
     def generate_certificate_pdf(user: User, course: Course, certificate_code: str) -> bytes:
-        """Generate a certificate PDF."""
         buffer = io.BytesIO()
 
         page_width, page_height = landscape(A4)
@@ -116,7 +114,6 @@ class CertificateService:
 
     @staticmethod
     def create_certificate(user_id: UUID, course_id: UUID, db: Session) -> Certificate:
-        """Create a certificate for a user who completed a course."""
         enrollment = (
             db.query(Enrollment)
             .filter(Enrollment.user_id == user_id, Enrollment.course_id == course_id)
@@ -182,9 +179,11 @@ class CertificateService:
 
     @staticmethod
     def verify_certificate(certificate_code: str, db: Session) -> dict:
-        """Verify a certificate by its code."""
         certificate = (
-            db.query(Certificate).filter(Certificate.certificate_code == certificate_code).first()
+            db.query(Certificate)
+            .options(joinedload(Certificate.user), joinedload(Certificate.course))
+            .filter(Certificate.certificate_code == certificate_code)
+            .first()
         )
 
         if not certificate:
@@ -197,14 +196,11 @@ class CertificateService:
                 "message": "Certificate not found",
             }
 
-        user = db.query(User).filter(User.id == certificate.user_id).first()
-        course = db.query(Course).filter(Course.id == certificate.course_id).first()
-
         return {
             "valid": True,
             "certificate_code": certificate_code,
-            "user_name": user.name if user else "Unknown",
-            "course_title": course.title if course else "Unknown",
+            "user_name": certificate.user.name if certificate.user else "Unknown",
+            "course_title": certificate.course.title if certificate.course else "Unknown",
             "issued_at": certificate.issued_at,
             "message": "Certificate is valid",
         }

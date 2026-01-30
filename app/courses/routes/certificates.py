@@ -3,11 +3,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.auth.dependencies import get_current_user
 from app.auth.models.user import User
-from app.courses.models import Certificate, Course
+from app.courses.models import Certificate
 from app.courses.schemas.certificate import (
     CertificateVerifyResponse,
     CertificateWithCourseResponse,
@@ -28,10 +28,15 @@ async def generate_certificate(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> CertificateWithCourseResponse:
-    """Generate a certificate for a completed course."""
     certificate = CertificateService.create_certificate(current_user.id, course_id, db)
 
-    course = db.query(Course).filter(Course.id == course_id).first()
+    # Reload with course relationship to avoid extra query
+    certificate = (
+        db.query(Certificate)
+        .options(joinedload(Certificate.course))
+        .filter(Certificate.id == certificate.id)
+        .first()
+    )
 
     return CertificateWithCourseResponse(
         id=str(certificate.id),
@@ -41,8 +46,8 @@ async def generate_certificate(
         issued_at=certificate.issued_at,
         file_path=certificate.file_path,
         created_at=certificate.created_at,
-        course_title=course.title if course else "Unknown",
-        course_slug=course.slug if course else "",
+        course_title=certificate.course.title if certificate.course else "Unknown",
+        course_slug=certificate.course.slug if certificate.course else "",
         user_name=current_user.name,
     )
 
@@ -52,33 +57,29 @@ async def get_my_certificates(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[CertificateWithCourseResponse]:
-    """Get all certificates for the current user."""
     certificates = (
         db.query(Certificate)
+        .options(joinedload(Certificate.course))
         .filter(Certificate.user_id == current_user.id)
         .order_by(Certificate.issued_at.desc())
         .all()
     )
 
-    result = []
-    for cert in certificates:
-        course = db.query(Course).filter(Course.id == cert.course_id).first()
-        result.append(
-            CertificateWithCourseResponse(
-                id=str(cert.id),
-                user_id=str(cert.user_id),
-                course_id=str(cert.course_id),
-                certificate_code=cert.certificate_code,
-                issued_at=cert.issued_at,
-                file_path=cert.file_path,
-                created_at=cert.created_at,
-                course_title=course.title if course else "Unknown",
-                course_slug=course.slug if course else "",
-                user_name=current_user.name,
-            )
+    return [
+        CertificateWithCourseResponse(
+            id=str(cert.id),
+            user_id=str(cert.user_id),
+            course_id=str(cert.course_id),
+            certificate_code=cert.certificate_code,
+            issued_at=cert.issued_at,
+            file_path=cert.file_path,
+            created_at=cert.created_at,
+            course_title=cert.course.title if cert.course else "Unknown",
+            course_slug=cert.course.slug if cert.course else "",
+            user_name=current_user.name,
         )
-
-    return result
+        for cert in certificates
+    ]
 
 
 @router.get("/certificates/{certificate_code}/download")
@@ -87,9 +88,11 @@ async def download_certificate(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> FileResponse:
-    """Download a certificate PDF."""
     certificate = (
-        db.query(Certificate).filter(Certificate.certificate_code == certificate_code).first()
+        db.query(Certificate)
+        .options(joinedload(Certificate.course))
+        .filter(Certificate.certificate_code == certificate_code)
+        .first()
     )
 
     if not certificate:
@@ -110,10 +113,9 @@ async def download_certificate(
             detail="Certificate file not found on server",
         )
 
-    course = db.query(Course).filter(Course.id == certificate.course_id).first()
     filename = (
-        f"certificate_{course.slug}_{certificate_code[:8]}.pdf"
-        if course
+        f"certificate_{certificate.course.slug}_{certificate_code[:8]}.pdf"
+        if certificate.course
         else f"certificate_{certificate_code[:8]}.pdf"
     )
 
@@ -133,7 +135,6 @@ async def verify_certificate(
     certificate_code: str,
     db: Session = Depends(get_db),
 ) -> CertificateVerifyResponse:
-    """Verify a certificate by its code (public endpoint)."""
     verification_result = CertificateService.verify_certificate(certificate_code, db)
 
     return CertificateVerifyResponse(
