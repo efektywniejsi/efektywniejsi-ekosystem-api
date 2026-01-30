@@ -86,22 +86,6 @@ class BundleCourseDetailItem(BaseModel):
     access_duration_days: int | None = None
 
 
-class BundleCourseItemResponse(BaseModel):
-    """Bundle course item response."""
-
-    id: str
-    course_id: str
-    sort_order: int
-    access_duration_days: int | None = None
-
-    @field_validator("id", "course_id", mode="before")
-    @classmethod
-    def validate_uuid(cls, v: Any) -> str:
-        return str(v)
-
-    model_config = ConfigDict(from_attributes=True)
-
-
 class BundleDetailResponse(BaseModel):
     """Bundle with full content (packages + courses)."""
 

@@ -132,14 +132,6 @@ class CourseDetailResponse(CourseResponse):
     total_duration_seconds: int = 0
 
 
-class CourseWithProgressResponse(CourseResponse):
-    completed_lessons: int = 0
-    total_lessons: int = 0
-    progress_percentage: int = 0
-    enrolled_at: datetime | None = None
-    last_accessed_at: datetime | None = None
-
-
 class EnrollmentResponse(BaseModel):
     id: str
     user_id: str

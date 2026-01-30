@@ -57,19 +57,6 @@ class UserPointsResponse(BaseModel):
         from_attributes = True
 
 
-class PointsHistoryResponse(BaseModel):
-    id: str
-    user_id: str
-    points: int
-    reason: str
-    reference_type: str | None = None
-    reference_id: str | None = None
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
 class GamificationSummaryResponse(BaseModel):
     points: UserPointsResponse
     streak: UserStreakResponse
