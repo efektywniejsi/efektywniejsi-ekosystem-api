@@ -1,10 +1,9 @@
+import os
 import time
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 from dotenv import load_dotenv
-
-import os
 
 env_file = Path(__file__).parent.parent / ".env.test"
 load_dotenv(env_file)
