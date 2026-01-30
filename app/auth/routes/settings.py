@@ -21,16 +21,14 @@ from app.auth.schemas.settings import (
 )
 from app.core import security
 from app.core.config import settings
+from app.core.encryption import decrypt_totp_secret, encrypt_totp_secret
 from app.db.session import get_db
 
 router = APIRouter()
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png"}
-MAX_AVATAR_SIZE = 2 * 1024 * 1024  # 2MB
-
-
-# --- Profile ---
+MAX_AVATAR_SIZE = 2 * 1024 * 1024
 
 
 @router.put("/profile")
@@ -72,7 +70,6 @@ async def upload_avatar(
     with open(filepath, "wb") as f:
         f.write(contents)
 
-    # Delete old avatar file if exists
     if current_user.avatar_url:
         old_filename = current_user.avatar_url.split("/")[-1]
         old_path = os.path.join(UPLOAD_DIR, old_filename)
@@ -100,9 +97,6 @@ async def delete_avatar(
     return {"message": "Avatar deleted"}
 
 
-# --- Password ---
-
-
 @router.post("/password")
 async def change_password(
     data: ChangePasswordRequest,
@@ -128,16 +122,13 @@ async def change_password(
     return {"message": "Password changed successfully"}
 
 
-# --- 2FA ---
-
-
 @router.post("/2fa/setup", response_model=TotpSetupResponse)
 async def setup_2fa(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> TotpSetupResponse:
     secret = pyotp.random_base32()
-    current_user.totp_secret = secret
+    current_user.totp_secret = encrypt_totp_secret(secret)
     db.commit()
 
     totp = pyotp.TOTP(secret)
@@ -158,7 +149,7 @@ async def verify_2fa(
             detail="2FA setup not initiated",
         )
 
-    totp = pyotp.TOTP(current_user.totp_secret)
+    totp = pyotp.TOTP(decrypt_totp_secret(current_user.totp_secret))
     if not totp.verify(data.code):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -183,7 +174,7 @@ async def disable_2fa(
             detail="2FA is not enabled",
         )
 
-    totp = pyotp.TOTP(current_user.totp_secret)
+    totp = pyotp.TOTP(decrypt_totp_secret(current_user.totp_secret))
     if not totp.verify(data.code):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -202,9 +193,6 @@ async def get_2fa_status(
     current_user: User = Depends(get_current_user),
 ) -> TotpStatusResponse:
     return TotpStatusResponse(totp_enabled=current_user.totp_enabled)
-
-
-# --- Payments ---
 
 
 def _get_or_create_stripe_customer(user: User, db: Session) -> str:
@@ -235,7 +223,6 @@ async def get_payment_methods(
         type="card",
     )
 
-    # Get default payment method
     customer = stripe.Customer.retrieve(current_user.stripe_customer_id)
     default_pm_id = None
     if customer.invoice_settings and customer.invoice_settings.default_payment_method:
@@ -297,9 +284,6 @@ async def delete_payment_method(
         ) from exc
 
     return {"message": "Payment method deleted"}
-
-
-# --- Notifications ---
 
 
 @router.get("/notifications", response_model=NotificationPreferences)
