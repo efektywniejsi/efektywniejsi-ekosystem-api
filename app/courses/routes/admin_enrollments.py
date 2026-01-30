@@ -265,7 +265,9 @@ async def get_course_user_progress(
         completed_lessons = sum(1 for p in progress_records if p.is_completed)
         total_watch_time = sum(p.watched_seconds for p in progress_records)
 
-        progress_percentage = int((completed_lessons / total_lessons) * 100) if total_lessons > 0 else 0
+        progress_percentage = (
+            int((completed_lessons / total_lessons) * 100) if total_lessons > 0 else 0
+        )
 
         session_count_result = (
             db.query(func.count(func.distinct(func.date(LessonProgress.last_updated_at))))
