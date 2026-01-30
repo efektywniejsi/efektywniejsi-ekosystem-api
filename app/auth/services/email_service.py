@@ -34,7 +34,7 @@ class EmailService(ABC):
 class ConsoleEmailService(EmailService):
     async def send_email(self, message: EmailMessage) -> bool:
         print("\n" + "=" * 80)
-        print("EMAIL (Console Output - Development Mode)")
+        print("EMAIL (Console Output - SMTP not configured)")
         print("=" * 80)
         print(f"To: {message.to}")
         print(f"Subject: {message.subject}")
@@ -42,7 +42,7 @@ class ConsoleEmailService(EmailService):
         print("Text Body:")
         print(message.body_text)
         print("=" * 80 + "\n")
-        return True
+        raise RuntimeError("SMTP nie jest skonfigurowany (EMAIL_BACKEND != 'smtp')")
 
 
 class SMTPEmailService(EmailService):
