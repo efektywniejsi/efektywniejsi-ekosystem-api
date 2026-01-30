@@ -1,14 +1,17 @@
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from redis.asyncio import Redis
 
 from app.admin.routes import admin_statistics
 from app.ai.routes import brand_guidelines as brand_guidelines_routes
 from app.ai.routes import sales_page_ai
 from app.auth.routes import admin, auth, password
+from app.auth.routes import settings as settings_routes
 from app.core import redis as redis_module
 from app.core.config import settings
 from app.courses.routes import (
@@ -26,6 +29,7 @@ from app.courses.routes import (
     sales_page,
     webhooks,
 )
+from app.notifications.routes import notifications as notifications_routes
 from app.packages.routes import (
     bundle_sales_page_router,
     bundles_router,
@@ -76,9 +80,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Serve uploaded files (avatars, etc.)
+uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+
 app.include_router(auth.router, prefix=f"{settings.API_V1_PREFIX}/auth", tags=["authentication"])
 app.include_router(
     password.router, prefix=f"{settings.API_V1_PREFIX}/password", tags=["password-reset"]
+)
+app.include_router(
+    settings_routes.router,
+    prefix=f"{settings.API_V1_PREFIX}/settings",
+    tags=["settings"],
 )
 app.include_router(admin.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["admin"])
 app.include_router(
@@ -115,6 +129,13 @@ app.include_router(enrollments_router, prefix=settings.API_V1_PREFIX, tags=["pac
 app.include_router(orders_router, prefix=settings.API_V1_PREFIX, tags=["orders"])
 app.include_router(
     sales_windows_router, prefix=f"{settings.API_V1_PREFIX}/sales-windows", tags=["sales-windows"]
+)
+
+# Notification routes
+app.include_router(
+    notifications_routes.router,
+    prefix=f"{settings.API_V1_PREFIX}/admin",
+    tags=["admin-notifications"],
 )
 
 # AI routes

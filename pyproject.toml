@@ -25,6 +25,7 @@ dependencies = [
     "httpx==0.28.1",
     "anthropic==0.42.0",
     "celery[redis]>=5.4",
+    "pyotp==2.9.0",
 ]
 
 [project.optional-dependencies]
@@ -66,6 +67,8 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "app/ai/services/prompt_builder.py" = ["E501"]  # prompt text has long lines by design
+"app/auth/services/email_service.py" = ["E501"]  # HTML email templates have long inline styles
+"app/notifications/email_templates.py" = ["E501"]  # HTML email templates have long inline styles
 
 [tool.ruff.format]
 quote-style = "double"
@@ -104,6 +107,8 @@ module = [
     "mux_python.*",
     "anthropic.*",
     "celery.*",
+    "pyotp.*",
+    "stripe.*",
 ]
 ignore_missing_imports = true
 
