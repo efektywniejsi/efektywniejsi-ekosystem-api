@@ -72,9 +72,8 @@ async def reset_password(
             detail="Invalid or expired password reset token",
         )
 
-    if (
-        not user.password_reset_token_expires
-        or user.password_reset_token_expires < datetime.now(UTC)
+    if not user.password_reset_token_expires or user.password_reset_token_expires < datetime.now(
+        UTC
     ):
         user.password_reset_token = None
         user.password_reset_token_expires = None
