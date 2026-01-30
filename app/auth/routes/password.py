@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
@@ -74,7 +74,7 @@ async def reset_password(
 
     if (
         not user.password_reset_token_expires
-        or user.password_reset_token_expires < datetime.utcnow()
+        or user.password_reset_token_expires < datetime.now(UTC)
     ):
         user.password_reset_token = None
         user.password_reset_token_expires = None

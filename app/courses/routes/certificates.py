@@ -30,24 +30,26 @@ async def generate_certificate(
 ) -> CertificateWithCourseResponse:
     certificate = CertificateService.create_certificate(current_user.id, course_id, db)
 
-    # Reload with course relationship to avoid extra query
-    certificate = (
+    cert = (
         db.query(Certificate)
         .options(joinedload(Certificate.course))
         .filter(Certificate.id == certificate.id)
         .first()
     )
 
+    if not cert:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Certificate not found")
+
     return CertificateWithCourseResponse(
-        id=str(certificate.id),
-        user_id=str(certificate.user_id),
-        course_id=str(certificate.course_id),
-        certificate_code=certificate.certificate_code,
-        issued_at=certificate.issued_at,
-        file_path=certificate.file_path,
-        created_at=certificate.created_at,
-        course_title=certificate.course.title if certificate.course else "Unknown",
-        course_slug=certificate.course.slug if certificate.course else "",
+        id=str(cert.id),
+        user_id=str(cert.user_id),
+        course_id=str(cert.course_id),
+        certificate_code=cert.certificate_code,
+        issued_at=cert.issued_at,
+        file_path=cert.file_path,
+        created_at=cert.created_at,
+        course_title=cert.course.title if cert.course else "Unknown",
+        course_slug=cert.course.slug if cert.course else "",
         user_name=current_user.name,
     )
 

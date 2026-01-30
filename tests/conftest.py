@@ -4,8 +4,11 @@ from unittest.mock import AsyncMock, patch
 
 from dotenv import load_dotenv
 
+import os
+
 env_file = Path(__file__).parent.parent / ".env.test"
 load_dotenv(env_file)
+os.environ["RATE_LIMIT_ENABLED"] = "false"
 
 import pytest  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402

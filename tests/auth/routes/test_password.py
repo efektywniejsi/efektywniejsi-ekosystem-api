@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -70,7 +70,7 @@ class TestResetPasswordEndpoint:
     async def test_should_return_400_when_token_expired(self, test_client, test_user, db_session):
         raw_token, hashed_token, _ = generate_reset_token()
         test_user.password_reset_token = hashed_token
-        test_user.password_reset_token_expires = datetime.utcnow() - timedelta(hours=1)
+        test_user.password_reset_token_expires = datetime.now(UTC) - timedelta(hours=1)
         db_session.commit()
 
         payload = {"token": raw_token, "new_password": "newPassword123"}
