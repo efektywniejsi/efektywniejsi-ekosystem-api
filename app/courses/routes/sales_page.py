@@ -108,7 +108,14 @@ async def serve_sales_page_image(
     filename: str,
 ) -> FileResponse:
     """Serve a sales page image."""
-    file_path = Path(settings.UPLOAD_DIR) / "sales-page" / filename
+    upload_root = (Path(settings.UPLOAD_DIR) / "sales-page").resolve()
+    file_path = (upload_root / filename).resolve()
+
+    if not str(file_path).startswith(str(upload_root)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid filename",
+        )
 
     if not file_path.exists():
         raise HTTPException(
