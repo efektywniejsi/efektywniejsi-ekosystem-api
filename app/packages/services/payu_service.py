@@ -1,9 +1,5 @@
-"""
-PayU payment integration service.
-"""
-
 import hashlib
-import hmac
+import json
 from typing import Any, cast
 
 import httpx  # type: ignore[import-not-found]
@@ -14,8 +10,6 @@ from app.packages.services.payment_service import PaymentService
 
 
 class PayUService(PaymentService):
-    """PayU payment service implementation."""
-
     def __init__(self) -> None:
         self.api_url = settings.PAYU_API_URL
         self.merchant_id = settings.PAYU_MERCHANT_ID
@@ -23,7 +17,6 @@ class PayUService(PaymentService):
         self.webhook_secret = settings.PAYU_WEBHOOK_SECRET
 
     async def _get_oauth_token(self) -> str:
-        """Get OAuth 2.0 token from PayU."""
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{self.api_url}/pl/standard/user/oauth/authorize",
@@ -39,31 +32,22 @@ class PayUService(PaymentService):
             return cast(str, data["access_token"])
 
     async def create_payment_session(
-        self, order: Order, success_url: str, cancel_url: str
+        self, order: Order, success_url: str, cancel_url: str, customer_ip: str = "127.0.0.1"
     ) -> dict[str, Any]:
-        """
-        Create a PayU order.
-
-        Creates a payment order and returns the redirect URL.
-        """
-        # Get OAuth token
         access_token = await self._get_oauth_token()
 
-        # Build products from order items
-        products = []
-        for item in order.items:
-            products.append(
-                {
-                    "name": item.package_title,
-                    "unitPrice": item.price,  # Price in grosz
-                    "quantity": 1,
-                }
-            )
+        products = [
+            {
+                "name": item.package_title,
+                "unitPrice": item.price,
+                "quantity": 1,
+            }
+            for item in order.items
+        ]
 
-        # Create PayU order
         order_data = {
-            "notifyUrl": f"{settings.FRONTEND_URL}/api/v1/webhooks/payu",
-            "customerIp": "127.0.0.1",  # Should be passed from request
+            "notifyUrl": f"{settings.BACKEND_URL}/api/v1/webhooks/payu",
+            "customerIp": customer_ip,
             "merchantPosId": self.merchant_id,
             "description": f"Zamówienie {order.order_number}",
             "currencyCode": order.currency,
@@ -96,28 +80,28 @@ class PayUService(PaymentService):
             }
 
     async def verify_webhook(self, payload: bytes, signature: str) -> dict[str, Any]:
-        """
-        Verify PayU webhook signature (HMAC SHA-256).
-
-        Raises:
-            ValueError: If signature verification fails
-        """
         if not self.webhook_secret:
             raise ValueError("PAYU_WEBHOOK_SECRET not configured")
 
-        # Calculate expected signature
-        expected_signature = hmac.new(
-            self.webhook_secret.encode(),
-            payload,
-            hashlib.sha256,
+        # PayU sends signature header in format:
+        # sender=checkout;signature=<sig>;algorithm=SHA-256;content=DOCUMENT
+        signature_value = None
+        for part in signature.split(";"):
+            key_value = part.split("=", 1)
+            if len(key_value) == 2 and key_value[0].strip() == "signature":
+                signature_value = key_value[1].strip()
+                break
+
+        if not signature_value:
+            raise ValueError("Could not parse signature from OpenPayu-Signature header")
+
+        # PayU notification signature: md5(json_body + secondKey)
+        expected_signature = hashlib.md5(
+            payload + self.webhook_secret.encode()
         ).hexdigest()
 
-        # Verify signature
-        if not hmac.compare_digest(signature, expected_signature):
+        if signature_value != expected_signature:
             raise ValueError("Invalid webhook signature")
-
-        # Parse JSON payload
-        import json
 
         try:
             event_data = json.loads(payload.decode("utf-8"))

@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str = "Efektywniejsi"
 
     FRONTEND_URL: str = "http://localhost:5173"
+    BACKEND_URL: str = "http://localhost:8000"
 
     PASSWORD_RESET_TOKEN_EXPIRE_HOURS: int = 1
 
@@ -40,23 +41,22 @@ class Settings(BaseSettings):
     MUX_TOKEN_SECRET: str = ""
     MUX_WEBHOOK_SECRET: str | None = None
 
-    # Stripe Configuration
     STRIPE_SECRET_KEY: str = ""
     STRIPE_PUBLISHABLE_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
 
-    # Anthropic AI Configuration
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
     ANTHROPIC_MAX_TOKENS: int = 8192
     ANTHROPIC_TEMPERATURE: float = 0.7
     ANTHROPIC_MAX_TOKENS_SALES_PAGE: int = 16384
 
-    # PayU Configuration
     PAYU_MERCHANT_ID: str = ""
     PAYU_SECRET_KEY: str = ""
     PAYU_API_URL: str = "https://secure.payu.com"
     PAYU_WEBHOOK_SECRET: str = ""
+
+    TOTP_ENCRYPTION_KEY: str = ""
 
     class Config:
         env_file = ".env"
