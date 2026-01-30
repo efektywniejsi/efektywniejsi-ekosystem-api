@@ -1,5 +1,6 @@
 import time
 from pathlib import Path
+from unittest.mock import AsyncMock, patch
 
 from dotenv import load_dotenv
 
@@ -121,7 +122,12 @@ async def test_app(db_session, redis_client):
 
     redis_module.redis_client = redis_client
 
-    yield app
+    with patch(
+        "app.auth.services.email_service.ConsoleEmailService.send_email",
+        new_callable=AsyncMock,
+        return_value=True,
+    ):
+        yield app
 
     app.dependency_overrides.clear()
 
