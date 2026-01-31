@@ -44,6 +44,8 @@ from app.packages.routes import (
     sales_windows_router,
     webhooks_router,
 )
+from app.support.routes import admin_tickets as admin_support_routes
+from app.support.routes import tickets as support_routes
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +149,17 @@ app.include_router(
 app.include_router(sales_page_ai.router, prefix=settings.API_V1_PREFIX, tags=["ai-sales-page"])
 app.include_router(
     brand_guidelines_routes.router, prefix=settings.API_V1_PREFIX, tags=["brand-guidelines"]
+)
+
+app.include_router(
+    support_routes.router,
+    prefix=f"{settings.API_V1_PREFIX}/support",
+    tags=["support"],
+)
+app.include_router(
+    admin_support_routes.router,
+    prefix=f"{settings.API_V1_PREFIX}/admin",
+    tags=["admin-support"],
 )
 
 

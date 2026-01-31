@@ -20,6 +20,8 @@ from app.packages.models.enrollment import PackageEnrollment
 from app.packages.models.order import Order, OrderItem
 from app.packages.models.package import Package, PackageBundleItem, PackageProcess
 from app.packages.models.sales_window import SalesWindow
+from app.support.models.message import TicketMessage
+from app.support.models.ticket import SupportTicket
 
 # Export all models for Alembic
 __all__ = [
@@ -42,4 +44,6 @@ __all__ = [
     "SalesWindow",
     "Notification",
     "AnnouncementLog",
+    "SupportTicket",
+    "TicketMessage",
 ]
