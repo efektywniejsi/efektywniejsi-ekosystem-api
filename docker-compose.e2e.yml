@@ -1,0 +1,70 @@
+services:
+  e2e_db:
+    image: postgres:16-alpine
+    container_name: e2e_db
+    environment:
+      POSTGRES_USER: e2e_user
+      POSTGRES_PASSWORD: e2e_password
+      POSTGRES_DB: e2e_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - e2e_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U e2e_user -d e2e_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - e2e_network
+
+  e2e_redis:
+    image: redis:7-alpine
+    container_name: e2e_redis
+    ports:
+      - "6382:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - e2e_network
+
+  e2e_api:
+    build: .
+    container_name: e2e_api
+    depends_on:
+      e2e_db:
+        condition: service_healthy
+      e2e_redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://e2e_user:e2e_password@e2e_db:5432/e2e_db
+      REDIS_URL: redis://e2e_redis:6379/0
+      SECRET_KEY: e2e-secret-key-for-testing-only-min-32-chars-long
+      EMAIL_BACKEND: console
+      FRONTEND_URL: http://localhost:3002
+      DEBUG: "True"
+      BACKEND_CORS_ORIGINS: '["http://localhost:3002","http://localhost:3001"]'
+      TOTP_ENCRYPTION_KEY: vTPIfkAhX7tIpgxvLm7eO6qooqrpkZM4RNsue-gdmOU=
+      RATE_LIMIT_ENABLED: "false"
+      MUX_TOKEN_ID: ""
+      MUX_TOKEN_SECRET: ""
+      STRIPE_SECRET_KEY: ""
+      STRIPE_PUBLISHABLE_KEY: ""
+      PAYU_MERCHANT_ID: ""
+      PAYU_SECRET_KEY: ""
+      ANTHROPIC_API_KEY: ""
+    ports:
+      - "8001:8000"
+    command: sh -c "uv run alembic upgrade head && uv run python -m app.scripts.seeds.seed_users && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    networks:
+      - e2e_network
+
+volumes:
+  e2e_postgres_data:
+
+networks:
+  e2e_network:
+    driver: bridge
