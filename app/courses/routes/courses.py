@@ -50,7 +50,7 @@ async def create_course(
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Course with this slug already exists",
+            detail="Kurs z tym slugiem już istnieje",
         )
 
     course = Course(
@@ -193,7 +193,7 @@ async def get_course(
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found",
+            detail="Kurs nie znaleziony",
         )
 
     # Public endpoint: filter out UNAVAILABLE lessons
@@ -273,7 +273,7 @@ async def update_course(
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found",
+            detail="Kurs nie znaleziony",
         )
 
     if request.title is not None:
@@ -285,7 +285,7 @@ async def update_course(
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Course with this slug already exists",
+                detail="Kurs z tym slugiem już istnieje",
             )
         course.slug = request.slug
     if request.description is not None:
@@ -347,7 +347,7 @@ async def delete_course(
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found",
+            detail="Kurs nie znaleziony",
         )
 
     db.delete(course)
@@ -365,7 +365,7 @@ async def get_course_modules(
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found",
+            detail="Kurs nie znaleziony",
         )
 
     modules = (
@@ -402,7 +402,7 @@ async def create_module(
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found",
+            detail="Kurs nie znaleziony",
         )
 
     module = Module(
@@ -447,7 +447,7 @@ async def update_module(
     if not module:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Module not found",
+            detail="Moduł nie znaleziony",
         )
 
     if request.title is not None:
@@ -485,7 +485,7 @@ async def delete_module(
     if not module:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Module not found",
+            detail="Moduł nie znaleziony",
         )
 
     # Check if module has any lessons
@@ -493,8 +493,8 @@ async def delete_module(
         lesson_count = len(module.lessons)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot delete module with {lesson_count} lesson(s). "
-            "Please delete all lessons first.",
+            detail=f"Nie można usunąć modułu z {lesson_count} lekcją/lekcjami. "
+            "Najpierw usuń wszystkie lekcje.",
         )
 
     db.delete(module)
@@ -517,7 +517,7 @@ async def create_lesson(
     if not module:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Module not found",
+            detail="Moduł nie znaleziony",
         )
 
     lesson = Lesson(
@@ -572,7 +572,7 @@ async def update_lesson(
     if not lesson:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Lesson not found",
+            detail="Lekcja nie znaleziona",
         )
 
     if request.title is not None:
@@ -624,7 +624,7 @@ async def delete_lesson(
     if not lesson:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Lesson not found",
+            detail="Lekcja nie znaleziona",
         )
 
     # Delete Mux asset if present
@@ -652,7 +652,7 @@ async def reorder_modules(
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found",
+            detail="Kurs nie znaleziony",
         )
 
     # Verify all module IDs belong to this course
@@ -662,7 +662,7 @@ async def reorder_modules(
     if len(modules) != len(module_ids):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="One or more module IDs are invalid",
+            detail="Jeden lub więcej identyfikatorów modułów jest nieprawidłowych",
         )
 
     # Verify all modules belong to this course
@@ -670,7 +670,7 @@ async def reorder_modules(
         if module.course_id != course_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Module {module.id} does not belong to this course",
+                detail=f"Moduł {module.id} nie należy do tego kursu",
             )
 
     # Update sort_order for each module
@@ -680,7 +680,7 @@ async def reorder_modules(
 
     db.commit()
 
-    return {"message": "Modules reordered successfully"}
+    return {"message": "Kolejność modułów zmieniona"}
 
 
 @router.post("/modules/{module_id}/lessons/reorder", status_code=status.HTTP_200_OK)
@@ -695,7 +695,7 @@ async def reorder_lessons(
     if not module:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Module not found",
+            detail="Moduł nie znaleziony",
         )
 
     # Verify all lesson IDs belong to this module
@@ -705,7 +705,7 @@ async def reorder_lessons(
     if len(lessons) != len(lesson_ids):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="One or more lesson IDs are invalid",
+            detail="Jeden lub więcej identyfikatorów lekcji jest nieprawidłowych",
         )
 
     # Verify all lessons belong to this module
@@ -713,7 +713,7 @@ async def reorder_lessons(
         if lesson.module_id != module_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Lesson {lesson.id} does not belong to this module",
+                detail=f"Lekcja {lesson.id} nie należy do tego modułu",
             )
 
     # Update sort_order for each lesson
@@ -723,7 +723,7 @@ async def reorder_lessons(
 
     db.commit()
 
-    return {"message": "Lessons reordered successfully"}
+    return {"message": "Kolejność lekcji zmieniona"}
 
 
 THUMBNAIL_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"]
@@ -741,13 +741,14 @@ async def upload_learning_thumbnail(
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found",
+            detail="Kurs nie znaleziony",
         )
 
     if file.content_type not in THUMBNAIL_MIME_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid file type. Allowed: PNG, JPG, WebP. Received: {file.content_type}",
+            detail=f"Nieprawidłowy typ pliku. Dozwolone: PNG, JPG, WebP. "
+            f"Otrzymano: {file.content_type}",
         )
 
     max_size_bytes = 5 * 1024 * 1024  # 5 MB
@@ -755,7 +756,7 @@ async def upload_learning_thumbnail(
     if len(file_content) > max_size_bytes:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File size exceeds maximum allowed size of 5MB",
+            detail="Rozmiar pliku przekracza maksymalny dozwolony rozmiar 5MB",
         )
 
     file_extension = Path(file.filename or "image.jpg").suffix
@@ -800,13 +801,13 @@ async def serve_learning_thumbnail(
     if not str(file_path).startswith(str(upload_root)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid filename",
+            detail="Nieprawidłowa nazwa pliku",
         )
 
     if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Thumbnail not found",
+            detail="Miniaturka nie znaleziona",
         )
 
     media_type = "image/jpeg"
