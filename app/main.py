@@ -16,6 +16,7 @@ from app.ai.routes import sales_page_ai
 from app.auth.routes import admin, auth, password
 from app.auth.routes import settings as settings_routes
 from app.community.routes import admin_threads as admin_community_routes
+from app.community.routes import thread_attachments as community_attachments_routes
 from app.community.routes import threads as community_routes
 from app.core import redis as redis_module
 from app.core.config import settings
@@ -155,6 +156,11 @@ app.include_router(
     community_routes.router,
     prefix=f"{settings.API_V1_PREFIX}/community",
     tags=["community"],
+)
+app.include_router(
+    community_attachments_routes.router,
+    prefix=f"{settings.API_V1_PREFIX}/community",
+    tags=["community-attachments"],
 )
 app.include_router(
     admin_community_routes.router,
