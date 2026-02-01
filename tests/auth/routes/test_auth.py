@@ -53,7 +53,7 @@ class TestLoginEndpoint:
         response = await test_client.post("/api/v1/auth/login", json=payload)
 
         assert response.status_code == 401
-        assert "Incorrect email or password" in response.json()["detail"]
+        assert "Nieprawidłowy email lub hasło" in response.json()["detail"]
 
     @pytest.mark.asyncio
     async def test_should_return_401_when_password_incorrect(self, test_client, test_user):
@@ -62,7 +62,7 @@ class TestLoginEndpoint:
         response = await test_client.post("/api/v1/auth/login", json=payload)
 
         assert response.status_code == 401
-        assert "Incorrect email or password" in response.json()["detail"]
+        assert "Nieprawidłowy email lub hasło" in response.json()["detail"]
 
     @pytest.mark.asyncio
     async def test_should_return_403_when_user_inactive(self, test_client, db_session):
@@ -75,7 +75,7 @@ class TestLoginEndpoint:
         response = await test_client.post("/api/v1/auth/login", json=payload)
 
         assert response.status_code == 403
-        assert "Inactive user" in response.json()["detail"]
+        assert "Konto jest nieaktywne" in response.json()["detail"]
 
 
 class TestRefreshEndpoint:
@@ -113,7 +113,7 @@ class TestRefreshEndpoint:
         response = await test_client.post("/api/v1/auth/refresh")
 
         assert response.status_code == 401
-        assert "revoked or expired" in response.json()["detail"]
+        assert "unieważniony lub wygasł" in response.json()["detail"]
 
 
 class TestLogoutEndpoint:
@@ -130,7 +130,7 @@ class TestLogoutEndpoint:
         response = await test_client.post("/api/v1/auth/logout")
 
         assert response.status_code == 200
-        assert "Successfully logged out" in response.json()["message"]
+        assert "Wylogowano pomyślnie" in response.json()["message"]
 
         token_data = await redis_module.get_refresh_token(token_hash)
         assert token_data is None
