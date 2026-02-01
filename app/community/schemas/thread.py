@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -18,6 +19,25 @@ class ThreadCreate(BaseModel):
 class ThreadUpdate(BaseModel):
     title: str = Field(..., min_length=3, max_length=255)
     content: str = Field(..., min_length=10, max_length=5000)
+
+
+class AdminThreadUpdate(BaseModel):
+    title: str | None = Field(None, min_length=3, max_length=255)
+    content: str | None = Field(None, min_length=10, max_length=5000)
+    category: ThreadCategory | None = None
+    is_pinned: bool | None = None
+
+
+class ThreadMoveRequest(BaseModel):
+    category: ThreadCategory
+
+
+BulkActionType = Literal["close", "reopen", "delete", "pin", "unpin"]
+
+
+class BulkActionRequest(BaseModel):
+    thread_ids: list[UUID] = Field(..., min_length=1, max_length=100)
+    action: BulkActionType
 
 
 class ReplyCreate(BaseModel):
@@ -96,3 +116,40 @@ class ThreadDetailResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class TopAuthorItem(BaseModel):
+    id: str
+    name: str
+    thread_count: int
+
+
+class AdminStatsResponse(BaseModel):
+    total_threads: int
+    open_threads: int
+    resolved_threads: int
+    closed_threads: int
+    total_replies: int
+    threads_today: int
+    replies_today: int
+    category_counts: dict[str, int]
+    top_authors: list[TopAuthorItem]
+
+
+class UserActivityItem(BaseModel):
+    user_id: UUID
+    user_name: str
+    thread_count: int
+    reply_count: int
+    solution_count: int
+    last_activity: datetime | None = None
+
+
+class UserActivityResponse(BaseModel):
+    users: list[UserActivityItem]
+    total: int
+
+
+class BulkActionResponse(BaseModel):
+    affected: int
+    action: str
