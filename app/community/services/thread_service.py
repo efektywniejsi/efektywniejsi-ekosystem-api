@@ -206,6 +206,32 @@ class ThreadService:
         self.db.refresh(reply)
         return reply
 
+    def unmark_reply_as_solution(self, thread_id: UUID, reply_id: UUID, user: User) -> ThreadReply:
+        thread = self._get_thread_or_404(thread_id)
+        self._check_author_or_admin(thread, user)
+
+        reply = (
+            self.db.query(ThreadReply)
+            .filter(ThreadReply.id == reply_id, ThreadReply.thread_id == thread_id)
+            .first()
+        )
+        if not reply:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Reply not found in this thread",
+            )
+
+        reply.is_solution = False
+
+        if thread.status == ThreadStatus.RESOLVED.value:
+            thread.status = ThreadStatus.OPEN.value
+            thread.resolved_by_id = None
+            thread.resolved_at = None
+
+        self.db.commit()
+        self.db.refresh(reply)
+        return cast(ThreadReply, reply)
+
     def pin_thread(self, thread_id: UUID) -> CommunityThread:
         thread = self._get_thread_or_404(thread_id)
         thread.is_pinned = not thread.is_pinned

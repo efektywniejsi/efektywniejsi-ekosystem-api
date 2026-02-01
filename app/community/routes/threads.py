@@ -197,3 +197,30 @@ def mark_solution(
         created_at=reply.created_at,
         updated_at=reply.updated_at,
     )
+
+
+@router.delete(
+    "/threads/{thread_id}/replies/{reply_id}/solution",
+    response_model=ReplyResponse,
+)
+def unmark_solution(
+    thread_id: UUID,
+    reply_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ReplyResponse:
+    service = ThreadService(db)
+    reply = service.unmark_reply_as_solution(thread_id, reply_id, current_user)
+    return ReplyResponse(
+        id=reply.id,
+        thread_id=reply.thread_id,
+        author={
+            "id": reply.author.id,
+            "name": reply.author.name,
+            "avatar_url": reply.author.avatar_url,
+        },
+        content=reply.content,
+        is_solution=reply.is_solution,
+        created_at=reply.created_at,
+        updated_at=reply.updated_at,
+    )
