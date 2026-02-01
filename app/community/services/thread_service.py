@@ -33,11 +33,22 @@ class ThreadService:
             title=data.title,
             content=data.content,
             category=data.category.value,
+            course_id=data.course_id,
+            module_id=data.module_id,
+            lesson_id=data.lesson_id,
         )
         self.db.add(thread)
         self.db.commit()
         self.db.refresh(thread)
         return thread
+
+    def get_category_counts(self) -> dict[str, int]:
+        rows = (
+            self.db.query(CommunityThread.category, func.count(CommunityThread.id))
+            .group_by(CommunityThread.category)
+            .all()
+        )
+        return dict(rows)
 
     def get_all_threads(
         self,
@@ -253,6 +264,9 @@ class ThreadService:
                 )
                 for r in thread.replies
             ],
+            course_title=thread.course.title if thread.course else None,
+            module_title=thread.module.title if thread.module else None,
+            lesson_title=thread.lesson.title if thread.lesson else None,
         )
 
     def _get_thread_or_404(self, thread_id: UUID) -> CommunityThread:
@@ -306,6 +320,9 @@ class ThreadService:
             updated_at=thread.updated_at,
             author=self._build_author(thread.author),
             last_activity=last_activity,
+            course_title=thread.course.title if thread.course else None,
+            module_title=thread.module.title if thread.module else None,
+            lesson_title=thread.lesson.title if thread.lesson else None,
         )
 
     @staticmethod

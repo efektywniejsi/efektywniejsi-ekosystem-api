@@ -419,7 +419,7 @@ def main():
                 user_cookies,
                 title="[E2E] Problem z dostępem do kursu",
                 content="Nie mogę uzyskać dostępu do materiałów kursu. Proszę o pomoc.",
-                category="kursy",
+                category="pytania",
             )
 
             # Resolved thread with reply
@@ -427,7 +427,7 @@ def main():
                 user_cookies,
                 title="[E2E] Pytanie o płatności",
                 content="Mam pytanie dotyczące metod płatności.",
-                category="general",
+                category="ogolne",
             )
 
             if resolved_thread:

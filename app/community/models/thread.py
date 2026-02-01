@@ -15,10 +15,13 @@ class ThreadStatus(str, enum.Enum):
 
 
 class ThreadCategory(str, enum.Enum):
+    PYTANIA = "pytania"
     KURSY = "kursy"
-    PAKIETY = "pakiety"
-    GENERAL = "general"
+    WDROZENIA = "wdrozenia"
     SHOWCASE = "showcase"
+    POMYSLY = "pomysly"
+    PORADY = "porady"
+    OGOLNE = "ogolne"
 
 
 class CommunityThread(Base):
@@ -28,6 +31,7 @@ class CommunityThread(Base):
         Index("ix_community_threads_author", "author_id"),
         Index("ix_community_threads_status", "status"),
         Index("ix_community_threads_pinned", "is_pinned"),
+        Index("ix_community_threads_course", "course_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4, index=True)
@@ -35,7 +39,7 @@ class CommunityThread(Base):
     title: Mapped[str] = mapped_column(String(255))
     content: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), default=ThreadStatus.OPEN.value)
-    category: Mapped[str] = mapped_column(String(20), default=ThreadCategory.GENERAL.value)
+    category: Mapped[str] = mapped_column(String(20), default=ThreadCategory.PYTANIA.value)
     is_pinned: Mapped[bool] = mapped_column(Boolean, default=False)
     reply_count: Mapped[int] = mapped_column(Integer, default=0)
     view_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -43,6 +47,16 @@ class CommunityThread(Base):
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True, default=None
     )
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None)
+
+    course_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("courses.id", ondelete="SET NULL"), nullable=True, default=None
+    )
+    module_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("modules.id", ondelete="SET NULL"), nullable=True, default=None
+    )
+    lesson_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("lessons.id", ondelete="SET NULL"), nullable=True, default=None
+    )
 
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -52,3 +66,6 @@ class CommunityThread(Base):
     replies = relationship(
         "ThreadReply", back_populates="thread", order_by="ThreadReply.created_at"
     )
+    course = relationship("Course", lazy="joined")
+    module = relationship("Module", lazy="joined")
+    lesson = relationship("Lesson", lazy="joined")

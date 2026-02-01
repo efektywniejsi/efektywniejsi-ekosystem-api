@@ -9,7 +9,10 @@ from app.community.models.thread import ThreadCategory
 class ThreadCreate(BaseModel):
     title: str = Field(..., min_length=3, max_length=255)
     content: str = Field(..., min_length=10, max_length=5000)
-    category: ThreadCategory = ThreadCategory.GENERAL
+    category: ThreadCategory = ThreadCategory.PYTANIA
+    course_id: UUID | None = None
+    module_id: UUID | None = None
+    lesson_id: UUID | None = None
 
 
 class ThreadUpdate(BaseModel):
@@ -59,6 +62,9 @@ class ThreadListItem(BaseModel):
     updated_at: datetime
     author: AuthorInfo
     last_activity: datetime
+    course_title: str | None = None
+    module_title: str | None = None
+    lesson_title: str | None = None
 
     class Config:
         from_attributes = True
@@ -84,6 +90,9 @@ class ThreadDetailResponse(BaseModel):
     resolved_by: AuthorInfo | None = None
     resolved_at: datetime | None = None
     replies: list[ReplyResponse]
+    course_title: str | None = None
+    module_title: str | None = None
+    lesson_title: str | None = None
 
     class Config:
         from_attributes = True

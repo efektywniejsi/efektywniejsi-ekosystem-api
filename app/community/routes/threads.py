@@ -32,6 +32,15 @@ def create_thread(
     return service.build_detail_response(reloaded)
 
 
+@router.get("/threads/counts")
+def get_thread_counts(
+    _current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, int]:
+    service = ThreadService(db)
+    return service.get_category_counts()
+
+
 @router.get("/threads", response_model=ThreadListResponse)
 def get_threads(
     category: str | None = None,
