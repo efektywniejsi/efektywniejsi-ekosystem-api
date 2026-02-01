@@ -15,6 +15,9 @@ from app.ai.routes import brand_guidelines as brand_guidelines_routes
 from app.ai.routes import sales_page_ai
 from app.auth.routes import admin, auth, password
 from app.auth.routes import settings as settings_routes
+from app.community.routes import admin_threads as admin_community_routes
+from app.community.routes import thread_attachments as community_attachments_routes
+from app.community.routes import threads as community_routes
 from app.core import redis as redis_module
 from app.core.config import settings
 from app.core.rate_limit import limiter
@@ -44,8 +47,6 @@ from app.packages.routes import (
     sales_windows_router,
     webhooks_router,
 )
-from app.support.routes import admin_tickets as admin_support_routes
-from app.support.routes import tickets as support_routes
 
 logger = logging.getLogger(__name__)
 
@@ -152,14 +153,19 @@ app.include_router(
 )
 
 app.include_router(
-    support_routes.router,
-    prefix=f"{settings.API_V1_PREFIX}/support",
-    tags=["support"],
+    community_routes.router,
+    prefix=f"{settings.API_V1_PREFIX}/community",
+    tags=["community"],
 )
 app.include_router(
-    admin_support_routes.router,
+    community_attachments_routes.router,
+    prefix=f"{settings.API_V1_PREFIX}/community",
+    tags=["community-attachments"],
+)
+app.include_router(
+    admin_community_routes.router,
     prefix=f"{settings.API_V1_PREFIX}/admin",
-    tags=["admin-support"],
+    tags=["admin-community"],
 )
 
 

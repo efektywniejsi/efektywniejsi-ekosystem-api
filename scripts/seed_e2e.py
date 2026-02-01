@@ -212,53 +212,65 @@ def enroll_user(cookies, course_id, user_email):
     return None
 
 
-def create_support_ticket(cookies, subject, description, category="technical", priority="medium"):
-    """Create a support ticket."""
+def create_community_thread(cookies, title, content, category="general"):
+    """Create a community thread."""
     data, status, _ = api_request(
-        "/support/tickets",
+        "/community/threads",
         method="POST",
         data={
-            "subject": subject,
-            "description": description,
+            "title": title,
+            "content": content,
             "category": category,
-            "priority": priority,
         },
         cookies=cookies,
     )
     if status in (200, 201):
-        print(f"  OK: Created ticket '{subject}' (id={data['id']})")
+        print(f"  OK: Created thread '{title}' (id={data['id']})")
         return data
-    print(f"  FAIL: Could not create ticket '{subject}': {data}")
+    print(f"  FAIL: Could not create thread '{title}': {data}")
     return None
 
 
-def admin_reply_to_ticket(cookies, ticket_id, content):
-    """Admin replies to a support ticket."""
+def add_thread_reply(cookies, thread_id, content):
+    """Add a reply to a community thread."""
     data, status, _ = api_request(
-        f"/admin/support/tickets/{ticket_id}/messages",
+        f"/community/threads/{thread_id}/replies",
         method="POST",
         data={"content": content},
         cookies=cookies,
     )
     if status in (200, 201):
-        print(f"  OK: Admin replied to ticket {ticket_id}")
+        print(f"  OK: Replied to thread {thread_id}")
         return data
-    print(f"  FAIL: Could not reply to ticket {ticket_id}: {data}")
+    print(f"  FAIL: Could not reply to thread {thread_id}: {data}")
     return None
 
 
-def update_ticket_status(cookies, ticket_id, new_status):
-    """Update ticket status via admin endpoint."""
+def resolve_thread(cookies, thread_id):
+    """Mark a community thread as resolved."""
     data, status, _ = api_request(
-        f"/admin/support/tickets/{ticket_id}/status",
+        f"/community/threads/{thread_id}/resolve",
         method="PATCH",
-        data={"status": new_status},
         cookies=cookies,
     )
     if status in (200, 201):
-        print(f"  OK: Updated ticket {ticket_id} status to '{new_status}'")
+        print(f"  OK: Resolved thread {thread_id}")
         return data
-    print(f"  FAIL: Could not update ticket {ticket_id} status: {data}")
+    print(f"  FAIL: Could not resolve thread {thread_id}: {data}")
+    return None
+
+
+def pin_thread(cookies, thread_id):
+    """Pin a community thread (admin only)."""
+    data, status, _ = api_request(
+        f"/admin/community/threads/{thread_id}/pin",
+        method="PATCH",
+        cookies=cookies,
+    )
+    if status in (200, 201):
+        print(f"  OK: Pinned thread {thread_id}")
+        return data
+    print(f"  FAIL: Could not pin thread {thread_id}: {data}")
     return None
 
 
@@ -386,46 +398,46 @@ def main():
     if course1:
         enroll_user(e2e_admin_cookies, course1["id"], USER_EMAIL)
 
-    # Step 6: Create support tickets (as paid user)
-    print("\n[6/7] Creating support tickets...")
+    # Step 6: Create community threads (as paid user)
+    print("\n[6/7] Creating community threads...")
     user_cookies = login(USER_EMAIL, USER_PASSWORD)
     if user_cookies:
-        # Check existing tickets first
-        existing_tickets, tickets_status, _ = api_request(
-            "/support/tickets/me", cookies=user_cookies
+        # Check existing threads first
+        existing_threads, threads_status, _ = api_request(
+            "/community/threads", cookies=user_cookies
         )
-        e2e_tickets = []
-        if tickets_status == 200 and existing_tickets:
-            e2e_tickets = [t for t in existing_tickets if t.get("subject", "").startswith("[E2E]")]
+        e2e_threads = []
+        if threads_status == 200 and existing_threads.get("threads"):
+            e2e_threads = [
+                t for t in existing_threads["threads"] if t.get("title", "").startswith("[E2E]")
+            ]
 
-        if len(e2e_tickets) >= 2:
-            print("  SKIP: E2E tickets already exist")
+        if len(e2e_threads) >= 2:
+            print("  SKIP: E2E threads already exist")
         else:
-            create_support_ticket(
+            create_community_thread(
                 user_cookies,
-                subject="[E2E] Problem z dostępem do kursu",
-                description="Nie mogę uzyskać dostępu do materiałów kursu. Proszę o pomoc.",
-                category="access",
-                priority="medium",
+                title="[E2E] Problem z dostępem do kursu",
+                content="Nie mogę uzyskać dostępu do materiałów kursu. Proszę o pomoc.",
+                category="pomoc",
             )
 
-            # Resolved ticket
-            resolved_ticket = create_support_ticket(
+            # Resolved thread with reply
+            resolved_thread = create_community_thread(
                 user_cookies,
-                subject="[E2E] Pytanie o płatności",
-                description="Mam pytanie dotyczące metod płatności.",
-                category="payment",
-                priority="low",
+                title="[E2E] Pytanie o płatności",
+                content="Mam pytanie dotyczące metod płatności.",
+                category="ogolne",
             )
 
-            # Admin replies to resolved ticket and resolves it
-            if resolved_ticket:
-                admin_reply_to_ticket(
+            if resolved_thread:
+                add_thread_reply(
                     e2e_admin_cookies,
-                    resolved_ticket["id"],
-                    "Dziękujemy za zgłoszenie. Akceptujemy karty Visa, Mastercard oraz PayU.",
+                    resolved_thread["id"],
+                    "Dziękujemy za pytanie. Akceptujemy karty Visa, Mastercard oraz PayU.",
                 )
-                update_ticket_status(e2e_admin_cookies, resolved_ticket["id"], "resolved")
+                resolve_thread(user_cookies, resolved_thread["id"])
+                pin_thread(e2e_admin_cookies, resolved_thread["id"])
 
     # Step 7: Summary
     print("\n[7/7] Seed complete!")

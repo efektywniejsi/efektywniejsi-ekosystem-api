@@ -18,4 +18,4 @@ celery_app.conf.update(
     result_expires=3600,
 )
 
-celery_app.autodiscover_tasks(["app.ai", "app.notifications", "app.support"])
+celery_app.autodiscover_tasks(["app.ai", "app.notifications"])
