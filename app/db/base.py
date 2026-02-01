@@ -9,6 +9,8 @@ unused, they are essential for the migration system to work properly.
 from app.ai.models.ai_chat_session import AiChatSession
 from app.ai.models.brand_guidelines import BrandGuidelines
 from app.auth.models.user import User
+from app.community.models.reply import ThreadReply
+from app.community.models.thread import CommunityThread
 from app.courses.models.attachment import Attachment
 from app.courses.models.certificate import Certificate
 from app.courses.models.course import Course, Lesson, Module
@@ -20,8 +22,6 @@ from app.packages.models.enrollment import PackageEnrollment
 from app.packages.models.order import Order, OrderItem
 from app.packages.models.package import Package, PackageBundleItem, PackageProcess
 from app.packages.models.sales_window import SalesWindow
-from app.support.models.message import TicketMessage
-from app.support.models.ticket import SupportTicket
 
 # Export all models for Alembic
 __all__ = [
@@ -44,6 +44,6 @@ __all__ = [
     "SalesWindow",
     "Notification",
     "AnnouncementLog",
-    "SupportTicket",
-    "TicketMessage",
+    "CommunityThread",
+    "ThreadReply",
 ]
