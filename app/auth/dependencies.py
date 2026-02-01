@@ -1,11 +1,16 @@
+import logging
+from datetime import datetime
 from typing import Annotated, cast
 
 from fastapi import Cookie, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.auth.models.user import User
+from app.auth.models.user_daily_activity import UserDailyActivity
 from app.core import security
 from app.db.session import get_db
+
+logger = logging.getLogger(__name__)
 
 
 async def get_access_token_from_cookie(
@@ -84,6 +89,22 @@ async def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Inactive user",
         )
+
+    now = datetime.utcnow()
+    today = now.date()
+
+    already_tracked = (
+        db.query(UserDailyActivity.id)
+        .filter(UserDailyActivity.user_id == user.id, UserDailyActivity.date == today)
+        .first()
+    )
+    if not already_tracked:
+        try:
+            db.add(UserDailyActivity(user_id=user.id, date=today, last_seen_at=now))
+            db.commit()
+        except Exception:
+            logger.exception("Failed to record daily activity")
+            db.rollback()
 
     return cast(User, user)
 

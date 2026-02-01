@@ -9,6 +9,7 @@ unused, they are essential for the migration system to work properly.
 from app.ai.models.ai_chat_session import AiChatSession
 from app.ai.models.brand_guidelines import BrandGuidelines
 from app.auth.models.user import User
+from app.auth.models.user_daily_activity import UserDailyActivity
 from app.community.models.reply import ThreadReply
 from app.community.models.thread import CommunityThread
 from app.courses.models.attachment import Attachment
@@ -28,6 +29,7 @@ __all__ = [
     "AiChatSession",
     "BrandGuidelines",
     "User",
+    "UserDailyActivity",
     "Attachment",
     "Certificate",
     "Course",
