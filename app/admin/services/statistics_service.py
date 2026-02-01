@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.admin.schemas.admin_statistics import (
@@ -40,6 +40,7 @@ from app.admin.schemas.admin_statistics import (
     UserStatisticsResponse,
 )
 from app.auth.models.user import User
+from app.auth.models.user_daily_activity import UserDailyActivity
 from app.courses.models.certificate import Certificate
 from app.courses.models.course import Course
 from app.courses.models.enrollment import Enrollment
@@ -91,14 +92,26 @@ class StatisticsService:
             return 100.0 if current > 0 else 0.0
         return round(((current - previous) / previous) * 100, 2)
 
+    @staticmethod
+    def _count_active_users(
+        db: Session,
+        since: datetime,
+        until: datetime | None = None,
+    ) -> int:
+        """Count distinct active users from daily activity log."""
+        query = db.query(func.count(func.distinct(UserDailyActivity.user_id))).filter(
+            UserDailyActivity.date >= since.date()
+        )
+        if until is not None:
+            query = query.filter(UserDailyActivity.date < until.date())
+        return query.scalar() or 0
+
     # ============ Revenue Methods ============
 
     @staticmethod
     def get_revenue_for_period(db: Session, start: datetime, end: datetime) -> tuple[int, int]:
         """Get total revenue and order count for a period."""
         # Use payment_completed_at if available, otherwise fall back to created_at
-        from sqlalchemy import or_
-
         result = (
             db.query(func.sum(Order.total), func.count(Order.id))
             .filter(
@@ -181,19 +194,9 @@ class StatisticsService:
         total_users = db.query(User).filter(User.is_active.is_(True)).count()
         new_users_month = db.query(User).filter(User.created_at >= month_start).count()
 
-        # Active users based on course access
-        active_today = (
-            db.query(func.count(func.distinct(Enrollment.user_id)))
-            .filter(Enrollment.last_accessed_at >= today_start)
-            .scalar()
-            or 0
-        )
-        active_week = (
-            db.query(func.count(func.distinct(Enrollment.user_id)))
-            .filter(Enrollment.last_accessed_at >= week_start)
-            .scalar()
-            or 0
-        )
+        # Active users based on course access OR daily activity log
+        active_today = StatisticsService._count_active_users(db, today_start)
+        active_week = StatisticsService._count_active_users(db, week_start)
 
         users_kpi = UsersKPI(
             total=total_users,
@@ -619,25 +622,10 @@ class StatisticsService:
 
         total_users = db.query(User).filter(User.is_active.is_(True)).count()
 
-        # Active users counts
-        active_today = (
-            db.query(func.count(func.distinct(Enrollment.user_id)))
-            .filter(Enrollment.last_accessed_at >= today_start)
-            .scalar()
-            or 0
-        )
-        active_week = (
-            db.query(func.count(func.distinct(Enrollment.user_id)))
-            .filter(Enrollment.last_accessed_at >= week_start)
-            .scalar()
-            or 0
-        )
-        active_month = (
-            db.query(func.count(func.distinct(Enrollment.user_id)))
-            .filter(Enrollment.last_accessed_at >= month_start)
-            .scalar()
-            or 0
-        )
+        # Active users counts (course access OR login)
+        active_today = StatisticsService._count_active_users(db, today_start)
+        active_week = StatisticsService._count_active_users(db, week_start)
+        active_month = StatisticsService._count_active_users(db, month_start)
 
         # New users counts
         new_today = db.query(User).filter(User.created_at >= today_start).count()
@@ -647,33 +635,43 @@ class StatisticsService:
         # DAU/MAU ratio
         dau_mau = round(active_today / active_month, 4) if active_month > 0 else 0.0
 
-        # Activity data points
+        # Activity data points — single grouped query
+        activity_by_day = dict(
+            db.query(
+                UserDailyActivity.date,
+                func.count(func.distinct(UserDailyActivity.user_id)),
+            )
+            .filter(
+                UserDailyActivity.date >= period_start.date(),
+                UserDailyActivity.date <= today_start.date(),
+            )
+            .group_by(UserDailyActivity.date)
+            .all()
+        )
+
+        new_by_day_rows = (
+            db.query(
+                func.date(User.created_at).label("day"),
+                func.count(User.id),
+            )
+            .filter(User.created_at >= period_start, User.created_at <= now)
+            .group_by("day")
+            .all()
+        )
+        new_by_day = {row[0]: row[1] for row in new_by_day_rows}
+
         data_points = []
         current = period_start
         while current <= today_start:
-            next_day = current + timedelta(days=1)
-            active = (
-                db.query(func.count(func.distinct(Enrollment.user_id)))
-                .filter(
-                    Enrollment.last_accessed_at >= current,
-                    Enrollment.last_accessed_at < next_day,
-                )
-                .scalar()
-                or 0
-            )
-            new = (
-                db.query(User)
-                .filter(User.created_at >= current, User.created_at < next_day)
-                .count()
-            )
+            d = current.date()
             data_points.append(
                 UserActivityDataPoint(
                     date=current.strftime("%Y-%m-%d"),
-                    active_users=active,
-                    new_users=new,
+                    active_users=activity_by_day.get(d, 0),
+                    new_users=new_by_day.get(d, 0),
                 )
             )
-            current = next_day
+            current = current + timedelta(days=1)
 
         return UserStatisticsResponse(
             total_users=total_users,
@@ -785,46 +783,37 @@ class StatisticsService:
         users_list = []
 
         if user_type == "active":
-            # Get users who had activity (accessed courses) on this day
-            active_subq = (
-                select(Enrollment.user_id)
-                .filter(
-                    Enrollment.last_accessed_at >= day_start,
-                    Enrollment.last_accessed_at < day_end,
-                )
-                .distinct()
+            target_day = target_date.date()
+
+            activities = (
+                db.query(UserDailyActivity)
+                .filter(UserDailyActivity.date == target_day)
+                .limit(limit)
+                .all()
+            )
+            user_ids = [a.user_id for a in activities]
+            users_map = (
+                {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()}
+                if user_ids
+                else {}
             )
 
-            users = db.query(User).filter(User.id.in_(active_subq)).limit(limit).all()
-
-            # Get last activity for each user
-            for user in users:
-                last_activity = (
-                    db.query(func.max(Enrollment.last_accessed_at))
-                    .filter(
-                        Enrollment.user_id == user.id,
-                        Enrollment.last_accessed_at >= day_start,
-                        Enrollment.last_accessed_at < day_end,
+            for activity in activities:
+                user = users_map.get(activity.user_id)
+                if user:
+                    users_list.append(
+                        UserDetail(
+                            id=str(user.id),
+                            email=user.email,
+                            full_name=user.name,
+                            created_at=user.created_at,
+                            last_activity=activity.last_seen_at,
+                        )
                     )
-                    .scalar()
-                )
-                users_list.append(
-                    UserDetail(
-                        id=str(user.id),
-                        email=user.email,
-                        full_name=user.name,
-                        created_at=user.created_at,
-                        last_activity=last_activity,
-                    )
-                )
 
-            # Get total count
             total = (
-                db.query(func.count(func.distinct(Enrollment.user_id)))
-                .filter(
-                    Enrollment.last_accessed_at >= day_start,
-                    Enrollment.last_accessed_at < day_end,
-                )
+                db.query(func.count(UserDailyActivity.id))
+                .filter(UserDailyActivity.date == target_day)
                 .scalar()
                 or 0
             )
@@ -960,22 +949,30 @@ class StatisticsService:
             .all()
         )
 
-        users_list = []
-        for user in users:
-            last_activity = (
-                db.query(func.max(Enrollment.last_accessed_at))
-                .filter(Enrollment.user_id == user.id)
-                .scalar()
-            )
-            users_list.append(
-                UserDetail(
-                    id=str(user.id),
-                    email=user.email,
-                    full_name=user.name,
-                    created_at=user.created_at,
-                    last_activity=last_activity,
+        user_ids = [u.id for u in users]
+        last_activity_map = {}
+        if user_ids:
+            rows = (
+                db.query(
+                    UserDailyActivity.user_id,
+                    func.max(UserDailyActivity.last_seen_at),
                 )
+                .filter(UserDailyActivity.user_id.in_(user_ids))
+                .group_by(UserDailyActivity.user_id)
+                .all()
             )
+            last_activity_map = {r[0]: r[1] for r in rows}
+
+        users_list = [
+            UserDetail(
+                id=str(user.id),
+                email=user.email,
+                full_name=user.name,
+                created_at=user.created_at,
+                last_activity=last_activity_map.get(user.id),
+            )
+            for user in users
+        ]
 
         return MonthlyUsersResponse(total=total, users=users_list)
 
