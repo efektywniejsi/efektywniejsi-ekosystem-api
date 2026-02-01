@@ -58,7 +58,7 @@ class ThreadService:
             .group_by(CommunityThread.category)
             .all()
         )
-        return dict(rows)
+        return {str(category): int(count) for category, count in rows}
 
     def get_all_threads(
         self,
