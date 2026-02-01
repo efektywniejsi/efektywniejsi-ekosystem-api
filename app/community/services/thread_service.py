@@ -10,12 +10,14 @@ from sqlalchemy.orm import Session, joinedload
 from app.auth.models.user import User
 from app.community.models.reply import ThreadReply
 from app.community.models.thread import CommunityThread, ThreadStatus
+from app.community.models.thread_tag import ThreadTag, ThreadTagAssociation
 from app.community.schemas.thread import (
     AdminStatsResponse,
     AdminThreadUpdate,
     AuthorInfo,
     BulkActionResponse,
     ReplyResponse,
+    ThreadAttachmentResponse,
     ThreadCreate,
     ThreadDetailResponse,
     ThreadListItem,
@@ -48,9 +50,32 @@ class ThreadService:
             lesson_id=data.lesson_id,
         )
         self.db.add(thread)
+        self.db.flush()
+
+        if data.tags:
+            tag_names = [t.strip().lower()[:30] for t in data.tags[:5] if t.strip()]
+            for tag_name in tag_names:
+                tag = self.db.query(ThreadTag).filter(ThreadTag.name == tag_name).first()
+                if not tag:
+                    tag = ThreadTag(name=tag_name)
+                    self.db.add(tag)
+                    self.db.flush()
+                self.db.add(ThreadTagAssociation(thread_id=thread.id, tag_id=tag.id))
+
         self.db.commit()
         self.db.refresh(thread)
         return thread
+
+    def get_popular_tags(self, limit: int = 20) -> list[str]:
+        rows = (
+            self.db.query(ThreadTag.name, func.count(ThreadTagAssociation.thread_id).label("cnt"))
+            .join(ThreadTagAssociation, ThreadTag.id == ThreadTagAssociation.tag_id)
+            .group_by(ThreadTag.name)
+            .order_by(func.count(ThreadTagAssociation.thread_id).desc())
+            .limit(limit)
+            .all()
+        )
+        return [row[0] for row in rows]
 
     def get_category_counts(self) -> dict[str, int]:
         rows = (
@@ -224,6 +249,19 @@ class ThreadService:
             )
         thread.title = data.title
         thread.content = data.content
+
+        if data.clear_course_context:
+            thread.course_id = None
+            thread.module_id = None
+            thread.lesson_id = None
+        else:
+            if data.course_id is not None:
+                thread.course_id = data.course_id
+            if data.module_id is not None:
+                thread.module_id = data.module_id
+            if data.lesson_id is not None:
+                thread.lesson_id = data.lesson_id
+
         thread.updated_at = datetime.utcnow()
         self.db.commit()
         self.db.refresh(thread)
@@ -466,9 +504,23 @@ class ThreadService:
                 )
                 for r in thread.replies
             ],
+            course_id=thread.course_id,
+            module_id=thread.module_id,
+            lesson_id=thread.lesson_id,
             course_title=thread.course.title if thread.course else None,
             module_title=thread.module.title if thread.module else None,
             lesson_title=thread.lesson.title if thread.lesson else None,
+            tags=[tag.name for tag in thread.tags] if thread.tags else [],
+            attachments=[
+                ThreadAttachmentResponse(
+                    id=a.id,
+                    file_name=a.file_name,
+                    file_size_bytes=a.file_size_bytes,
+                    mime_type=a.mime_type,
+                    created_at=a.created_at,
+                )
+                for a in (thread.attachments or [])
+            ],
         )
 
     def _get_thread_or_404(self, thread_id: UUID) -> CommunityThread:
@@ -525,6 +577,7 @@ class ThreadService:
             course_title=thread.course.title if thread.course else None,
             module_title=thread.module.title if thread.module else None,
             lesson_title=thread.lesson.title if thread.lesson else None,
+            tags=[tag.name for tag in thread.tags] if thread.tags else [],
         )
 
     @staticmethod

@@ -10,15 +10,20 @@ from app.community.models.thread import ThreadCategory
 class ThreadCreate(BaseModel):
     title: str = Field(..., min_length=3, max_length=255)
     content: str = Field(..., min_length=10, max_length=5000)
-    category: ThreadCategory = ThreadCategory.PYTANIA
+    category: ThreadCategory = ThreadCategory.POMOC
     course_id: UUID | None = None
     module_id: UUID | None = None
     lesson_id: UUID | None = None
+    tags: list[str] = Field(default_factory=list, max_length=5)
 
 
 class ThreadUpdate(BaseModel):
     title: str = Field(..., min_length=3, max_length=255)
     content: str = Field(..., min_length=10, max_length=5000)
+    course_id: UUID | None = None
+    module_id: UUID | None = None
+    lesson_id: UUID | None = None
+    clear_course_context: bool = False
 
 
 class AdminThreadUpdate(BaseModel):
@@ -85,6 +90,7 @@ class ThreadListItem(BaseModel):
     course_title: str | None = None
     module_title: str | None = None
     lesson_title: str | None = None
+    tags: list[str] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
@@ -93,6 +99,17 @@ class ThreadListItem(BaseModel):
 class ThreadListResponse(BaseModel):
     threads: list[ThreadListItem]
     total: int
+
+
+class ThreadAttachmentResponse(BaseModel):
+    id: UUID
+    file_name: str
+    file_size_bytes: int
+    mime_type: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class ThreadDetailResponse(BaseModel):
@@ -110,9 +127,14 @@ class ThreadDetailResponse(BaseModel):
     resolved_by: AuthorInfo | None = None
     resolved_at: datetime | None = None
     replies: list[ReplyResponse]
+    course_id: UUID | None = None
+    module_id: UUID | None = None
+    lesson_id: UUID | None = None
     course_title: str | None = None
     module_title: str | None = None
     lesson_title: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    attachments: list[ThreadAttachmentResponse] = Field(default_factory=list)
 
     class Config:
         from_attributes = True

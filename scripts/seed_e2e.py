@@ -419,7 +419,7 @@ def main():
                 user_cookies,
                 title="[E2E] Problem z dostępem do kursu",
                 content="Nie mogę uzyskać dostępu do materiałów kursu. Proszę o pomoc.",
-                category="pytania",
+                category="pomoc",
             )
 
             # Resolved thread with reply

@@ -32,6 +32,15 @@ def create_thread(
     return service.build_detail_response(reloaded)
 
 
+@router.get("/threads/tags/popular")
+def get_popular_tags(
+    _current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[str]:
+    service = ThreadService(db)
+    return service.get_popular_tags()
+
+
 @router.get("/threads/counts")
 def get_thread_counts(
     _current_user: User = Depends(get_current_user),
@@ -68,9 +77,18 @@ def get_thread(
     db: Session = Depends(get_db),
 ) -> ThreadDetailResponse:
     service = ThreadService(db)
-    service.increment_view_count(thread_id)
     thread = service.get_thread_detail(thread_id)
     return service.build_detail_response(thread)
+
+
+@router.post("/threads/{thread_id}/view", status_code=204)
+def track_thread_view(
+    thread_id: UUID,
+    _current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    service = ThreadService(db)
+    service.increment_view_count(thread_id)
 
 
 @router.patch("/threads/{thread_id}", response_model=ThreadDetailResponse)

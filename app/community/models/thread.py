@@ -15,12 +15,9 @@ class ThreadStatus(str, enum.Enum):
 
 
 class ThreadCategory(str, enum.Enum):
-    PYTANIA = "pytania"
-    KURSY = "kursy"
-    WDROZENIA = "wdrozenia"
+    POMOC = "pomoc"
     SHOWCASE = "showcase"
     POMYSLY = "pomysly"
-    PORADY = "porady"
     OGOLNE = "ogolne"
 
 
@@ -39,7 +36,7 @@ class CommunityThread(Base):
     title: Mapped[str] = mapped_column(String(255))
     content: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), default=ThreadStatus.OPEN.value)
-    category: Mapped[str] = mapped_column(String(20), default=ThreadCategory.PYTANIA.value)
+    category: Mapped[str] = mapped_column(String(20), default=ThreadCategory.POMOC.value)
     is_pinned: Mapped[bool] = mapped_column(Boolean, default=False)
     reply_count: Mapped[int] = mapped_column(Integer, default=0)
     view_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -69,3 +66,12 @@ class CommunityThread(Base):
     course = relationship("Course", lazy="joined")
     module = relationship("Module", lazy="joined")
     lesson = relationship("Lesson", lazy="joined")
+    tags = relationship(
+        "ThreadTag",
+        secondary="community_thread_tag_associations",
+        back_populates="threads",
+        lazy="joined",
+    )
+    attachments = relationship(
+        "ThreadAttachment", back_populates="thread", order_by="ThreadAttachment.created_at"
+    )
