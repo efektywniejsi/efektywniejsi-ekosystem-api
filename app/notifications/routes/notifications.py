@@ -90,7 +90,7 @@ async def get_announcement_recipients(
     """List recipients for a specific announcement (admin only)."""
     log = db.query(AnnouncementLog).filter(AnnouncementLog.id == UUID(announcement_id)).first()
     if not log:
-        raise HTTPException(status_code=404, detail="Announcement not found")
+        raise HTTPException(status_code=404, detail="Ogłoszenie nie znalezione")
 
     rows = (
         db.query(Notification, User.name, User.email)

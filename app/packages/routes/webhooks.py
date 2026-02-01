@@ -24,7 +24,7 @@ async def stripe_webhook(
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     if not stripe_signature:
-        raise HTTPException(status_code=400, detail="Missing Stripe signature")
+        raise HTTPException(status_code=400, detail="Brak sygnatury Stripe")
 
     payload = await request.body()
 
@@ -67,7 +67,7 @@ async def payu_webhook(
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     if not openpayu_signature:
-        raise HTTPException(status_code=400, detail="Missing PayU signature")
+        raise HTTPException(status_code=400, detail="Brak sygnatury PayU")
 
     payload = await request.body()
 

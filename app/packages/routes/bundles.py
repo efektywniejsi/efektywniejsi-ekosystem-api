@@ -72,7 +72,7 @@ def get_bundle_by_slug(
     )
 
     if not bundle:
-        raise HTTPException(status_code=404, detail="Bundle not found")
+        raise HTTPException(status_code=404, detail="Bundle nie znaleziony")
 
     return BundleListResponse.from_orm(bundle)
 
@@ -157,7 +157,7 @@ def get_bundle_detail(
     try:
         bundle_uuid = uuid.UUID(bundle_id)
     except ValueError:
-        raise HTTPException(400, "Invalid bundle ID") from None
+        raise HTTPException(400, "Nieprawidłowy ID bundla") from None
 
     bundle = (
         db.query(Package)
@@ -170,7 +170,7 @@ def get_bundle_detail(
     )
 
     if not bundle:
-        raise HTTPException(404, "Bundle not found")
+        raise HTTPException(404, "Bundle nie znaleziony")
 
     return _build_bundle_detail_response(db, bundle)
 
@@ -198,7 +198,7 @@ def create_bundle(
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Package with slug '{bundle_data.slug}' already exists",
+            detail=f"Pakiet ze slugiem '{bundle_data.slug}' już istnieje",
         )
 
     # Create bundle package
@@ -226,12 +226,12 @@ def create_bundle(
         try:
             pkg_uuid = uuid.UUID(package_id)
         except ValueError:
-            raise HTTPException(400, f"Invalid package ID: {package_id}") from None
+            raise HTTPException(400, f"Nieprawidłowy ID pakietu: {package_id}") from None
 
         # Verify package exists
         pkg = db.query(Package).filter(Package.id == pkg_uuid).first()
         if not pkg:
-            raise HTTPException(404, f"Package {package_id} not found")
+            raise HTTPException(404, f"Pakiet {package_id} nie znaleziony")
 
         bundle_item = PackageBundleItem(
             bundle_id=new_bundle.id,
@@ -248,11 +248,11 @@ def create_bundle(
             try:
                 course_uuid = uuid.UUID(ci.course_id)
             except ValueError:
-                raise HTTPException(400, f"Invalid course ID: {ci.course_id}") from None
+                raise HTTPException(400, f"Nieprawidłowy ID kursu: {ci.course_id}") from None
 
             course = db.query(Course).filter(Course.id == course_uuid).first()
             if not course:
-                raise HTTPException(404, f"Course {ci.course_id} not found")
+                raise HTTPException(404, f"Kurs {ci.course_id} nie znaleziony")
 
             course_item = BundleCourseItem(
                 bundle_id=new_bundle.id,
@@ -267,11 +267,11 @@ def create_bundle(
             try:
                 course_uuid = uuid.UUID(course_id)
             except ValueError:
-                raise HTTPException(400, f"Invalid course ID: {course_id}") from None
+                raise HTTPException(400, f"Nieprawidłowy ID kursu: {course_id}") from None
 
             course = db.query(Course).filter(Course.id == course_uuid).first()
             if not course:
-                raise HTTPException(404, f"Course {course_id} not found")
+                raise HTTPException(404, f"Kurs {course_id} nie znaleziony")
 
             course_item = BundleCourseItem(
                 bundle_id=new_bundle.id,
@@ -299,7 +299,7 @@ def update_bundle(
     try:
         bundle_uuid = uuid.UUID(bundle_id)
     except ValueError:
-        raise HTTPException(400, "Invalid bundle ID") from None
+        raise HTTPException(400, "Nieprawidłowy ID bundla") from None
 
     bundle = (
         db.query(Package)
@@ -308,7 +308,7 @@ def update_bundle(
     )
 
     if not bundle:
-        raise HTTPException(404, "Bundle not found")
+        raise HTTPException(404, "Bundle nie znaleziony")
 
     # Update basic fields
     if bundle_data.name is not None:
@@ -385,7 +385,7 @@ def delete_bundle(
     try:
         bundle_uuid = uuid.UUID(bundle_id)
     except ValueError:
-        raise HTTPException(400, "Invalid bundle ID") from None
+        raise HTTPException(400, "Nieprawidłowy ID bundla") from None
 
     bundle = (
         db.query(Package)
@@ -394,7 +394,7 @@ def delete_bundle(
     )
 
     if not bundle:
-        raise HTTPException(404, "Bundle not found")
+        raise HTTPException(404, "Bundle nie znaleziony")
 
     # Soft delete
     bundle.is_published = False

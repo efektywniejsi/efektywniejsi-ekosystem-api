@@ -39,7 +39,7 @@ async def update_profile(
 ) -> dict[str, str]:
     current_user.name = data.name
     db.commit()
-    return {"message": "Profile updated"}
+    return {"message": "Profil zaktualizowany"}
 
 
 @router.post("/profile/avatar")
@@ -51,14 +51,14 @@ async def upload_avatar(
     if file.content_type not in ALLOWED_AVATAR_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only JPG and PNG files are allowed",
+            detail="Dozwolone są tylko pliki JPG i PNG",
         )
 
     contents = await file.read()
     if len(contents) > MAX_AVATAR_SIZE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File size exceeds 2MB limit",
+            detail="Rozmiar pliku przekracza limit 2MB",
         )
 
     os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -94,7 +94,7 @@ async def delete_avatar(
             os.remove(filepath)
         current_user.avatar_url = None
         db.commit()
-    return {"message": "Avatar deleted"}
+    return {"message": "Zdjęcie usunięte"}
 
 
 @router.post("/password")
@@ -106,20 +106,20 @@ async def change_password(
     if data.new_password != data.confirm_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Passwords do not match",
+            detail="Hasła nie są identyczne",
         )
 
     if not security.verify_password(data.current_password, str(current_user.hashed_password)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Current password is incorrect",
+            detail="Obecne hasło jest nieprawidłowe",
         )
 
     current_user.hashed_password = security.get_password_hash(data.new_password)
     current_user.password_changed_at = datetime.utcnow()
     db.commit()
 
-    return {"message": "Password changed successfully"}
+    return {"message": "Hasło zostało zmienione"}
 
 
 @router.post("/2fa/setup", response_model=TotpSetupResponse)
@@ -146,20 +146,20 @@ async def verify_2fa(
     if not current_user.totp_secret:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="2FA setup not initiated",
+            detail="Konfiguracja 2FA nie została rozpoczęta",
         )
 
     totp = pyotp.TOTP(decrypt_totp_secret(current_user.totp_secret))
     if not totp.verify(data.code):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid verification code",
+            detail="Nieprawidłowy kod weryfikacyjny",
         )
 
     current_user.totp_enabled = True
     db.commit()
 
-    return {"message": "2FA enabled successfully"}
+    return {"message": "2FA włączone"}
 
 
 @router.post("/2fa/disable")
@@ -171,21 +171,21 @@ async def disable_2fa(
     if not current_user.totp_enabled or not current_user.totp_secret:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="2FA is not enabled",
+            detail="2FA nie jest włączone",
         )
 
     totp = pyotp.TOTP(decrypt_totp_secret(current_user.totp_secret))
     if not totp.verify(data.code):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid verification code",
+            detail="Nieprawidłowy kod weryfikacyjny",
         )
 
     current_user.totp_enabled = False
     current_user.totp_secret = None
     db.commit()
 
-    return {"message": "2FA disabled successfully"}
+    return {"message": "2FA wyłączone"}
 
 
 @router.get("/2fa/status", response_model=TotpStatusResponse)
@@ -274,16 +274,16 @@ async def delete_payment_method(
         if pm.customer != current_user.stripe_customer_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Payment method does not belong to this user",
+                detail="Metoda płatności nie należy do tego użytkownika",
             )
         stripe.PaymentMethod.detach(method_id)
     except stripe.InvalidRequestError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Payment method not found",
+            detail="Metoda płatności nie znaleziona",
         ) from exc
 
-    return {"message": "Payment method deleted"}
+    return {"message": "Metoda płatności usunięta"}
 
 
 @router.get("/notifications", response_model=NotificationPreferences)

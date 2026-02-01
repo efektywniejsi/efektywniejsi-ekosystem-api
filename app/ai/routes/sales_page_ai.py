@@ -30,7 +30,7 @@ def _check_api_key() -> None:
     if not settings.ANTHROPIC_API_KEY:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Anthropic API key is not configured. Set ANTHROPIC_API_KEY in .env",
+            detail="Klucz API Anthropic nie jest skonfigurowany. Ustaw ANTHROPIC_API_KEY w .env",
         )
 
 
@@ -105,7 +105,7 @@ async def ai_generate_course_sales_page(
 
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Course not found")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kurs nie znaleziony")
 
     return _dispatch_task(db, EntityType.COURSE, course_id, request)
 
@@ -126,7 +126,7 @@ async def ai_generate_bundle_sales_page(
 
     bundle = db.query(Package).filter(Package.id == bundle_id).first()
     if not bundle:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bundle not found")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bundle nie znaleziony")
 
     return _dispatch_task(db, EntityType.BUNDLE, bundle_id, request)
 

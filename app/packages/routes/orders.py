@@ -76,15 +76,15 @@ def get_order_details(
     try:
         order_uuid = uuid.UUID(order_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid order ID format") from None
+        raise HTTPException(status_code=400, detail="Nieprawidłowy format ID zamówienia") from None
 
     order = db.query(Order).filter(Order.id == order_uuid).first()
 
     if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
+        raise HTTPException(status_code=404, detail="Zamówienie nie znalezione")
 
     # Check ownership
     if order.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
+        raise HTTPException(status_code=403, detail="Brak dostępu")
 
     return OrderResponse.from_orm(order)

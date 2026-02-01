@@ -38,7 +38,9 @@ async def generate_certificate(
     )
 
     if not cert:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Certificate not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Certyfikat nie znaleziony"
+        )
 
     return CertificateWithCourseResponse(
         id=str(cert.id),
@@ -100,19 +102,19 @@ async def download_certificate(
     if not certificate:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Certificate not found",
+            detail="Certyfikat nie znaleziony",
         )
 
     if certificate.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have permission to download this certificate",
+            detail="Nie masz uprawnień do pobrania tego certyfikatu",
         )
 
     if not certificate.file_path or not os.path.exists(certificate.file_path):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Certificate file not found on server",
+            detail="Plik certyfikatu nie znaleziony na serwerze",
         )
 
     filename = (

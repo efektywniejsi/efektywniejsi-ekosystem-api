@@ -44,13 +44,13 @@ async def create_user(
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Email already registered",
+            detail="Email jest już zarejestrowany",
         )
 
     if len(request.password) < 8:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Password must be at least 8 characters long",
+            detail="Hasło musi mieć co najmniej 8 znaków",
         )
 
     new_user = User(
@@ -127,7 +127,7 @@ async def update_user(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
+            detail="Użytkownik nie znaleziony",
         )
 
     if request.name is not None:

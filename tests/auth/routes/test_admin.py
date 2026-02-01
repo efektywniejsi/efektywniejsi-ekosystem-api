@@ -41,7 +41,7 @@ class TestCreateUserEndpoint:
         response = await test_client.post("/api/v1/admin/users", json=payload)
 
         assert response.status_code == 409
-        assert "already registered" in response.json()["detail"]
+        assert "już zarejestrowany" in response.json()["detail"]
 
     @pytest.mark.asyncio
     async def test_should_return_422_when_password_too_short(self, test_client, test_admin_token):
@@ -56,7 +56,7 @@ class TestCreateUserEndpoint:
         response = await test_client.post("/api/v1/admin/users", json=payload)
 
         assert response.status_code == 422
-        assert "at least 8 characters" in response.json()["detail"]
+        assert "co najmniej 8 znaków" in response.json()["detail"]
 
     @pytest.mark.asyncio
     async def test_should_return_403_when_not_admin(self, test_client, test_user_token):
@@ -71,7 +71,7 @@ class TestCreateUserEndpoint:
         response = await test_client.post("/api/v1/admin/users", json=payload)
 
         assert response.status_code == 403
-        assert "Admin access required" in response.json()["detail"]
+        assert "Wymagane uprawnienia administratora" in response.json()["detail"]
 
     @pytest.mark.asyncio
     async def test_should_return_403_when_not_authenticated(self, test_client):
@@ -214,7 +214,7 @@ class TestUpdateUserEndpoint:
         response = await test_client.patch(f"/api/v1/admin/users/{fake_uuid}", json=payload)
 
         assert response.status_code == 404
-        assert "not found" in response.json()["detail"]
+        assert "nie znaleziony" in response.json()["detail"]
 
     @pytest.mark.asyncio
     async def test_should_return_403_when_not_admin(self, test_client, test_user_token, test_user):
