@@ -274,6 +274,43 @@ def pin_thread(cookies, thread_id):
     return None
 
 
+def get_bundles(cookies):
+    """Get all bundles."""
+    data, status, _ = api_request("/bundles", cookies=cookies)
+    if status == 200:
+        return data
+    return []
+
+
+def create_bundle(cookies, slug, name, package_ids):
+    """Create a bundle if it doesn't exist by slug."""
+    existing = get_bundles(cookies)
+    for bundle in existing:
+        if bundle.get("slug") == slug:
+            print(f"  SKIP: Bundle '{slug}' already exists (id={bundle['id']})")
+            return bundle
+
+    data, status, _ = api_request(
+        "/bundles",
+        method="POST",
+        data={
+            "slug": slug,
+            "name": name,
+            "description": f"Bundle testowy E2E: {name}",
+            "category": "e2e-test",
+            "price": 19900,
+            "difficulty": "beginner",
+            "package_ids": package_ids,
+        },
+        cookies=cookies,
+    )
+    if status in (200, 201):
+        print(f"  OK: Created bundle '{slug}' (id={data.get('id', 'unknown')})")
+        return data
+    print(f"  FAIL: Could not create bundle '{slug}': {data}")
+    return None
+
+
 def get_packages(cookies):
     """Get all packages."""
     data, status, _ = api_request("/packages/all", cookies=cookies)
@@ -316,14 +353,14 @@ def main():
     print("=" * 60)
 
     # Step 1: Login as bootstrap admin
-    print("\n[1/7] Logging in as bootstrap admin...")
+    print("\n[1/8] Logging in as bootstrap admin...")
     admin_cookies = login(BOOTSTRAP_ADMIN_EMAIL, BOOTSTRAP_ADMIN_PASSWORD)
     if not admin_cookies:
         print("FATAL: Cannot login as bootstrap admin. Is the API running?")
         sys.exit(1)
 
     # Step 2: Create E2E test users
-    print("\n[2/7] Creating E2E test users...")
+    print("\n[2/8] Creating E2E test users...")
     create_user_if_not_exists(admin_cookies, ADMIN_EMAIL, ADMIN_NAME, ADMIN_PASSWORD, "admin")
     create_user_if_not_exists(admin_cookies, USER_EMAIL, USER_NAME, USER_PASSWORD, "paid")
 
@@ -335,7 +372,7 @@ def main():
         sys.exit(1)
 
     # Step 3: Create courses with modules and lessons
-    print("\n[3/7] Creating courses...")
+    print("\n[3/8] Creating courses...")
     course1 = create_course(
         e2e_admin_cookies,
         slug="e2e-kurs-1",
@@ -379,27 +416,51 @@ def main():
                 create_lesson(e2e_admin_cookies, mod2["id"], "Lekcja 2.1: Techniki", sort_order=0)
 
     # Step 4: Create packages
-    print("\n[4/7] Creating packages...")
-    create_package(
+    print("\n[4/8] Creating packages...")
+    pkg1 = create_package(
         e2e_admin_cookies,
         slug="e2e-pakiet-1",
         title="E2E Pakiet Podstawowy",
         description="Podstawowy pakiet testowy E2E.",
     )
-    create_package(
+    pkg2 = create_package(
         e2e_admin_cookies,
         slug="e2e-pakiet-2",
         title="E2E Pakiet Premium",
         description="Premiumowy pakiet testowy E2E.",
     )
 
-    # Step 5: Create enrollment
-    print("\n[5/7] Creating enrollments...")
+    # Step 5: Create bundles (required by sales window form)
+    print("\n[5/8] Creating bundles...")
+    pkg_ids = []
+    if pkg1 and pkg1.get("id"):
+        pkg_ids.append(str(pkg1["id"]))
+    if pkg2 and pkg2.get("id"):
+        pkg_ids.append(str(pkg2["id"]))
+
+    if pkg_ids:
+        create_bundle(
+            e2e_admin_cookies,
+            slug="e2e-bundle-1",
+            name="E2E Bundle Podstawowy",
+            package_ids=pkg_ids[:1],
+        )
+        create_bundle(
+            e2e_admin_cookies,
+            slug="e2e-bundle-2",
+            name="E2E Bundle Premium",
+            package_ids=pkg_ids,
+        )
+    else:
+        print("  SKIP: No packages available for bundle creation")
+
+    # Step 6: Create enrollment
+    print("\n[6/8] Creating enrollments...")
     if course1:
         enroll_user(e2e_admin_cookies, course1["id"], USER_EMAIL)
 
     # Step 6: Create community threads (as paid user)
-    print("\n[6/7] Creating community threads...")
+    print("\n[7/8] Creating community threads...")
     user_cookies = login(USER_EMAIL, USER_PASSWORD)
     if user_cookies:
         # Check existing threads first
@@ -440,7 +501,7 @@ def main():
                 pin_thread(e2e_admin_cookies, resolved_thread["id"])
 
     # Step 7: Summary
-    print("\n[7/7] Seed complete!")
+    print("\n[8/8] Seed complete!")
     print("=" * 60)
     print(f"  Admin:  {ADMIN_EMAIL} / {ADMIN_PASSWORD}")
     print(f"  User:   {USER_EMAIL} / {USER_PASSWORD}")
