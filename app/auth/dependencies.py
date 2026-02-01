@@ -20,7 +20,7 @@ async def get_access_token_from_cookie(
     if not access_token:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authenticated",
+            detail="Brak uwierzytelnienia",
         )
     return access_token
 
@@ -32,7 +32,7 @@ async def get_refresh_token_from_cookie(
     if not refresh_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token missing",
+            detail="Brak tokena odświeżania",
         )
     return refresh_token
 
@@ -47,14 +47,14 @@ async def get_validated_token_payload(
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail="Nie udało się zweryfikować danych uwierzytelniających",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if payload.get("type") != expected_type:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid token type, expected {expected_type}",
+            detail=f"Nieprawidłowy typ tokena, oczekiwano {expected_type}",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -72,7 +72,7 @@ async def get_current_user(
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail="Nie udało się zweryfikować danych uwierzytelniających",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -80,14 +80,14 @@ async def get_current_user(
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
+            detail="Użytkownik nie znaleziony",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Inactive user",
+            detail="Konto jest nieaktywne",
         )
 
     now = datetime.utcnow()
@@ -115,6 +115,6 @@ async def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
+            detail="Wymagane uprawnienia administratora",
         )
     return current_user

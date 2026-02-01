@@ -35,7 +35,7 @@ async def request_password_reset(
 ) -> MessageResponse:
     user = db.query(User).filter(User.email == reset_request.email).first()
 
-    generic_message = "If the email exists, a password reset link has been sent"
+    generic_message = "Jeśli podany email istnieje, link do resetowania hasła został wysłany"
 
     if not user:
         return MessageResponse(message=generic_message)
@@ -69,7 +69,7 @@ async def reset_password(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired password reset token",
+            detail="Nieprawidłowy lub wygasły token resetowania hasła",
         )
 
     if not user.password_reset_token_expires or user.password_reset_token_expires < datetime.now(
@@ -80,13 +80,13 @@ async def reset_password(
         db.commit()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password reset token has expired",
+            detail="Token resetowania hasła wygasł",
         )
 
     if len(request.new_password) < 8:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Password must be at least 8 characters long",
+            detail="Hasło musi mieć co najmniej 8 znaków",
         )
 
     user.hashed_password = security.get_password_hash(request.new_password)
@@ -96,4 +96,4 @@ async def reset_password(
 
     db.commit()
 
-    return MessageResponse(message="Password successfully reset")
+    return MessageResponse(message="Hasło zostało zresetowane")

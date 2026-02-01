@@ -35,19 +35,19 @@ async def login(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Nieprawidłowy email lub hasło",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not security.verify_password(credentials.password, str(user.hashed_password)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Nieprawidłowy email lub hasło",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Konto jest nieaktywne")
 
     token_data = {"sub": str(user.id), "email": user.email, "role": user.role}
 
@@ -87,7 +87,7 @@ async def refresh_token(
     if token_data is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token has been revoked or expired",
+            detail="Token odświeżania został unieważniony lub wygasł",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -95,14 +95,14 @@ async def refresh_token(
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload",
+            detail="Nieprawidłowe dane tokena",
         )
 
     user = db.query(User).filter(User.id == user_id).first()
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found or inactive",
+            detail="Użytkownik nie znaleziony lub nieaktywny",
         )
 
     token_payload = {"sub": str(user.id), "email": user.email, "role": user.role}
@@ -110,7 +110,7 @@ async def refresh_token(
 
     security.update_access_cookie(response, new_access_token)
 
-    return RefreshResponse(message="Token refreshed successfully")
+    return RefreshResponse(message="Token odświeżony")
 
 
 @router.post("/logout", response_model=LogoutResponse)
@@ -124,7 +124,7 @@ async def logout(
 
     security.clear_auth_cookies(response)
 
-    return LogoutResponse(message="Successfully logged out")
+    return LogoutResponse(message="Wylogowano pomyślnie")
 
 
 @router.get("/me", response_model=UserResponse)
