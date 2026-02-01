@@ -93,18 +93,20 @@ async def get_current_user(
     now = datetime.utcnow()
     today = now.date()
 
-    already_tracked = (
-        db.query(UserDailyActivity.id)
+    existing = (
+        db.query(UserDailyActivity)
         .filter(UserDailyActivity.user_id == user.id, UserDailyActivity.date == today)
         .first()
     )
-    if not already_tracked:
-        try:
+    try:
+        if existing:
+            existing.last_seen_at = now
+        else:
             db.add(UserDailyActivity(user_id=user.id, date=today, last_seen_at=now))
-            db.commit()
-        except Exception:
-            logger.exception("Failed to record daily activity")
-            db.rollback()
+        db.commit()
+    except Exception:
+        logger.exception("Failed to record daily activity")
+        db.rollback()
 
     return cast(User, user)
 
