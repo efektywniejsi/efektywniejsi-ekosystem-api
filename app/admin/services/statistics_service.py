@@ -1,6 +1,6 @@
 """Statistics service for aggregating data from various models."""
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
@@ -636,7 +636,7 @@ class StatisticsService:
         dau_mau = round(active_today / active_month, 4) if active_month > 0 else 0.0
 
         # Activity data points — single grouped query
-        activity_by_day = dict(
+        activity_rows = (
             db.query(
                 UserDailyActivity.date,
                 func.count(func.distinct(UserDailyActivity.user_id)),
@@ -648,6 +648,7 @@ class StatisticsService:
             .group_by(UserDailyActivity.date)
             .all()
         )
+        activity_by_day: dict[date, int] = {row[0]: row[1] for row in activity_rows}
 
         new_by_day_rows = (
             db.query(
