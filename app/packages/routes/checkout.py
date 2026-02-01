@@ -50,7 +50,7 @@ async def initiate_checkout(
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.error("Checkout failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="An internal error occurred") from e
+        raise HTTPException(status_code=500, detail="Wystąpił błąd wewnętrzny") from e
 
 
 @router.get("/order/{order_id}", response_model=OrderStatusResponse)
@@ -63,7 +63,7 @@ def get_order_status(
     order = checkout_service.get_order_by_id(order_id)
 
     if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
+        raise HTTPException(status_code=404, detail="Zamówienie nie znalezione")
 
     return OrderStatusResponse(
         order_id=order.id,
