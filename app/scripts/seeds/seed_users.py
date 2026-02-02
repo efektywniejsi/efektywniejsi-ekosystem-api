@@ -1,3 +1,6 @@
+import os
+import secrets
+import string
 import sys
 from pathlib import Path
 
@@ -9,10 +12,18 @@ from app.core.security import get_password_hash
 from app.db.session import SessionLocal
 
 
+def generate_secure_password(length: int = 24) -> str:
+    alphabet = string.ascii_letters + string.digits + "!@#$%&*"
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
 def seed_admin_user() -> None:
     db = SessionLocal()
     try:
-        admin_email = "admin@efektywniejsi.pl"
+        admin_email = os.environ.get("ADMIN_EMAIL", "admin@efektywniejsi.pl")
+        admin_password = os.environ.get("ADMIN_PASSWORD") or generate_secure_password()
+        admin_name = os.environ.get("ADMIN_NAME", "Admin")
+
         existing_admin = db.query(User).filter(User.email == admin_email).first()
 
         if existing_admin:
@@ -21,8 +32,8 @@ def seed_admin_user() -> None:
 
         admin_user = User(
             email=admin_email,
-            name="Admin",
-            hashed_password=get_password_hash("admin123"),
+            name=admin_name,
+            hashed_password=get_password_hash(admin_password),
             role="admin",
             is_active=True,
         )
@@ -31,10 +42,13 @@ def seed_admin_user() -> None:
         db.refresh(admin_user)
 
         print("✓ Admin user created successfully!")
-        print(f"  Email: {admin_email}")
-        print("  Password: admin123")
-        print("  Role: admin")
-        print("\n⚠️  IMPORTANT: Change the password after first login!")
+        print(f"  Email:    {admin_email}")
+        print(f"  Password: {admin_password}")
+        print()
+        print("  ╔══════════════════════════════════════════════════╗")
+        print("  ║  SAVE THIS PASSWORD NOW — it won't be shown     ║")
+        print("  ║  again. Change it after first login.             ║")
+        print("  ╚══════════════════════════════════════════════════╝")
     except Exception as e:
         print(f"✗ Error creating admin user: {e}")
         db.rollback()
@@ -47,15 +61,15 @@ def seed_test_users() -> None:
     try:
         test_users = [
             {
-                "email": "user@test.pl",
+                "email": os.environ.get("TEST_USER1_EMAIL", "user@test.pl"),
                 "name": "Jan Kowalski",
-                "password": "testuser123",
+                "password": os.environ.get("TEST_USER1_PASSWORD") or generate_secure_password(),
                 "role": "paid",
             },
             {
-                "email": "user2@test.pl",
+                "email": os.environ.get("TEST_USER2_EMAIL", "user2@test.pl"),
                 "name": "Anna Nowak",
-                "password": "testuser123",
+                "password": os.environ.get("TEST_USER2_PASSWORD") or generate_secure_password(),
                 "role": "paid",
             },
         ]
@@ -75,7 +89,8 @@ def seed_test_users() -> None:
             )
             db.add(user)
             db.commit()
-            print(f"✓ Test user created: {user_data['email']} (password: {user_data['password']})")
+            print(f"✓ Test user created: {user_data['email']}")
+            print(f"  Password: {user_data['password']}")
     except Exception as e:
         print(f"✗ Error creating test users: {e}")
         db.rollback()
@@ -86,6 +101,12 @@ def seed_test_users() -> None:
 if __name__ == "__main__":
     print("=" * 80)
     print("Seeding database with initial users...")
+    print()
+    print("  Tip: Set env vars to control credentials:")
+    print("    ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME")
+    print("    TEST_USER1_EMAIL, TEST_USER1_PASSWORD")
+    print("    TEST_USER2_EMAIL, TEST_USER2_PASSWORD")
+    print("  If not set, secure random passwords will be generated.")
     print("=" * 80)
 
     seed_admin_user()
