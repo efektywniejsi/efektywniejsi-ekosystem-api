@@ -274,6 +274,36 @@ def pin_thread(cookies, thread_id):
     return None
 
 
+def create_achievement(cookies, slug, name, description, points, criteria_type="manual"):
+    """Create a gamification achievement if it doesn't exist."""
+    # Check existing achievements
+    data, status, _ = api_request("/admin/gamification/achievements", cookies=cookies)
+    if status == 200:
+        existing = data if isinstance(data, list) else data.get("achievements", [])
+        for ach in existing:
+            if ach.get("slug") == slug:
+                print(f"  SKIP: Achievement '{slug}' already exists (id={ach['id']})")
+                return ach
+
+    data, status, _ = api_request(
+        "/admin/gamification/achievements",
+        method="POST",
+        data={
+            "slug": slug,
+            "name": name,
+            "description": description,
+            "points": points,
+            "criteria_type": criteria_type,
+        },
+        cookies=cookies,
+    )
+    if status in (200, 201):
+        print(f"  OK: Created achievement '{slug}' (id={data.get('id', 'unknown')})")
+        return data
+    print(f"  FAIL: Could not create achievement '{slug}': {data}")
+    return None
+
+
 def get_bundles(cookies):
     """Get all bundles."""
     data, status, _ = api_request("/bundles", cookies=cookies)
@@ -453,6 +483,33 @@ def main():
         )
     else:
         print("  SKIP: No packages available for bundle creation")
+
+    # Step 5b: Create gamification achievements
+    print("\n[5b/8] Creating gamification achievements...")
+    create_achievement(
+        e2e_admin_cookies,
+        slug="e2e-first-lesson",
+        name="Pierwsza lekcja",
+        description="Ukończ swoją pierwszą lekcję.",
+        points=10,
+        criteria_type="lesson_complete",
+    )
+    create_achievement(
+        e2e_admin_cookies,
+        slug="e2e-course-complete",
+        name="Kurs ukończony",
+        description="Ukończ cały kurs od początku do końca.",
+        points=100,
+        criteria_type="course_complete",
+    )
+    create_achievement(
+        e2e_admin_cookies,
+        slug="e2e-streak-7",
+        name="Tydzień serii",
+        description="Utrzymaj serię aktywności przez 7 dni.",
+        points=50,
+        criteria_type="streak",
+    )
 
     # Step 6: Create enrollment
     print("\n[6/8] Creating enrollments...")
