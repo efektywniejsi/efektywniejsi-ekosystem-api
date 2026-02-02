@@ -1,14 +1,15 @@
-import logging
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from redis.asyncio import Redis
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from sqlalchemy import text
 
 from app.admin.routes import admin_statistics
 from app.ai.routes import brand_guidelines as brand_guidelines_routes
@@ -20,6 +21,7 @@ from app.community.routes import thread_attachments as community_attachments_rou
 from app.community.routes import threads as community_routes
 from app.core import redis as redis_module
 from app.core.config import settings
+from app.core.log_config import RequestLoggingMiddleware, setup_logging
 from app.core.rate_limit import limiter
 from app.courses.routes import (
     admin as courses_admin,
@@ -36,6 +38,7 @@ from app.courses.routes import (
     sales_page,
     webhooks,
 )
+from app.db.session import SessionLocal
 from app.messaging.routes import admin_messages as admin_messages_routes
 from app.messaging.routes import messages as messages_routes
 from app.notifications.routes import notifications as notifications_routes
@@ -50,12 +53,13 @@ from app.packages.routes import (
     webhooks_router,
 )
 
-logger = logging.getLogger(__name__)
+setup_logging()
+logger = structlog.get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    logger.info("Connecting to Redis...")
+    logger.info("connecting_to_redis")
     redis_module.redis_client = Redis.from_url(
         settings.REDIS_URL, decode_responses=True, encoding="utf-8"
     )
@@ -63,16 +67,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         if redis_module.redis_client:
             await redis_module.redis_client.ping()
-            logger.info("Connected to Redis successfully")
+            logger.info("redis_connected")
     except Exception as e:
-        logger.error("Failed to connect to Redis: %s", e)
+        logger.error("redis_connection_failed", error=str(e))
 
     yield
 
-    logger.info("Closing Redis connection...")
+    logger.info("closing_redis")
     if redis_module.redis_client:
         await redis_module.redis_client.close()
-    logger.info("Redis connection closed")
+    logger.info("redis_closed")
 
 
 app = FastAPI(
@@ -93,6 +97,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestLoggingMiddleware)
 
 uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(uploads_dir, exist_ok=True)
@@ -190,6 +195,7 @@ async def root() -> dict[str, str]:
 @app.get("/health")
 async def health_check() -> dict[str, str]:
     redis_status = "unknown"
+    db_status = "unknown"
 
     try:
         if redis_module.redis_client:
@@ -198,4 +204,17 @@ async def health_check() -> dict[str, str]:
     except Exception:
         redis_status = "unhealthy"
 
-    return {"status": "healthy" if redis_status == "healthy" else "degraded", "redis": redis_status}
+    try:
+        db = SessionLocal()
+        try:
+            db.execute(text("SELECT 1"))
+            db_status = "healthy"
+        finally:
+            db.close()
+    except Exception:
+        db_status = "unhealthy"
+
+    all_healthy = redis_status == "healthy" and db_status == "healthy"
+    overall = "healthy" if all_healthy else "degraded"
+
+    return {"status": overall, "redis": redis_status, "database": db_status}
