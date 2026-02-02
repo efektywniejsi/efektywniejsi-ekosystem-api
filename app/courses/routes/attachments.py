@@ -1,15 +1,13 @@
-import os
-import uuid
-from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user, require_admin
 from app.auth.models.user import User
 from app.core.config import settings
+from app.core.storage import generate_unique_filename, get_storage
 from app.courses.models import Attachment, Course, Lesson, Module
 from app.courses.services.enrollment_service import EnrollmentService
 from app.db.session import get_db
@@ -66,21 +64,15 @@ async def upload_attachment(
             detail=f"File size exceeds maximum allowed size of {settings.MAX_FILE_SIZE_MB}MB",
         )
 
-    file_extension = Path(file.filename or "file.pdf").suffix
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-
-    upload_dir = Path(settings.UPLOAD_DIR) / "attachments"
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
-    file_path = upload_dir / unique_filename
-    with open(file_path, "wb") as f:
-        f.write(file_content)
+    unique_filename = generate_unique_filename(file.filename or "file.pdf")
+    storage = get_storage()
+    stored_path = storage.upload(file_content, "attachments", unique_filename)
 
     attachment = Attachment(
         lesson_id=lesson_id,
         title=title,
         file_name=file.filename or unique_filename,
-        file_path=str(file_path),
+        file_path=stored_path,
         file_size_bytes=file_size,
         mime_type=file.content_type or "application/pdf",
     )
@@ -140,7 +132,7 @@ async def download_attachment(
     attachment_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> FileResponse:
+) -> RedirectResponse:
     """Download an attachment (requires enrollment in the course)."""
     attachment = db.query(Attachment).filter(Attachment.id == attachment_id).first()
     if not attachment:
@@ -179,18 +171,15 @@ async def download_attachment(
                 detail="You must be enrolled in this course to download this attachment",
             )
 
-    if not os.path.exists(attachment.file_path):
+    storage = get_storage()
+    if not storage.exists(attachment.file_path):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="File not found on server",
         )
 
-    return FileResponse(
-        path=attachment.file_path,
-        media_type=attachment.mime_type,
-        filename=attachment.file_name,
-        headers={"Content-Disposition": f'attachment; filename="{attachment.file_name}"'},
-    )
+    url = storage.download_url(attachment.file_path)
+    return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
 
 
 @router.delete("/attachments/{attachment_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -208,8 +197,8 @@ async def delete_attachment(
             detail="Attachment not found",
         )
 
-    if os.path.exists(attachment.file_path):
-        os.remove(attachment.file_path)
+    storage = get_storage()
+    storage.delete(attachment.file_path)
 
     db.delete(attachment)
     db.commit()
