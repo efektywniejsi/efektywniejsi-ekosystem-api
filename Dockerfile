@@ -47,8 +47,10 @@ COPY alembic.ini ./
 # Install the project itself (editable, into the existing venv)
 RUN uv pip install --no-deps -e .
 
-# Create non-root user
-RUN useradd --create-home appuser
+# Create non-root user and writable uploads directory
+RUN useradd --create-home appuser && \
+    mkdir -p /app/app/uploads && \
+    chown -R appuser:appuser /app/app/uploads
 USER appuser
 
 EXPOSE 8000
