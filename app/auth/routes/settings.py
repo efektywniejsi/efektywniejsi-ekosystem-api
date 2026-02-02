@@ -1,4 +1,3 @@
-import os
 import uuid
 from datetime import datetime
 
@@ -22,11 +21,11 @@ from app.auth.schemas.settings import (
 from app.core import security
 from app.core.config import settings
 from app.core.encryption import decrypt_totp_secret, encrypt_totp_secret
+from app.core.storage import get_storage
 from app.db.session import get_db
 
 router = APIRouter()
 
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png"}
 MAX_AVATAR_SIZE = 2 * 1024 * 1024
 
@@ -61,25 +60,24 @@ async def upload_avatar(
             detail="Rozmiar pliku przekracza limit 2MB",
         )
 
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    storage = get_storage()
 
     ext = "jpg" if file.content_type == "image/jpeg" else "png"
     filename = f"{uuid.uuid4()}.{ext}"
-    filepath = os.path.join(UPLOAD_DIR, filename)
 
-    with open(filepath, "wb") as f:
-        f.write(contents)
+    stored_path = storage.upload(contents, "avatars", filename)
 
     if current_user.avatar_url:
-        old_filename = current_user.avatar_url.split("/")[-1]
-        old_path = os.path.join(UPLOAD_DIR, old_filename)
-        if os.path.exists(old_path):
-            os.remove(old_path)
+        try:
+            storage.delete(current_user.avatar_url)
+        except Exception:
+            pass
 
-    current_user.avatar_url = f"/uploads/{filename}"
+    avatar_url = storage.download_url(stored_path)
+    current_user.avatar_url = avatar_url
     db.commit()
 
-    return {"avatar_url": current_user.avatar_url}
+    return {"avatar_url": avatar_url}
 
 
 @router.delete("/profile/avatar")
@@ -88,10 +86,11 @@ async def delete_avatar(
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     if current_user.avatar_url:
-        filename = current_user.avatar_url.split("/")[-1]
-        filepath = os.path.join(UPLOAD_DIR, filename)
-        if os.path.exists(filepath):
-            os.remove(filepath)
+        storage = get_storage()
+        try:
+            storage.delete(current_user.avatar_url)
+        except Exception:
+            pass
         current_user.avatar_url = None
         db.commit()
     return {"message": "Zdjęcie usunięte"}
