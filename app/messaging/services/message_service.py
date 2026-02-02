@@ -585,6 +585,6 @@ class MessageService:
 
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
-                    loop.create_task(redis_module.redis_client.delete(f"dm:unread:{user_id}"))
+                    asyncio.ensure_future(redis_module.redis_client.delete(f"dm:unread:{user_id}"))
         except Exception:
             logger.warning("Failed to invalidate unread cache for user %s", user_id)
