@@ -1,17 +1,14 @@
-import os
-import uuid
-from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.auth.models.user import User
 from app.community.models.thread import CommunityThread
 from app.community.models.thread_attachment import ThreadAttachment
-from app.core.config import settings
+from app.core.storage import generate_unique_filename, get_storage
 from app.db.session import get_db
 
 router = APIRouter()
@@ -80,21 +77,15 @@ async def upload_thread_attachment(
             detail=f"File size exceeds maximum allowed size of {MAX_FILE_SIZE_MB}MB",
         )
 
-    file_extension = Path(file.filename or "file.bin").suffix
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-
-    upload_dir = Path(settings.UPLOAD_DIR) / "thread-attachments"
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
-    file_path = upload_dir / unique_filename
-    with open(file_path, "wb") as f:
-        f.write(file_content)
+    unique_filename = generate_unique_filename(file.filename or "file.bin")
+    storage = get_storage()
+    stored_path = storage.upload(file_content, "thread-attachments", unique_filename)
 
     attachment = ThreadAttachment(
         thread_id=thread_id,
         uploader_id=current_user.id,
         file_name=file.filename or unique_filename,
-        file_path=str(file_path),
+        file_path=stored_path,
         file_size_bytes=file_size,
         mime_type=file.content_type or "application/octet-stream",
     )
@@ -150,7 +141,7 @@ def download_thread_attachment(
     attachment_id: UUID,
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
-) -> FileResponse:
+) -> RedirectResponse:
     attachment = db.query(ThreadAttachment).filter(ThreadAttachment.id == attachment_id).first()
     if not attachment:
         raise HTTPException(
@@ -158,18 +149,15 @@ def download_thread_attachment(
             detail="Attachment not found",
         )
 
-    if not os.path.exists(attachment.file_path):
+    storage = get_storage()
+    if not storage.exists(attachment.file_path):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="File not found on server",
         )
 
-    return FileResponse(
-        path=attachment.file_path,
-        media_type=attachment.mime_type,
-        filename=attachment.file_name,
-        headers={"Content-Disposition": f'attachment; filename="{attachment.file_name}"'},
-    )
+    url = storage.download_url(attachment.file_path)
+    return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
 
 
 @router.delete(
@@ -194,8 +182,8 @@ def delete_thread_attachment(
             detail="Only the uploader or admin can delete this attachment",
         )
 
-    if os.path.exists(attachment.file_path):
-        os.remove(attachment.file_path)
+    storage = get_storage()
+    storage.delete(attachment.file_path)
 
     db.delete(attachment)
     db.commit()

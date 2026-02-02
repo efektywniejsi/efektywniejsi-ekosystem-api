@@ -1,7 +1,6 @@
 import io
 import secrets
 from datetime import datetime
-from pathlib import Path
 from typing import cast
 from uuid import UUID
 
@@ -13,6 +12,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.auth.models.user import User
 from app.core.config import settings
+from app.core.storage import get_storage
 from app.courses.models import Certificate, Course, Enrollment
 
 
@@ -154,19 +154,15 @@ class CertificateService:
 
         pdf_bytes = CertificateService.generate_certificate_pdf(user, course, certificate_code)
 
-        upload_dir = Path(settings.UPLOAD_DIR) / "certificates"
-        upload_dir.mkdir(parents=True, exist_ok=True)
-
-        file_path = upload_dir / f"{certificate_code}.pdf"
-        with open(file_path, "wb") as f:
-            f.write(pdf_bytes)
+        storage = get_storage()
+        stored_path = storage.upload(pdf_bytes, "certificates", f"{certificate_code}.pdf")
 
         certificate = Certificate(
             user_id=user_id,
             course_id=course_id,
             certificate_code=certificate_code,
             issued_at=datetime.utcnow(),
-            file_path=str(file_path),
+            file_path=stored_path,
         )
         db.add(certificate)
 

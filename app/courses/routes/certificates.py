@@ -1,12 +1,12 @@
-import os
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session, joinedload
 
 from app.auth.dependencies import get_current_user
 from app.auth.models.user import User
+from app.core.storage import get_storage
 from app.courses.models import Certificate
 from app.courses.schemas.certificate import (
     CertificateVerifyResponse,
@@ -91,7 +91,7 @@ async def download_certificate(
     certificate_code: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> FileResponse:
+) -> RedirectResponse:
     certificate = (
         db.query(Certificate)
         .options(joinedload(Certificate.course))
@@ -111,24 +111,15 @@ async def download_certificate(
             detail="Nie masz uprawnień do pobrania tego certyfikatu",
         )
 
-    if not certificate.file_path or not os.path.exists(certificate.file_path):
+    storage = get_storage()
+    if not certificate.file_path or not storage.exists(certificate.file_path):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Plik certyfikatu nie znaleziony na serwerze",
         )
 
-    filename = (
-        f"certificate_{certificate.course.slug}_{certificate_code[:8]}.pdf"
-        if certificate.course
-        else f"certificate_{certificate_code[:8]}.pdf"
-    )
-
-    return FileResponse(
-        path=certificate.file_path,
-        media_type="application/pdf",
-        filename=filename,
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
+    url = storage.download_url(certificate.file_path)
+    return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
 
 
 @router.get(
