@@ -1,0 +1,17 @@
+.venv
+.git
+.github
+.ruff_cache
+.mypy_cache
+.pytest_cache
+__pycache__
+*.pyc
+tests
+htmlcov
+coverage.xml
+.coverage
+.env
+.env.*
+docker-compose*.yml
+uploads
+*.md
