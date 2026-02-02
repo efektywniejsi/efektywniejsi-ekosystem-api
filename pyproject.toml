@@ -27,6 +27,8 @@ dependencies = [
     "celery[redis]>=5.4",
     "pyotp==2.9.0",
     "slowapi==0.1.9",
+    "boto3>=1.35.0",
+    "structlog>=24.4.0",
 ]
 
 [project.optional-dependencies]
@@ -111,6 +113,9 @@ module = [
     "pyotp.*",
     "stripe.*",
     "slowapi.*",
+    "boto3.*",
+    "botocore.*",
+    "structlog.*",
 ]
 ignore_missing_imports = true
 

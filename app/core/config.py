@@ -58,6 +58,16 @@ class Settings(BaseSettings):
 
     TOTP_ENCRYPTION_KEY: str = ""
 
+    # Cloudflare R2 storage (S3-compatible)
+    R2_ACCOUNT_ID: str = ""
+    R2_ACCESS_KEY_ID: str = ""
+    R2_SECRET_ACCESS_KEY: str = ""
+    R2_BUCKET_NAME: str = "efektywniejsi-uploads"
+    R2_PUBLIC_URL: str = ""  # e.g. https://files.efektywniejsi.pl
+
+    # Storage backend: "local" for development, "r2" for production
+    STORAGE_BACKEND: str = "local"
+
     class Config:
         env_file = ".env"
         case_sensitive = True
@@ -72,6 +82,10 @@ class Settings(BaseSettings):
             except json.JSONDecodeError:
                 return ["http://localhost:5173", "http://localhost:3000"]
         return self.BACKEND_CORS_ORIGINS
+
+    @property
+    def r2_endpoint_url(self) -> str:
+        return f"https://{self.R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
 
 
 settings = Settings()
