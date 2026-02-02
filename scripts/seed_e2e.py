@@ -9,23 +9,28 @@ Usage:
 """
 
 import json
+import os
 import sys
 import urllib.error
 import urllib.request
 
-API_BASE = "http://localhost:8001/api/v1"
+API_BASE = os.environ.get("E2E_API_BASE", "http://localhost:8001/api/v1")
 
-ADMIN_EMAIL = "e2e-admin@test.pl"
-ADMIN_PASSWORD = "E2eAdmin123!"
+ADMIN_EMAIL = os.environ.get("E2E_ADMIN_EMAIL", "e2e-admin@test.pl")
+ADMIN_PASSWORD = os.environ.get("E2E_ADMIN_PASSWORD", "E2eAdmin123!")
 ADMIN_NAME = "E2E Admin"
 
-USER_EMAIL = "e2e-user@test.pl"
-USER_PASSWORD = "E2eUser123!"
+USER_EMAIL = os.environ.get("E2E_USER_EMAIL", "e2e-user@test.pl")
+USER_PASSWORD = os.environ.get("E2E_USER_PASSWORD", "E2eUser123!")
 USER_NAME = "E2E Paid User"
 
 # First, use the built-in admin to bootstrap
-BOOTSTRAP_ADMIN_EMAIL = "admin@efektywniejsi.pl"
-BOOTSTRAP_ADMIN_PASSWORD = "admin123"
+BOOTSTRAP_ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@efektywniejsi.pl")
+BOOTSTRAP_ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+if not BOOTSTRAP_ADMIN_PASSWORD:
+    print("ERROR: ADMIN_PASSWORD env var is required.")
+    print("  Set it to the password used when seeding the admin user.")
+    sys.exit(1)
 
 
 def api_request(endpoint, method="GET", data=None, cookies=None):
