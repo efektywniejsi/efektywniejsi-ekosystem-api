@@ -3,7 +3,7 @@ import logging
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import Response
 from jose import JWTError, jwt
@@ -68,15 +68,21 @@ def generate_reset_token() -> tuple[str, str, datetime]:
     return raw_token, hashed_token, expiry
 
 
+def _cookie_samesite() -> Literal["lax", "none"]:
+    """Return SameSite policy: 'none' for cross-site production, 'lax' for same-site/dev."""
+    return "lax" if settings.DEBUG else "none"
+
+
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
     """Set httpOnly cookies for authentication tokens"""
     is_secure = not settings.DEBUG
+    samesite = _cookie_samesite()
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
         secure=is_secure,
-        samesite="lax",
+        samesite=samesite,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
     response.set_cookie(
@@ -84,7 +90,7 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str) 
         value=refresh_token,
         httponly=True,
         secure=is_secure,
-        samesite="lax",
+        samesite=samesite,
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
     )
 
@@ -96,12 +102,13 @@ def update_access_cookie(response: Response, access_token: str) -> None:
         value=access_token,
         httponly=True,
         secure=not settings.DEBUG,
-        samesite="lax",
+        samesite=_cookie_samesite(),
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
 
 
 def clear_auth_cookies(response: Response) -> None:
     """Clear authentication cookies on logout"""
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
+    samesite = _cookie_samesite()
+    response.delete_cookie("access_token", samesite=samesite, secure=not settings.DEBUG)
+    response.delete_cookie("refresh_token", samesite=samesite, secure=not settings.DEBUG)
