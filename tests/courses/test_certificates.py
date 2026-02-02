@@ -125,19 +125,20 @@ async def test_download_certificate(
     test_course,
     db_session,
 ):
-    """Test downloading certificate PDF."""
+    """Test downloading certificate PDF redirects to storage URL."""
     from datetime import datetime
     from pathlib import Path
 
+    from app.core.config import settings
     from app.courses.models import Certificate
 
-    # Create dummy PDF file
-    upload_dir = Path("/tmp/certificates")
+    # Create dummy PDF file via local storage
+    upload_dir = Path(settings.UPLOAD_DIR) / "certificates"
     upload_dir.mkdir(parents=True, exist_ok=True)
     cert_file = upload_dir / "TEST-CERT-2026-002.pdf"
     cert_file.write_bytes(b"%PDF-1.4\nDummy PDF")
 
-    # Create certificate
+    # Create certificate with storage-compatible path
     certificate = Certificate(
         user_id=test_user.id,
         course_id=test_course.id,
@@ -151,13 +152,12 @@ async def test_download_certificate(
     response = await test_client.get(
         "/api/v1/certificates/TEST-CERT-2026-002/download",
         cookies={"access_token": test_user_token},
+        follow_redirects=False,
     )
 
-    # Should return PDF or 200 status
-    assert response.status_code in [200, 201]
-    # Check Content-Type is PDF
-    if response.status_code == 200:
-        assert "application/pdf" in response.headers.get("content-type", "")
+    # Should return 302 redirect to storage URL
+    assert response.status_code == 302
+    assert "location" in response.headers
 
 
 @pytest.mark.asyncio
