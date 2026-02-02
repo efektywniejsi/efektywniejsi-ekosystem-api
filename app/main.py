@@ -36,6 +36,8 @@ from app.courses.routes import (
     sales_page,
     webhooks,
 )
+from app.messaging.routes import admin_messages as admin_messages_routes
+from app.messaging.routes import messages as messages_routes
 from app.notifications.routes import notifications as notifications_routes
 from app.packages.routes import (
     bundle_sales_page_router,
@@ -166,6 +168,17 @@ app.include_router(
     admin_community_routes.router,
     prefix=f"{settings.API_V1_PREFIX}/admin",
     tags=["admin-community"],
+)
+
+app.include_router(
+    messages_routes.router,
+    prefix=f"{settings.API_V1_PREFIX}/messages",
+    tags=["messages"],
+)
+app.include_router(
+    admin_messages_routes.router,
+    prefix=f"{settings.API_V1_PREFIX}/admin/messages",
+    tags=["admin-messages"],
 )
 
 
