@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.auth.models.user import User
+from app.community.schemas.public_profile import PublicProfileResponse
 from app.community.schemas.thread import (
     ReplyCreate,
     ReplyResponse,
@@ -14,10 +15,21 @@ from app.community.schemas.thread import (
     ThreadListResponse,
     ThreadUpdate,
 )
+from app.community.services.public_profile_service import PublicProfileService
 from app.community.services.thread_service import ThreadService
 from app.db.session import get_db
 
 router = APIRouter()
+
+
+@router.get("/users/{user_id}/profile", response_model=PublicProfileResponse)
+def get_user_public_profile(
+    user_id: UUID,
+    _current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> PublicProfileResponse:
+    service = PublicProfileService(db)
+    return service.get_public_profile(user_id)
 
 
 @router.post("/threads", response_model=ThreadDetailResponse, status_code=201)
