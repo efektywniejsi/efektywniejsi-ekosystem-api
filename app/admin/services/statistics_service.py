@@ -1,6 +1,6 @@
 """Statistics service for aggregating data from various models."""
 
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
@@ -58,7 +58,7 @@ class StatisticsService:
     @staticmethod
     def _get_period_boundaries(period: str) -> tuple[datetime, datetime]:
         """Get start and end datetime for a period."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
         if period == "today":
@@ -136,7 +136,7 @@ class StatisticsService:
     @staticmethod
     def get_dashboard_summary(db: Session) -> DashboardSummaryResponse:
         """Get complete dashboard summary with all KPIs."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_start = today_start - timedelta(days=today_start.weekday())
         month_start = today_start.replace(day=1)
@@ -614,7 +614,7 @@ class StatisticsService:
     @staticmethod
     def get_user_statistics(db: Session, days: int = 30) -> UserStatisticsResponse:
         """Get user statistics with activity trends."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_start = today_start - timedelta(days=today_start.weekday())
         month_start = today_start.replace(day=1)
@@ -691,7 +691,7 @@ class StatisticsService:
     @staticmethod
     def get_education_statistics(db: Session) -> EducationStatisticsResponse:
         """Get education statistics with course details."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         week_ago = now - timedelta(days=7)
 
         total_enrollments = db.query(Enrollment).count()
@@ -937,7 +937,7 @@ class StatisticsService:
     @staticmethod
     def get_monthly_new_users(db: Session, limit: int = 50) -> MonthlyUsersResponse:
         """Get new users registered in the current month."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
         total = db.query(User).filter(User.created_at >= month_start).count()

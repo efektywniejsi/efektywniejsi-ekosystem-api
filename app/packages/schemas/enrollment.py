@@ -3,9 +3,10 @@ Pydantic schemas for package enrollments.
 """
 
 import uuid
-from datetime import datetime
 
 from pydantic import BaseModel
+
+from app.core.datetime_utils import UTCDatetime
 
 
 class PackageEnrollmentResponse(BaseModel):
@@ -13,8 +14,8 @@ class PackageEnrollmentResponse(BaseModel):
 
     id: uuid.UUID
     package_id: uuid.UUID
-    enrolled_at: datetime
-    last_accessed_at: datetime | None
+    enrolled_at: UTCDatetime
+    last_accessed_at: UTCDatetime | None
 
     # Package details (nested)
     package: "PackageEnrollmentPackage"

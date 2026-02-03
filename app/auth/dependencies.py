@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated, cast
 
 from fastapi import Cookie, Depends, HTTPException, status
@@ -90,7 +90,7 @@ async def get_current_user(
             detail="Konto jest nieaktywne",
         )
 
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     today = now.date()
 
     existing = (

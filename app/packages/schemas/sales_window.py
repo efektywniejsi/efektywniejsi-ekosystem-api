@@ -5,6 +5,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from app.core.datetime_utils import UTCDatetime
+
 
 class SalesWindowBase(BaseModel):
     """Base schema for sales window with common fields."""
@@ -12,8 +14,8 @@ class SalesWindowBase(BaseModel):
     id: str
     name: str
     status: Literal["upcoming", "active", "closed"]
-    startsAt: datetime = Field(..., validation_alias="starts_at")
-    endsAt: datetime = Field(..., validation_alias="ends_at")
+    startsAt: UTCDatetime = Field(..., validation_alias="starts_at")
+    endsAt: UTCDatetime = Field(..., validation_alias="ends_at")
     landingPage: dict[str, Any] = Field(..., validation_alias="landing_page_config")
     earlyBird: dict[str, Any] | None = Field(None, validation_alias="early_bird_config")
     bundleIds: list[str] = Field(..., validation_alias="bundle_ids")
@@ -41,8 +43,8 @@ class SalesWindowBase(BaseModel):
 class SalesWindowResponse(SalesWindowBase):
     """Response schema for sales window (includes audit fields)."""
 
-    createdAt: datetime = Field(..., validation_alias="created_at")
-    updatedAt: datetime = Field(..., validation_alias="updated_at")
+    createdAt: UTCDatetime = Field(..., validation_alias="created_at")
+    updatedAt: UTCDatetime = Field(..., validation_alias="updated_at")
     createdBy: str | None = Field(None, validation_alias="created_by")
     updatedBy: str | None = Field(None, validation_alias="updated_by")
 

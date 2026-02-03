@@ -1,7 +1,8 @@
-from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
+
+from app.core.datetime_utils import UTCDatetime
 
 LessonStatusType = Literal["unavailable", "in_preparation", "available"]
 
@@ -46,8 +47,8 @@ class CourseResponse(CourseBase):
     learning_description: str | None = None
     learning_thumbnail_url: str | None = None
     sales_page_sections: dict[str, Any] | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: UTCDatetime
+    updated_at: UTCDatetime
 
     class Config:
         from_attributes = True
@@ -72,8 +73,8 @@ class ModuleUpdate(BaseModel):
 class ModuleResponse(ModuleBase):
     id: str
     course_id: str
-    created_at: datetime
-    updated_at: datetime
+    created_at: UTCDatetime
+    updated_at: UTCDatetime
 
     class Config:
         from_attributes = True
@@ -108,8 +109,8 @@ class LessonUpdate(BaseModel):
 class LessonResponse(LessonBase):
     id: str
     module_id: str
-    created_at: datetime
-    updated_at: datetime
+    created_at: UTCDatetime
+    updated_at: UTCDatetime
 
     class Config:
         from_attributes = True
@@ -136,11 +137,11 @@ class EnrollmentResponse(BaseModel):
     id: str
     user_id: str
     course_id: str
-    enrolled_at: datetime
-    completed_at: datetime | None = None
-    certificate_issued_at: datetime | None = None
-    last_accessed_at: datetime | None = None
-    expires_at: datetime | None = None
+    enrolled_at: UTCDatetime
+    completed_at: UTCDatetime | None = None
+    certificate_issued_at: UTCDatetime | None = None
+    last_accessed_at: UTCDatetime | None = None
+    expires_at: UTCDatetime | None = None
 
     class Config:
         from_attributes = True

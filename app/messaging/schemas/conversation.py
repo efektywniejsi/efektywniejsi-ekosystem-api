@@ -1,7 +1,8 @@
-from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+from app.core.datetime_utils import UTCDatetime
 
 
 class ConversationCreate(BaseModel):
@@ -23,7 +24,7 @@ class ParticipantInfo(BaseModel):
 class MessagePreview(BaseModel):
     content: str
     sender_name: str
-    created_at: datetime
+    created_at: UTCDatetime
 
 
 class ConversationListItem(BaseModel):
@@ -33,7 +34,7 @@ class ConversationListItem(BaseModel):
     last_message: MessagePreview | None = None
     unread_count: int = 0
     is_archived: bool = False
-    updated_at: datetime
+    updated_at: UTCDatetime
 
     class Config:
         from_attributes = True

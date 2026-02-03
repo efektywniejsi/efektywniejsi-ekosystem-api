@@ -4,10 +4,11 @@ Pydantic schemas for packages.
 
 import json
 import uuid
-from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
+
+from app.core.datetime_utils import UTCDatetime
 
 
 class PackageProcessResponse(BaseModel):
@@ -83,8 +84,8 @@ class PackageDetailResponse(BaseModel):
     processes: list[PackageProcessResponse] = Field(default_factory=list)
     bundle_items: list[PackageBundleItemResponse] = Field(default_factory=list)
     sales_page_sections: dict[str, Any] | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: UTCDatetime
+    updated_at: UTCDatetime
 
     class Config:
         from_attributes = True

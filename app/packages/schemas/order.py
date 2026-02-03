@@ -3,10 +3,10 @@ Pydantic schemas for orders.
 """
 
 import uuid
-from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.core.datetime_utils import UTCDatetime
 from app.packages.models.order import OrderStatus, PaymentProvider
 
 
@@ -35,8 +35,8 @@ class OrderResponse(BaseModel):
     total: int  # In grosz
     currency: str
     payment_provider: PaymentProvider
-    payment_completed_at: datetime | None
-    created_at: datetime
+    payment_completed_at: UTCDatetime | None
+    created_at: UTCDatetime
     items: list[OrderItemResponse] = []
 
     class Config:
@@ -51,7 +51,7 @@ class OrderListResponse(BaseModel):
     status: OrderStatus
     total: int  # In grosz
     currency: str
-    created_at: datetime
+    created_at: UTCDatetime
     items_count: int
 
     class Config:
