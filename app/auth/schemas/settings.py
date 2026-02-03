@@ -27,6 +27,7 @@ class TotpStatusResponse(BaseModel):
 class NotificationPreferences(BaseModel):
     course_updates: bool = True
     admin_announcements: bool = False
+    direct_messages: bool = True
 
 
 class PaymentMethodResponse(BaseModel):

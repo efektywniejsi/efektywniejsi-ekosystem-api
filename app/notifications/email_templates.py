@@ -1,3 +1,5 @@
+import html
+
 from app.auth.services.email_service import (
     _BG_DARK,
     _BORDER,
@@ -111,6 +113,68 @@ def build_announcement_email(
 Cześć {user_name},
 
 {body_text}
+
+---
+© 2026 Efektywniejsi. Wszystkie prawa zastrzeżone."""
+
+    return EmailMessage(
+        to=user_email,
+        subject=subject,
+        body_html=_wrap_html(inner),
+        body_text=text_body,
+    )
+
+
+def build_direct_message_email(
+    user_name: str,
+    user_email: str,
+    sender_name: str,
+    message_preview: str,
+    conversation_url: str,
+) -> EmailMessage:
+    """Build an email notifying a user about a new direct message."""
+    safe_user_name = html.escape(user_name)
+    safe_sender_name = html.escape(sender_name)
+    safe_preview = html.escape(message_preview[:200])
+    subject = f"Nowa wiadomość od {safe_sender_name}"
+
+    inner = f"""\
+<h2 style="margin: 0 0 24px 0; font-size: 22px; font-weight: 700; color: {_TEXT_LIGHT};">
+  {subject}
+</h2>
+<p style="margin: 0 0 16px 0; font-size: 15px; color: {_TEXT_MUTED}; line-height: 1.6;">
+  Cześć {safe_user_name},
+</p>
+<p style="margin: 0 0 20px 0; font-size: 15px; color: {_TEXT_MUTED}; line-height: 1.6;">
+  <strong style="color: {_TEXT_LIGHT};">{safe_sender_name}</strong> wysłał(a) Ci wiadomość:
+</p>
+<div style="background-color: {_BG_DARK}; border: 1px solid {_BORDER}; border-radius: 8px; padding: 16px 20px; margin: 0 0 24px 0;">
+  <p style="margin: 0; font-size: 15px; color: {_TEXT_MUTED}; line-height: 1.6; font-style: italic;">
+    {safe_preview}
+  </p>
+</div>
+<table cellpadding="0" cellspacing="0" style="margin: 0 0 8px 0;">
+  <tr>
+    <td style="border-radius: 8px; background: linear-gradient(135deg, {_VIOLET}, {_CYAN});">
+      <a href="{conversation_url}"
+         style="display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600;
+                color: #ffffff; text-decoration: none; border-radius: 8px;">
+        Odpowiedz
+      </a>
+    </td>
+  </tr>
+</table>"""
+
+    text_body = f"""\
+{subject}
+
+Cześć {user_name},
+
+{sender_name} wysłał(a) Ci wiadomość:
+
+"{message_preview[:200]}"
+
+Odpowiedz: {conversation_url}
 
 ---
 © 2026 Efektywniejsi. Wszystkie prawa zastrzeżone."""

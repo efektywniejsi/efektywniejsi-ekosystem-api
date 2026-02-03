@@ -74,6 +74,12 @@ class MessageService:
 
             self.db.commit()
             self._invalidate_unread_cache(data.recipient_id)
+            self._send_dm_notification(
+                recipient_user_id=data.recipient_id,
+                sender=sender,
+                message_content=data.initial_message,
+                conversation_id=existing_conv.id,
+            )
             return self.get_conversation_detail(existing_conv.id, sender.id)
 
         conversation = Conversation(subject=data.subject)
@@ -101,6 +107,12 @@ class MessageService:
 
         self.db.commit()
         self._invalidate_unread_cache(data.recipient_id)
+        self._send_dm_notification(
+            recipient_user_id=data.recipient_id,
+            sender=sender,
+            message_content=data.initial_message,
+            conversation_id=conversation.id,
+        )
         return self.get_conversation_detail(conversation.id, sender.id)
 
     def get_user_conversations(
@@ -243,6 +255,12 @@ class MessageService:
         )
         for p in other_participants:
             self._invalidate_unread_cache(p.user_id)
+            self._send_dm_notification(
+                recipient_user_id=p.user_id,
+                sender=sender,
+                message_content=content,
+                conversation_id=conversation_id,
+            )
 
         return MessageResponse(
             id=message.id,
@@ -473,6 +491,29 @@ class MessageService:
             )
             for u in users
         ]
+
+    @staticmethod
+    def _send_dm_notification(
+        recipient_user_id: UUID,
+        sender: User,
+        message_content: str,
+        conversation_id: UUID,
+    ) -> None:
+        try:
+            from app.notifications.tasks import send_direct_message_notification
+
+            send_direct_message_notification.delay(
+                recipient_user_id=str(recipient_user_id),
+                sender_user_id=str(sender.id),
+                message_preview=message_content[:200],
+                conversation_id=str(conversation_id),
+            )
+        except (ImportError, AttributeError) as exc:
+            logger.error("Celery task import failed: %s", exc, exc_info=True)
+        except Exception as exc:
+            logger.warning(
+                "Failed to enqueue DM notification for user %s: %s", recipient_user_id, exc
+            )
 
     def _find_existing_conversation(self, user1_id: UUID, user2_id: UUID) -> Conversation | None:
         user1_convs = (
