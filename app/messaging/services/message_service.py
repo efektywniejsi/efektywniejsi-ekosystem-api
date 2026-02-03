@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import cast
 from uuid import UUID
 
@@ -59,7 +59,7 @@ class MessageService:
                 content=data.initial_message,
             )
             self.db.add(message)
-            existing_conv.updated_at = datetime.utcnow()
+            existing_conv.updated_at = datetime.now(UTC)
 
             participant = (
                 self.db.query(ConversationParticipant)
@@ -83,7 +83,7 @@ class MessageService:
         sender_participant = ConversationParticipant(
             conversation_id=conversation.id,
             user_id=sender.id,
-            last_read_at=datetime.utcnow(),
+            last_read_at=datetime.now(UTC),
         )
         recipient_participant = ConversationParticipant(
             conversation_id=conversation.id,
@@ -186,7 +186,7 @@ class MessageService:
             .all()
         )
 
-        participant.last_read_at = datetime.utcnow()
+        participant.last_read_at = datetime.now(UTC)
         self.db.commit()
         self._invalidate_unread_cache(user_id)
 
@@ -228,7 +228,7 @@ class MessageService:
             self.db.query(Conversation).filter(Conversation.id == conversation_id).first()
         )
         if conversation:
-            conversation.updated_at = datetime.utcnow()
+            conversation.updated_at = datetime.now(UTC)
 
         self.db.commit()
         self.db.refresh(message)
@@ -255,7 +255,7 @@ class MessageService:
 
     def mark_as_read(self, conversation_id: UUID, user_id: UUID) -> None:
         participant = self._get_participant_or_403(conversation_id, user_id)
-        participant.last_read_at = datetime.utcnow()
+        participant.last_read_at = datetime.now(UTC)
         self.db.commit()
         self._invalidate_unread_cache(user_id)
 
