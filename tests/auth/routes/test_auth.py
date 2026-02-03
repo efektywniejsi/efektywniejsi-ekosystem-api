@@ -136,10 +136,10 @@ class TestLogoutEndpoint:
         assert token_data is None
 
     @pytest.mark.asyncio
-    async def test_should_return_403_when_no_auth_token(self, test_client, test_refresh_token):
+    async def test_should_return_401_when_no_auth_token(self, test_client, test_refresh_token):
         response = await test_client.post("/api/v1/auth/logout")
 
-        assert response.status_code == 403
+        assert response.status_code == 401
 
 
 class TestMeEndpoint:
@@ -161,10 +161,10 @@ class TestMeEndpoint:
         assert data["role"] == test_user.role
 
     @pytest.mark.asyncio
-    async def test_should_return_403_when_no_token(self, test_client):
+    async def test_should_return_401_when_no_token(self, test_client):
         response = await test_client.get("/api/v1/auth/me")
 
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     @pytest.mark.asyncio
     async def test_should_return_401_when_invalid_token(self, test_client):

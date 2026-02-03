@@ -74,7 +74,7 @@ class TestCreateUserEndpoint:
         assert "Wymagane uprawnienia administratora" in response.json()["detail"]
 
     @pytest.mark.asyncio
-    async def test_should_return_403_when_not_authenticated(self, test_client):
+    async def test_should_return_401_when_not_authenticated(self, test_client):
         payload = {
             "email": "newuser@example.com",
             "name": "New User",
@@ -84,7 +84,7 @@ class TestCreateUserEndpoint:
 
         response = await test_client.post("/api/v1/admin/users", json=payload)
 
-        assert response.status_code == 403
+        assert response.status_code == 401
 
 
 class TestListUsersEndpoint:
