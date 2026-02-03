@@ -54,7 +54,7 @@ async def test_enroll_without_auth(test_client: AsyncClient, test_course):
     """Test enrollment requires authentication."""
     response = await test_client.post(f"/api/v1/courses/{test_course.id}/enroll")
 
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 @pytest.mark.asyncio

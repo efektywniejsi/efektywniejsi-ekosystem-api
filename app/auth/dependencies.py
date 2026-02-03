@@ -19,8 +19,9 @@ async def get_access_token_from_cookie(
     """Extract and validate access token from cookie"""
     if not access_token:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Brak uwierzytelnienia",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     return access_token
 
