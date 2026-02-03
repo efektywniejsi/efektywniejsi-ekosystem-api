@@ -146,7 +146,7 @@ def send_announcement_notification(
 
         for user in users:
             prefs = user.notification_preferences or {}
-            if not prefs.get("marketing", True):
+            if not prefs.get("admin_announcements", True):
                 skipped += 1
                 continue
 
