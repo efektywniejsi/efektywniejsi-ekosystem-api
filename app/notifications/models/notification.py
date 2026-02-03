@@ -11,6 +11,7 @@ from app.db.session import Base
 class NotificationType(str, enum.Enum):
     COURSE_UPDATE = "course_update"
     ANNOUNCEMENT = "announcement"
+    DIRECT_MESSAGE = "direct_message"
 
 
 class NotificationStatus(str, enum.Enum):

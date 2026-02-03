@@ -38,6 +38,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.5 /uv /usr/local/bin/uv
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 ENV VIRTUAL_ENV="/opt/venv"
+ENV UV_PROJECT_ENVIRONMENT="/opt/venv"
 
 # Copy application code (changes frequently — separate layer)
 COPY pyproject.toml uv.lock ./
@@ -48,10 +49,10 @@ COPY alembic.ini ./
 # Install the project itself (editable, no deps — deps already in venv)
 RUN uv pip install --no-deps -e .
 
-# Create non-root user and writable uploads directory
+# Create non-root user and writable directories
 RUN useradd --create-home appuser && \
     mkdir -p /app/app/uploads && \
-    chown -R appuser:appuser /app/app/uploads
+    chown -R appuser:appuser /app/app/uploads /opt/venv
 USER appuser
 
 EXPOSE 8000
