@@ -457,7 +457,7 @@ class MessageService:
             self.db.query(User)
             .filter(
                 User.id != current_user_id,
-                User.is_active.is_(True),
+                User.is_active == True,  # noqa: E712
                 User.name.ilike(f"%{_escape_like(query)}%"),
             )
             .limit(limit)

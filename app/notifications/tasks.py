@@ -45,7 +45,7 @@ def send_course_update_notification(
             return {"sent": 0, "skipped": 0}
 
         users = (
-            db.query(User).filter(User.id.in_(enrolled_user_ids), User.is_active.is_(True)).all()
+            db.query(User).filter(User.id.in_(enrolled_user_ids), User.is_active == True).all()  # noqa: E712
         )
 
         email_service = get_email_service()
@@ -133,7 +133,7 @@ def send_announcement_notification(
                 log.status = "in_progress"
                 db.commit()
 
-        users = db.query(User).filter(User.is_active.is_(True)).all()
+        users = db.query(User).filter(User.is_active == True).all()  # noqa: E712
 
         if log:
             log.total_recipients = len(users)
