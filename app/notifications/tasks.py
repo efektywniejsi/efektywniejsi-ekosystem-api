@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -80,7 +80,7 @@ def send_course_update_notification(
                 success = asyncio.run(email_service.send_email(email_msg))
                 if success:
                     notification.status = NotificationStatus.SENT.value
-                    notification.sent_at = datetime.utcnow()
+                    notification.sent_at = datetime.now(UTC)
                     sent += 1
                 else:
                     notification.status = NotificationStatus.FAILED.value
@@ -171,7 +171,7 @@ def send_announcement_notification(
                 success = asyncio.run(email_service.send_email(email_msg))
                 if success:
                     notification.status = NotificationStatus.SENT.value
-                    notification.sent_at = datetime.utcnow()
+                    notification.sent_at = datetime.now(UTC)
                     sent += 1
                 else:
                     notification.status = NotificationStatus.FAILED.value
@@ -190,7 +190,7 @@ def send_announcement_notification(
             log.skipped_count = skipped
             log.failed_count = failed
             log.status = "completed"
-            log.completed_at = datetime.utcnow()
+            log.completed_at = datetime.now(UTC)
             db.commit()
 
         logger.info(
