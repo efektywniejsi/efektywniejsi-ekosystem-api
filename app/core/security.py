@@ -68,9 +68,9 @@ def generate_reset_token() -> tuple[str, str, datetime]:
     return raw_token, hashed_token, expiry
 
 
-def _cookie_samesite() -> Literal["lax", "none"]:
-    """Return SameSite policy: 'none' for cross-site production, 'lax' for same-site/dev."""
-    return "lax" if settings.DEBUG else "none"
+def _cookie_samesite() -> Literal["lax"]:
+    """Return SameSite policy: always 'lax' since API is proxied on the same domain."""
+    return "lax"
 
 
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
