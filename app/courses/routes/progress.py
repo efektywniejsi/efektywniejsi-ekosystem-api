@@ -1,6 +1,7 @@
+from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -10,12 +11,36 @@ from app.courses.models import LessonProgress
 from app.courses.schemas.progress import (
     CourseProgressSummary,
     LessonProgressResponse,
+    MonthlyActivityResponse,
     ProgressUpdateRequest,
+    WeeklyStatsResponse,
 )
 from app.courses.services.progress_service import ProgressService
 from app.db.session import get_db
 
 router = APIRouter()
+
+
+@router.get("/progress/weekly-stats", response_model=WeeklyStatsResponse)
+async def get_weekly_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> WeeklyStatsResponse:
+    """Get learning stats for the current week."""
+    stats = ProgressService.get_weekly_stats(current_user.id, db)
+    return WeeklyStatsResponse(**stats)
+
+
+@router.get("/progress/activity-dates", response_model=MonthlyActivityResponse)
+async def get_monthly_activity_dates(
+    year: int = Query(default_factory=lambda: date.today().year, ge=2020, le=2100),
+    month: int = Query(default_factory=lambda: date.today().month, ge=1, le=12),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> MonthlyActivityResponse:
+    """Get all active dates for a given month."""
+    result = ProgressService.get_monthly_activity_dates(current_user.id, year, month, db)
+    return MonthlyActivityResponse(**result)
 
 
 @router.post(

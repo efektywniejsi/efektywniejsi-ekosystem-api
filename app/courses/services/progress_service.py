@@ -1,11 +1,15 @@
-from datetime import datetime
+import calendar
+from datetime import date, datetime, timedelta
 from typing import cast
 from uuid import UUID
 
 from fastapi import HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.auth.models.user_daily_activity import UserDailyActivity
 from app.courses.models import Course, Enrollment, Lesson, LessonProgress, Module
+from app.courses.models.gamification import PointsHistory, UserStreak
 from app.courses.services.gamification_service import GamificationService
 
 
@@ -221,4 +225,94 @@ class ProgressService:
             "progress_percentage": progress_percentage,
             "total_watch_time_seconds": total_watch_time_seconds,
             "last_accessed_at": enrollment.last_accessed_at if enrollment else None,
+        }
+
+    @staticmethod
+    def get_weekly_stats(user_id: UUID, db: Session) -> dict:
+        """Get user's learning stats for the current week (Monday–Sunday)."""
+        today = date.today()
+        week_start = today - timedelta(days=today.weekday())  # Monday
+        week_end = week_start + timedelta(days=6)  # Sunday
+        week_start_dt = datetime.combine(week_start, datetime.min.time())
+
+        active_date_rows = (
+            db.query(UserDailyActivity.date)
+            .filter(
+                UserDailyActivity.user_id == user_id,
+                UserDailyActivity.date >= week_start,
+                UserDailyActivity.date <= week_end,
+            )
+            .distinct()
+            .all()
+        )
+        active_dates = [row[0] for row in active_date_rows]
+        active_days = len(active_dates)
+
+        total_watched_seconds = (
+            db.query(func.coalesce(func.sum(LessonProgress.watched_seconds), 0))
+            .filter(
+                LessonProgress.user_id == user_id,
+                LessonProgress.last_updated_at >= week_start_dt,
+            )
+            .scalar()
+        ) or 0
+
+        lessons_completed = (
+            db.query(func.count())
+            .select_from(LessonProgress)
+            .filter(
+                LessonProgress.user_id == user_id,
+                LessonProgress.is_completed == True,  # noqa: E712
+                LessonProgress.completed_at >= week_start_dt,
+            )
+            .scalar()
+        ) or 0
+
+        points_earned = (
+            db.query(func.coalesce(func.sum(PointsHistory.points), 0))
+            .filter(
+                PointsHistory.user_id == user_id,
+                PointsHistory.created_at >= week_start_dt,
+            )
+            .scalar()
+        ) or 0
+
+        streak_record = db.query(UserStreak).filter(UserStreak.user_id == user_id).first()
+        current_streak = streak_record.current_streak if streak_record else 0
+        longest_streak = streak_record.longest_streak if streak_record else 0
+
+        return {
+            "week_start": week_start,
+            "week_end": week_end,
+            "active_days": active_days,
+            "learning_minutes": total_watched_seconds // 60,
+            "lessons_completed": lessons_completed,
+            "points_earned": points_earned,
+            "current_streak": current_streak,
+            "active_dates": sorted(active_dates),
+            "longest_streak": longest_streak,
+        }
+
+    @staticmethod
+    def get_monthly_activity_dates(user_id: UUID, year: int, month: int, db: Session) -> dict:
+        """Get all active dates for a given month."""
+        month_start = date(year, month, 1)
+        last_day = calendar.monthrange(year, month)[1]
+        month_end = date(year, month, last_day)
+
+        rows = (
+            db.query(UserDailyActivity.date)
+            .filter(
+                UserDailyActivity.user_id == user_id,
+                UserDailyActivity.date >= month_start,
+                UserDailyActivity.date <= month_end,
+            )
+            .distinct()
+            .all()
+        )
+
+        return {
+            "year": year,
+            "month": month,
+            "active_dates": sorted(row[0] for row in rows),
         }

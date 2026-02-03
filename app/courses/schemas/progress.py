@@ -1,3 +1,5 @@
+from datetime import date
+
 from pydantic import BaseModel, Field
 
 from app.core.datetime_utils import UTCDatetime
@@ -31,3 +33,21 @@ class CourseProgressSummary(BaseModel):
     progress_percentage: int
     total_watch_time_seconds: int
     last_accessed_at: UTCDatetime | None = None
+
+
+class WeeklyStatsResponse(BaseModel):
+    week_start: date
+    week_end: date
+    active_days: int
+    learning_minutes: int
+    lessons_completed: int
+    points_earned: int
+    current_streak: int
+    active_dates: list[date]
+    longest_streak: int
+
+
+class MonthlyActivityResponse(BaseModel):
+    year: int
+    month: int
+    active_dates: list[date]
