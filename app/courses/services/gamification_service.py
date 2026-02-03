@@ -11,6 +11,14 @@ class GamificationService:
     POINTS_LESSON_COMPLETED = 10
     POINTS_COURSE_COMPLETED = 100
 
+    STREAK_DAILY_BONUS = {
+        1: 2,  # days 1-2: +2 XP
+        3: 5,  # days 3-6: +5 XP
+        7: 10,  # days 7-13: +10 XP
+        14: 15,  # days 14-29: +15 XP
+        30: 25,  # days 30+: +25 XP
+    }
+
     LEVEL_THRESHOLDS = [
         0,
         100,
@@ -23,6 +31,31 @@ class GamificationService:
         12500,
         20000,
     ]
+
+    @staticmethod
+    def _get_streak_bonus(current_streak: int) -> int:
+        """Return daily XP bonus for the given streak length."""
+        bonus = 0
+        for threshold in sorted(GamificationService.STREAK_DAILY_BONUS.keys()):
+            if current_streak >= threshold:
+                bonus = GamificationService.STREAK_DAILY_BONUS[threshold]
+            else:
+                break
+        return bonus
+
+    @staticmethod
+    def _award_streak_bonus(user_id: UUID, current_streak: int, db: Session) -> None:
+        """Award daily streak bonus XP."""
+        bonus = GamificationService._get_streak_bonus(current_streak)
+        if bonus > 0:
+            GamificationService.award_points(
+                user_id=user_id,
+                points=bonus,
+                reason=f"Daily streak bonus (day {current_streak})",
+                db=db,
+                reference_type="streak",
+                reference_id=None,
+            )
 
     @staticmethod
     def update_streak(user_id: UUID, db: Session) -> UserStreak:
@@ -46,6 +79,7 @@ class GamificationService:
             db.commit()
             db.refresh(user_streak)
 
+            GamificationService._award_streak_bonus(user_id, 1, db)
             GamificationService.check_streak_achievements(user_id, 1, db)
             return cast(UserStreak, user_streak)
 
@@ -61,6 +95,7 @@ class GamificationService:
             user_streak.last_activity_date = today
             db.commit()
 
+            GamificationService._award_streak_bonus(user_id, user_streak.current_streak, db)
             GamificationService.check_streak_achievements(user_id, user_streak.current_streak, db)
             return cast(UserStreak, user_streak)
 
@@ -79,6 +114,7 @@ class GamificationService:
                 user_streak.grace_period_used_at = today
                 db.commit()
 
+                GamificationService._award_streak_bonus(user_id, user_streak.current_streak, db)
                 GamificationService.check_streak_achievements(
                     user_id, user_streak.current_streak, db
                 )
