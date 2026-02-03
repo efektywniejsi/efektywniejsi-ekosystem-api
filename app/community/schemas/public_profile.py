@@ -1,7 +1,8 @@
-from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+from app.core.datetime_utils import UTCDatetime
 
 
 class PublicCourseInfo(BaseModel):
@@ -27,7 +28,7 @@ class PublicProfileResponse(BaseModel):
     name: str
     avatar_url: str | None = None
     role: str
-    member_since: datetime
+    member_since: UTCDatetime
     courses: list[PublicCourseInfo] = Field(default_factory=list)
     completed_courses_count: int
     community_activity: CommunityActivity

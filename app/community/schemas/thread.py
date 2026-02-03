@@ -1,10 +1,10 @@
-from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from app.community.models.thread import ThreadCategory
+from app.core.datetime_utils import UTCDatetime
 
 
 class ThreadCreate(BaseModel):
@@ -68,8 +68,8 @@ class ReplyResponse(BaseModel):
     author: AuthorInfo
     content: str
     is_solution: bool
-    created_at: datetime
-    updated_at: datetime | None = None
+    created_at: UTCDatetime
+    updated_at: UTCDatetime | None = None
 
     class Config:
         from_attributes = True
@@ -83,10 +83,10 @@ class ThreadListItem(BaseModel):
     is_pinned: bool
     reply_count: int
     view_count: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: UTCDatetime
+    updated_at: UTCDatetime
     author: AuthorInfo
-    last_activity: datetime
+    last_activity: UTCDatetime
     course_title: str | None = None
     module_title: str | None = None
     lesson_title: str | None = None
@@ -106,7 +106,7 @@ class ThreadAttachmentResponse(BaseModel):
     file_name: str
     file_size_bytes: int
     mime_type: str
-    created_at: datetime
+    created_at: UTCDatetime
 
     class Config:
         from_attributes = True
@@ -121,11 +121,11 @@ class ThreadDetailResponse(BaseModel):
     is_pinned: bool
     reply_count: int
     view_count: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: UTCDatetime
+    updated_at: UTCDatetime
     author: AuthorInfo
     resolved_by: AuthorInfo | None = None
-    resolved_at: datetime | None = None
+    resolved_at: UTCDatetime | None = None
     replies: list[ReplyResponse]
     course_id: UUID | None = None
     module_id: UUID | None = None
@@ -164,7 +164,7 @@ class UserActivityItem(BaseModel):
     thread_count: int
     reply_count: int
     solution_count: int
-    last_activity: datetime | None = None
+    last_activity: UTCDatetime | None = None
 
 
 class UserActivityResponse(BaseModel):

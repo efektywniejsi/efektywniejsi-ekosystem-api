@@ -1,9 +1,10 @@
 """Statistics schemas for admin dashboard."""
 
-from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
+
+from app.core.datetime_utils import UTCDatetime
 
 
 class Granularity(str, Enum):
@@ -183,8 +184,8 @@ class SalesWindowStats(BaseModel):
     id: str
     name: str
     status: str
-    starts_at: datetime
-    ends_at: datetime
+    starts_at: UTCDatetime
+    ends_at: UTCDatetime
     total_orders: int
     total_revenue: int = Field(description="Revenue in grosz")
     unique_customers: int
@@ -258,8 +259,8 @@ class UserDetail(BaseModel):
     id: str
     email: str
     full_name: str | None
-    created_at: datetime
-    last_activity: datetime | None
+    created_at: UTCDatetime
+    last_activity: UTCDatetime | None
 
 
 class DailyUserDetailsResponse(BaseModel):
@@ -290,7 +291,7 @@ class OrderDetailResponse(BaseModel):
     name: str
     status: str
     total: int = Field(description="Total in grosz")
-    created_at: datetime
+    created_at: UTCDatetime
     items: list[OrderDetailItem]
 
 
@@ -321,7 +322,7 @@ class CompletionDetail(BaseModel):
     user_email: str
     user_name: str | None
     course_title: str
-    completed_at: datetime
+    completed_at: UTCDatetime
 
 
 class CompletionsListResponse(BaseModel):
@@ -338,7 +339,7 @@ class CertificateDetail(BaseModel):
     user_name: str | None
     course_title: str
     certificate_code: str
-    issued_at: datetime
+    issued_at: UTCDatetime
 
 
 class CertificatesListResponse(BaseModel):

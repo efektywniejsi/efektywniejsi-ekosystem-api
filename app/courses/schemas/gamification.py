@@ -1,6 +1,8 @@
-from datetime import date, datetime
+from datetime import date
 
 from pydantic import BaseModel
+
+from app.core.datetime_utils import UTCDatetime
 
 
 class AchievementResponse(BaseModel):
@@ -12,7 +14,7 @@ class AchievementResponse(BaseModel):
     points_reward: int
     category: str | None = None
     is_active: bool
-    created_at: datetime
+    created_at: UTCDatetime
 
     class Config:
         from_attributes = True
@@ -22,7 +24,7 @@ class UserAchievementResponse(BaseModel):
     id: str
     user_id: str
     achievement_id: str
-    earned_at: datetime
+    earned_at: UTCDatetime
     progress_value: int | None = None
     achievement: AchievementResponse
 
@@ -50,8 +52,8 @@ class UserPointsResponse(BaseModel):
     total_points: int
     level: int
     points_to_next_level: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: UTCDatetime
+    updated_at: UTCDatetime
 
     class Config:
         from_attributes = True

@@ -1,6 +1,6 @@
-from datetime import datetime
-
 from pydantic import BaseModel, Field
+
+from app.core.datetime_utils import UTCDatetime
 
 
 class ProgressUpdateRequest(BaseModel):
@@ -17,8 +17,8 @@ class LessonProgressResponse(BaseModel):
     last_position_seconds: int
     completion_percentage: int
     is_completed: bool
-    completed_at: datetime | None = None
-    last_updated_at: datetime
+    completed_at: UTCDatetime | None = None
+    last_updated_at: UTCDatetime
 
     class Config:
         from_attributes = True
@@ -30,4 +30,4 @@ class CourseProgressSummary(BaseModel):
     completed_lessons: int
     progress_percentage: int
     total_watch_time_seconds: int
-    last_accessed_at: datetime | None = None
+    last_accessed_at: UTCDatetime | None = None

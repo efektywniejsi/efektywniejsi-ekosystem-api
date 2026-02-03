@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr
 
+from app.core.datetime_utils import UTCDatetime
+
 
 class UserCourseProgress(BaseModel):
     user_id: str
@@ -11,8 +13,8 @@ class UserCourseProgress(BaseModel):
     completed_lessons: int
     total_lessons: int
     session_count: int  # distinct days with activity
-    first_activity_at: datetime | None
-    last_activity_at: datetime | None
+    first_activity_at: UTCDatetime | None
+    last_activity_at: UTCDatetime | None
     total_watch_time_seconds: int
     is_completed: bool
 
@@ -28,8 +30,8 @@ class AdminEnrollmentResponse(BaseModel):
     course_id: str
     user_name: str | None = None
     user_email: str
-    enrolled_at: datetime
-    expires_at: datetime | None = None
+    enrolled_at: UTCDatetime
+    expires_at: UTCDatetime | None = None
     is_expired: bool = False
 
     class Config:

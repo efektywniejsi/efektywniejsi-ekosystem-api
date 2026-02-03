@@ -1,8 +1,8 @@
-from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.core.datetime_utils import UTCDatetime
 from app.messaging.schemas.conversation import ParticipantInfo
 
 
@@ -15,8 +15,8 @@ class MessageResponse(BaseModel):
     sender: ParticipantInfo
     content: str
     is_system_message: bool = False
-    created_at: datetime
-    edited_at: datetime | None = None
+    created_at: UTCDatetime
+    edited_at: UTCDatetime | None = None
 
     class Config:
         from_attributes = True
