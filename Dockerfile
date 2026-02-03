@@ -12,10 +12,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:0.5 /uv /usr/local/bin/uv
 
-# Copy dependency manifest first (layer caching)
-COPY pyproject.toml ./
+# Copy only dependency files first (layer caching — deps change rarely)
+COPY pyproject.toml uv.lock ./
 
-# Install Python dependencies into a virtual environment
+# Install dependencies into venv (cached unless pyproject.toml/uv.lock change)
 RUN uv venv /opt/venv && \
     VIRTUAL_ENV=/opt/venv uv pip install --compile-bytecode -e .
 
@@ -39,13 +39,13 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 ENV VIRTUAL_ENV="/opt/venv"
 
-# Copy application code
-COPY pyproject.toml ./
+# Copy application code (changes frequently — separate layer)
+COPY pyproject.toml uv.lock ./
 COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
 
-# Install the project itself (editable, into the existing venv)
+# Install the project itself (editable, no deps — deps already in venv)
 RUN uv pip install --no-deps -e .
 
 # Create non-root user and writable uploads directory
@@ -57,4 +57,4 @@ USER appuser
 EXPOSE 8000
 
 # Default command (overridden by fly.worker.toml for Celery)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
