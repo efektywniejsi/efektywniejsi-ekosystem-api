@@ -50,6 +50,7 @@ services:
       TOTP_ENCRYPTION_KEY: vTPIfkAhX7tIpgxvLm7eO6qooqrpkZM4RNsue-gdmOU=
       RATE_LIMIT_ENABLED: "false"
       UV_PROJECT_ENVIRONMENT: /opt/venv
+      ADMIN_PASSWORD: e2e-bootstrap-admin-pass
       MUX_TOKEN_ID: ""
       MUX_TOKEN_SECRET: ""
       STRIPE_SECRET_KEY: ""
