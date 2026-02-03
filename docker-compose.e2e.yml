@@ -49,6 +49,7 @@ services:
       BACKEND_CORS_ORIGINS: '["http://localhost:3002","http://localhost:3001"]'
       TOTP_ENCRYPTION_KEY: vTPIfkAhX7tIpgxvLm7eO6qooqrpkZM4RNsue-gdmOU=
       RATE_LIMIT_ENABLED: "false"
+      UV_PROJECT_ENVIRONMENT: /opt/venv
       MUX_TOKEN_ID: ""
       MUX_TOKEN_SECRET: ""
       STRIPE_SECRET_KEY: ""
