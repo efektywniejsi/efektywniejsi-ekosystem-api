@@ -386,6 +386,62 @@ async def get_course_modules(
     ]
 
 
+@router.get(
+    "/courses/{course_id}/modules-with-lessons",
+    response_model=list[ModuleWithLessonsResponse],
+)
+async def get_course_modules_with_lessons(
+    course_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> list[ModuleWithLessonsResponse]:
+    """Get all modules with their lessons for a course (admin only, no filtering)."""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kurs nie znaleziony",
+        )
+
+    modules = (
+        db.query(Module)
+        .options(joinedload(Module.lessons))
+        .filter(Module.course_id == course_id)
+        .order_by(Module.sort_order)
+        .all()
+    )
+
+    return [
+        ModuleWithLessonsResponse(
+            id=str(m.id),
+            course_id=str(m.course_id),
+            title=m.title,
+            description=m.description,
+            sort_order=m.sort_order,
+            created_at=m.created_at,
+            updated_at=m.updated_at,
+            lessons=[
+                LessonResponse(
+                    id=str(lesson.id),
+                    module_id=str(lesson.module_id),
+                    title=lesson.title,
+                    description=lesson.description,
+                    mux_playback_id=lesson.mux_playback_id,
+                    mux_asset_id=lesson.mux_asset_id,
+                    duration_seconds=lesson.duration_seconds,
+                    is_preview=lesson.is_preview,
+                    status=lesson.status.value,
+                    sort_order=lesson.sort_order,
+                    created_at=lesson.created_at,
+                    updated_at=lesson.updated_at,
+                )
+                for lesson in sorted(m.lessons, key=lambda x: x.sort_order)
+            ],
+        )
+        for m in modules
+    ]
+
+
 @router.post(
     "/courses/{course_id}/modules",
     response_model=ModuleResponse,
