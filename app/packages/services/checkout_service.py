@@ -89,7 +89,7 @@ class CheckoutService:
 
             package = (
                 self.db.query(Package)
-                .filter(Package.id == package_uuid, Package.is_published.is_(True))  # noqa: E712
+                .filter(Package.id == package_uuid, Package.is_published == True)  # noqa: E712
                 .first()
             )
 

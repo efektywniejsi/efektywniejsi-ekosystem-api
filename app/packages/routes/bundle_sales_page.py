@@ -69,7 +69,11 @@ async def upload_bundle_sales_page_image(
     """Upload an image for a bundle sales page section (admin only)."""
     from app.packages.models.package import Package
 
-    bundle = db.query(Package).filter(Package.id == bundle_id, Package.is_bundle.is_(True)).first()
+    bundle = (
+        db.query(Package)
+        .filter(Package.id == bundle_id, Package.is_bundle == True)  # noqa: E712
+        .first()
+    )
     if not bundle:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
