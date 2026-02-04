@@ -166,13 +166,8 @@ class EnrollmentService:
         - Regular users see only enrolled published courses
         """
         if is_admin:
-            # Admins see all published courses ordered by sort_order
-            courses = (
-                db.query(Course)
-                .filter(Course.is_published == True)  # noqa: E712
-                .order_by(Course.sort_order, Course.created_at.desc())
-                .all()
-            )
+            # Admins see all courses ordered by sort_order (including unpublished)
+            courses = db.query(Course).order_by(Course.sort_order, Course.created_at.desc()).all()
             return [
                 EnrollmentService._map_course_to_enrollment_response(course, user_id)
                 for course in courses
