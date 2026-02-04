@@ -192,7 +192,7 @@ class ThreadService:
         # Unmark any existing solution
         self.db.query(ThreadReply).filter(
             ThreadReply.thread_id == thread_id,
-            ThreadReply.is_solution.is_(True),
+            ThreadReply.is_solution == True,  # noqa: E712
         ).update({ThreadReply.is_solution: False})
 
         reply = self._mark_reply_solution(thread_id, reply_id)
@@ -454,7 +454,7 @@ class ThreadService:
             self.db.query(
                 ThreadReply.author_id,
                 func.count(ThreadReply.id).label("reply_count"),
-                func.count(case((ThreadReply.is_solution.is_(True), 1))).label("solution_count"),
+                func.count(case((ThreadReply.is_solution == True, 1))).label("solution_count"),  # noqa: E712
                 func.max(ThreadReply.created_at).label("last_reply"),
             )
             .group_by(ThreadReply.author_id)
