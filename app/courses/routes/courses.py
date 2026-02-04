@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, 
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 
-from app.auth.dependencies import require_admin
+from app.auth.dependencies import get_optional_current_user, require_admin
 from app.auth.models.user import User
 from app.core.config import settings
 from app.courses.models import Course, Lesson, LessonStatus, Module
@@ -181,14 +181,20 @@ async def list_all_courses(
 async def get_course(
     slug: str,
     db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_optional_current_user),
 ) -> CourseDetailResponse:
-    """Get published course details with modules and lessons (public endpoint)."""
-    course = (
+    """Get course details. Admins can see unpublished courses and all lessons."""
+    is_admin = current_user is not None and current_user.role == "admin"
+
+    query = (
         db.query(Course)
         .options(joinedload(Course.modules).joinedload(Module.lessons))
-        .filter(Course.slug == slug, Course.is_published == True)  # noqa: E712
-        .first()
+        .filter(Course.slug == slug)
     )
+    if not is_admin:
+        query = query.filter(Course.is_published == True)  # noqa: E712
+
+    course = query.first()
 
     if not course:
         raise HTTPException(
@@ -196,13 +202,12 @@ async def get_course(
             detail="Kurs nie znaleziony",
         )
 
-    # Public endpoint: filter out UNAVAILABLE lessons
     modules_data = []
     for m in sorted(course.modules, key=lambda x: x.sort_order):
         filtered_lessons = [
             lesson
             for lesson in sorted(m.lessons, key=lambda x: x.sort_order)
-            if lesson.status != LessonStatus.UNAVAILABLE
+            if is_admin or lesson.status != LessonStatus.UNAVAILABLE
         ]
         modules_data.append(
             ModuleWithLessonsResponse(
