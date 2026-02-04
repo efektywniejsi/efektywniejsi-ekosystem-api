@@ -97,7 +97,7 @@ async def list_courses(
     db: Session = Depends(get_db),
 ) -> list[CourseResponse]:
     """List published courses (public endpoint)."""
-    query = db.query(Course).filter(Course.is_published.is_(True))
+    query = db.query(Course).filter(Course.is_published == True)  # noqa: E712
 
     if category:
         query = query.filter(Course.category == category)
@@ -186,7 +186,7 @@ async def get_course(
     course = (
         db.query(Course)
         .options(joinedload(Course.modules).joinedload(Module.lessons))
-        .filter(Course.slug == slug, Course.is_published.is_(True))
+        .filter(Course.slug == slug, Course.is_published == True)  # noqa: E712
         .first()
     )
 
