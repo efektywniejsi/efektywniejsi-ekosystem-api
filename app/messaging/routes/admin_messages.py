@@ -1,16 +1,23 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import require_admin
 from app.auth.models.user import User
 from app.db.session import get_db
+from app.messaging.models.conversation_participant import ConversationParticipant
 from app.messaging.schemas.conversation import ConversationListResponse
 from app.messaging.schemas.message import ConversationDetail
 from app.messaging.services.message_service import MessageService
 
 router = APIRouter()
+
+
+class UserMessageCountResponse(BaseModel):
+    conversation_count: int
 
 
 @router.get("/conversations", response_model=ConversationListResponse)
@@ -47,3 +54,20 @@ def admin_delete_message(
 ) -> None:
     service = MessageService(db)
     service.admin_delete_message(message_id)
+
+
+@router.get("/users/{user_id}/message-count", response_model=UserMessageCountResponse)
+def admin_get_user_message_count(
+    user_id: UUID,
+    _current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> UserMessageCountResponse:
+    count = (
+        db.query(func.count(ConversationParticipant.conversation_id))
+        .filter(
+            ConversationParticipant.user_id == user_id,
+            ConversationParticipant.is_deleted == False,  # noqa: E712
+        )
+        .scalar()
+    ) or 0
+    return UserMessageCountResponse(conversation_count=count)
