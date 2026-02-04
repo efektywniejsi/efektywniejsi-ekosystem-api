@@ -23,7 +23,11 @@ class PublicProfileService:
         self.db = db
 
     def get_public_profile(self, user_id: UUID) -> PublicProfileResponse:
-        user = self.db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
+        user = (
+            self.db.query(User)
+            .filter(User.id == user_id, User.is_active == True)  # noqa: E712
+            .first()
+        )
 
         if not user:
             raise HTTPException(
@@ -55,7 +59,7 @@ class PublicProfileService:
         enrollments = (
             self.db.query(Enrollment)
             .join(Course, Enrollment.course_id == Course.id)
-            .filter(Enrollment.user_id == user_id, Course.is_published.is_(True))
+            .filter(Enrollment.user_id == user_id, Course.is_published == True)  # noqa: E712
             .all()
         )
         return [
@@ -88,7 +92,7 @@ class PublicProfileService:
             self.db.query(func.count(ThreadReply.id))
             .filter(
                 ThreadReply.author_id == user_id,
-                ThreadReply.is_solution.is_(True),
+                ThreadReply.is_solution == True,  # noqa: E712
             )
             .scalar()
             or 0

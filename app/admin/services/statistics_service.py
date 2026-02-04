@@ -191,7 +191,9 @@ class StatisticsService:
         )
 
         # Users KPIs
-        total_users = db.query(User).filter(User.is_active.is_(True)).count()
+        total_users = (
+            db.query(User).filter(User.is_active == True).count()  # noqa: E712
+        )
         new_users_month = db.query(User).filter(User.created_at >= month_start).count()
 
         # Active users based on course access OR daily activity log
@@ -620,7 +622,9 @@ class StatisticsService:
         month_start = today_start.replace(day=1)
         period_start = today_start - timedelta(days=days)
 
-        total_users = db.query(User).filter(User.is_active.is_(True)).count()
+        total_users = (
+            db.query(User).filter(User.is_active == True).count()  # noqa: E712
+        )
 
         # Active users counts (course access OR login)
         active_today = StatisticsService._count_active_users(db, today_start)
@@ -710,7 +714,7 @@ class StatisticsService:
         )
 
         # Per-course statistics
-        courses_data = db.query(Course).filter(Course.is_published.is_(True)).all()
+        courses_data = db.query(Course).filter(Course.is_published == True).all()  # noqa: E712
 
         courses = []
         for course in courses_data:

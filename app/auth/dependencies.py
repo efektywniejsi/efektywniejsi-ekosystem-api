@@ -112,6 +112,30 @@ async def get_current_user(
     return cast(User, user)
 
 
+async def get_optional_current_user(
+    access_token: Annotated[str | None, Cookie()] = None,
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Try to get current user from cookie, return None if not authenticated."""
+    if not access_token:
+        return None
+
+    try:
+        payload = await get_validated_token_payload(access_token, expected_type="access")
+    except HTTPException:
+        return None
+
+    user_id: str | None = payload.get("sub")
+    if user_id is None:
+        return None
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None or not user.is_active:
+        return None
+
+    return cast(User, user)
+
+
 async def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != "admin":
         raise HTTPException(

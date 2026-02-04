@@ -14,7 +14,11 @@ from app.packages.models.package import Package
 
 
 def get_bundle_sales_page(db: Session, bundle_id: UUID) -> dict[str, Any] | None:
-    bundle = db.query(Package).filter(Package.id == bundle_id, Package.is_bundle.is_(True)).first()
+    bundle = (
+        db.query(Package)
+        .filter(Package.id == bundle_id, Package.is_bundle == True)  # noqa: E712
+        .first()
+    )
     if not bundle:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -25,7 +29,11 @@ def get_bundle_sales_page(db: Session, bundle_id: UUID) -> dict[str, Any] | None
 
 
 def update_bundle_sales_page(db: Session, bundle_id: UUID, data: SalesPageData) -> dict[str, Any]:
-    bundle = db.query(Package).filter(Package.id == bundle_id, Package.is_bundle.is_(True)).first()
+    bundle = (
+        db.query(Package)
+        .filter(Package.id == bundle_id, Package.is_bundle == True)  # noqa: E712
+        .first()
+    )
     if not bundle:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
