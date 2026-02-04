@@ -162,22 +162,28 @@ class EnrollmentService:
     ) -> list[EnrollmentWithCourseResponse]:
         """
         Get courses accessible to a user.
-        - Admins see all courses
-        - Regular users see only enrolled courses
+        - Admins see all published courses
+        - Regular users see only enrolled published courses
         """
         if is_admin:
-            # Admins see all courses ordered by sort_order
-            courses = db.query(Course).order_by(Course.sort_order, Course.created_at.desc()).all()
+            # Admins see all published courses ordered by sort_order
+            courses = (
+                db.query(Course)
+                .filter(Course.is_published == True)  # noqa: E712
+                .order_by(Course.sort_order, Course.created_at.desc())
+                .all()
+            )
             return [
                 EnrollmentService._map_course_to_enrollment_response(course, user_id)
                 for course in courses
             ]
 
-        # Regular users see only enrolled courses
+        # Regular users see only enrolled published courses
         enrollments = (
             db.query(Enrollment)
             .options(joinedload(Enrollment.course))
-            .filter(Enrollment.user_id == user_id)
+            .join(Course, Enrollment.course_id == Course.id)
+            .filter(Enrollment.user_id == user_id, Course.is_published == True)  # noqa: E712
             .all()
         )
         return [
