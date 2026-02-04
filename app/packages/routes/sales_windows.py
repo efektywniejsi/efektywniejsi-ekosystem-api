@@ -90,7 +90,7 @@ async def get_next_sales_window(
 # Admin-only endpoints - require admin role
 
 
-@router.get("/", response_model=SalesWindowListResponse, response_model_by_alias=True)
+@router.get("", response_model=SalesWindowListResponse, response_model_by_alias=True)
 async def get_all_sales_windows(
     db: Session = Depends(get_db),
     _admin: User = Depends(require_admin),
@@ -111,7 +111,7 @@ async def get_all_sales_windows(
 
 
 @router.post(
-    "/",
+    "",
     response_model=SalesWindowDetailResponse,
     response_model_by_alias=True,
     status_code=status.HTTP_201_CREATED,
