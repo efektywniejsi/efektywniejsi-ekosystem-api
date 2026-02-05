@@ -21,6 +21,7 @@ from app.community.routes import thread_attachments as community_attachments_rou
 from app.community.routes import threads as community_routes
 from app.core import redis as redis_module
 from app.core.config import settings
+from app.core.exceptions import register_exception_handlers
 from app.core.log_config import RequestLoggingMiddleware, setup_logging
 from app.core.rate_limit import limiter
 from app.courses.routes import (
@@ -34,6 +35,7 @@ from app.courses.routes import (
     enrollment,
     gamification,
     lessons,
+    modules,
     progress,
     sales_page,
     webhooks,
@@ -89,6 +91,7 @@ app = FastAPI(
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+register_exception_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -118,6 +121,7 @@ app.include_router(
 )
 
 app.include_router(courses.router, prefix=settings.API_V1_PREFIX, tags=["courses"])
+app.include_router(modules.router, prefix=settings.API_V1_PREFIX, tags=["modules"])
 app.include_router(enrollment.router, prefix=settings.API_V1_PREFIX, tags=["enrollments"])
 app.include_router(lessons.router, prefix=settings.API_V1_PREFIX, tags=["lessons"])
 app.include_router(progress.router, prefix=settings.API_V1_PREFIX, tags=["progress"])
