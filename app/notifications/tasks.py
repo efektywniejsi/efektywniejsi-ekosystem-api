@@ -1,13 +1,11 @@
 """Celery tasks for sending notifications."""
 
-import asyncio
 import logging
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
 from app.auth.models.user import User
-from app.auth.services.email_service import get_email_service
 from app.core.celery_app import celery_app
 from app.core.config import settings
 from app.courses.models.course import Course
@@ -19,7 +17,8 @@ from app.notifications.email_templates import (
     build_direct_message_email,
 )
 from app.notifications.models.announcement_log import AnnouncementLog
-from app.notifications.models.notification import Notification, NotificationStatus, NotificationType
+from app.notifications.models.notification import NotificationType
+from app.notifications.services.notification_sender import NotificationSender
 
 logger = logging.getLogger(__name__)
 
@@ -53,51 +52,36 @@ def send_course_update_notification(
             db.query(User).filter(User.id.in_(enrolled_user_ids), User.is_active == True).all()  # noqa: E712
         )
 
-        email_service = get_email_service()
+        sender = NotificationSender(db)
         sent = 0
         skipped = 0
 
         for user in users:
-            prefs = user.notification_preferences or {}
-            if not prefs.get("course_updates", True):
-                skipped += 1
-                continue
+            # Bind loop variables to avoid B023
+            def make_email_builder(u: User) -> Any:
+                def email_builder() -> Any:
+                    return build_course_update_email(
+                        user_name=u.name,
+                        user_email=u.email,
+                        course_title=course.title,
+                        course_slug=course.slug,
+                        update_type=update_type,
+                        item_title=item_title,
+                    )
 
-            email_msg = build_course_update_email(
-                user_name=user.name,
-                user_email=user.email,
-                course_title=course.title,
-                course_slug=course.slug,
-                update_type=update_type,
-                item_title=item_title,
-            )
+                return email_builder
 
-            notification = Notification(
-                user_id=user.id,
-                notification_type=NotificationType.COURSE_UPDATE.value,
-                subject=email_msg.subject,
-                status=NotificationStatus.PENDING.value,
+            result = sender.process_user_notification(
+                user=user,
+                notification_type=NotificationType.COURSE_UPDATE,
+                email_builder=make_email_builder(user),
                 course_id=course.id,
             )
-            db.add(notification)
 
-            try:
-                success = asyncio.run(email_service.send_email(email_msg))
-                if success:
-                    notification.status = NotificationStatus.SENT.value
-                    notification.sent_at = datetime.now(UTC)
-                    sent += 1
-                else:
-                    notification.status = NotificationStatus.FAILED.value
-                    notification.error_message = "Email service returned False"
-                    skipped += 1
-            except Exception as exc:
-                notification.status = NotificationStatus.FAILED.value
-                notification.error_message = str(exc)[:500]
+            if result.sent:
+                sent += 1
+            else:
                 skipped += 1
-                logger.exception("Failed to send course update email to %s", user.email)
-
-            db.commit()
 
         logger.info(
             "Course update notifications for %s: sent=%d, skipped=%d",
@@ -144,51 +128,38 @@ def send_announcement_notification(
             log.total_recipients = len(users)
             db.commit()
 
-        email_service = get_email_service()
+        sender = NotificationSender(db)
         sent = 0
         skipped = 0
         failed = 0
 
         for user in users:
-            prefs = user.notification_preferences or {}
-            if not prefs.get("admin_announcements", True):
-                skipped += 1
-                continue
+            # Bind loop variables to avoid B023
+            def make_announcement_builder(u: User) -> Any:
+                def email_builder() -> Any:
+                    return build_announcement_email(
+                        user_name=u.name,
+                        user_email=u.email,
+                        subject=subject,
+                        body_html=body_html,
+                        body_text=body_text,
+                    )
 
-            email_msg = build_announcement_email(
-                user_name=user.name,
-                user_email=user.email,
-                subject=subject,
-                body_html=body_html,
-                body_text=body_text,
-            )
+                return email_builder
 
-            notification = Notification(
-                user_id=user.id,
-                notification_type=NotificationType.ANNOUNCEMENT.value,
-                subject=subject,
-                status=NotificationStatus.PENDING.value,
+            result = sender.process_user_notification(
+                user=user,
+                notification_type=NotificationType.ANNOUNCEMENT,
+                email_builder=make_announcement_builder(user),
                 announcement_log_id=UUID(announcement_log_id) if announcement_log_id else None,
             )
-            db.add(notification)
 
-            try:
-                success = asyncio.run(email_service.send_email(email_msg))
-                if success:
-                    notification.status = NotificationStatus.SENT.value
-                    notification.sent_at = datetime.now(UTC)
-                    sent += 1
-                else:
-                    notification.status = NotificationStatus.FAILED.value
-                    notification.error_message = "Email service returned False"
-                    failed += 1
-            except Exception as exc:
-                notification.status = NotificationStatus.FAILED.value
-                notification.error_message = str(exc)[:500]
+            if result.sent:
+                sent += 1
+            elif result.skipped:
+                skipped += 1
+            else:
                 failed += 1
-                logger.exception("Failed to send announcement email to %s", user.email)
-
-            db.commit()
 
         if log:
             log.sent_count = sent
@@ -231,56 +202,44 @@ def send_direct_message_notification(
     db = SessionLocal()
     try:
         recipient = db.query(User).filter(User.id == UUID(recipient_user_id)).first()
-        sender = db.query(User).filter(User.id == UUID(sender_user_id)).first()
+        sender_user = db.query(User).filter(User.id == UUID(sender_user_id)).first()
 
-        if not recipient or not sender:
+        if not recipient or not sender_user:
             logger.error(
                 "User not found: recipient=%s, sender=%s", recipient_user_id, sender_user_id
             )
             return {"status": "skipped", "reason": "user_not_found"}
 
-        prefs = recipient.notification_preferences or {}
-        if not prefs.get("direct_messages", True):
+        notification_sender = NotificationSender(db)
+
+        if not notification_sender.should_send(recipient, NotificationType.DIRECT_MESSAGE):
             logger.info("User %s opted out of DM notifications", recipient_user_id)
             return {"status": "skipped", "reason": "opted_out"}
 
         conversation_url = f"{settings.FRONTEND_URL}/wiadomosci/{conversation_id}"
 
-        email_msg = build_direct_message_email(
-            user_name=recipient.name,
-            user_email=recipient.email,
-            sender_name=sender.name,
-            message_preview=message_preview,
-            conversation_url=conversation_url,
+        def email_builder() -> Any:
+            return build_direct_message_email(
+                user_name=recipient.name,
+                user_email=recipient.email,
+                sender_name=sender_user.name,
+                message_preview=message_preview,
+                conversation_url=conversation_url,
+            )
+
+        result = notification_sender.process_user_notification(
+            user=recipient,
+            notification_type=NotificationType.DIRECT_MESSAGE,
+            email_builder=email_builder,
         )
 
-        notification = Notification(
-            user_id=recipient.id,
-            notification_type=NotificationType.DIRECT_MESSAGE.value,
-            subject=email_msg.subject,
-            status=NotificationStatus.PENDING.value,
-        )
-        db.add(notification)
+        if result.sent:
+            return {"status": "sent"}
+        elif result.skipped:
+            return {"status": "skipped", "reason": result.reason or "unknown"}
+        else:
+            return {"status": "failed", "reason": result.reason or "unknown"}
 
-        try:
-            email_service = get_email_service()
-            success = asyncio.run(email_service.send_email(email_msg))
-            if success:
-                notification.status = NotificationStatus.SENT.value
-                notification.sent_at = datetime.now(UTC)
-                db.commit()
-                return {"status": "sent"}
-            else:
-                notification.status = NotificationStatus.FAILED.value
-                notification.error_message = "Email service returned False"
-                db.commit()
-                return {"status": "failed", "reason": "email_service_false"}
-        except Exception as exc:
-            notification.status = NotificationStatus.FAILED.value
-            notification.error_message = str(exc)[:500]
-            db.commit()
-            logger.exception("Failed to send DM email to %s", recipient.email)
-            return {"status": "failed", "reason": str(exc)[:200]}
     except Exception as exc:
         logger.exception("send_direct_message_notification failed: %s", exc)
         db.rollback()
