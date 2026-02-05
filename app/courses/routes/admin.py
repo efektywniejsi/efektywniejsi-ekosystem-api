@@ -170,14 +170,15 @@ async def delete_lesson_video(
             detail="Lesson not found",
         )
 
+    # Try to delete from Mux if asset exists
     if lesson.mux_asset_id:
         try:
             mux_service.delete_asset(lesson.mux_asset_id)
         except Exception as e:
-            print(f"Warning: Could not delete Mux asset: {e}")
+            logger.warning("Could not delete Mux asset: %s", e)
 
-        # Clear video fields
-        lesson.mux_asset_id = None
-        lesson.mux_playback_id = ""
-        lesson.duration_seconds = 0
-        db.commit()
+    # Always clear video fields, even if mux_asset_id was already None
+    lesson.mux_asset_id = None
+    lesson.mux_playback_id = None
+    lesson.duration_seconds = 0
+    db.commit()
