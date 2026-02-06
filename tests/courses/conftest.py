@@ -57,26 +57,7 @@ def test_lesson(db_session: Session, test_module):
         mux_playback_id="test_mux_id_123",
         mux_asset_id="test_asset_123",
         duration_seconds=300,
-        is_preview=False,
         sort_order=0,
-    )
-    db_session.add(lesson)
-    db_session.flush()
-    return lesson
-
-
-@pytest.fixture
-def test_preview_lesson(db_session: Session, test_module):
-    """Create a preview lesson."""
-    lesson = Lesson(
-        module_id=test_module.id,
-        title="Preview Lesson",
-        description="A preview lesson",
-        mux_playback_id="preview_mux_id_456",
-        mux_asset_id="preview_asset_456",
-        duration_seconds=180,
-        is_preview=True,
-        sort_order=1,
     )
     db_session.add(lesson)
     db_session.flush()
@@ -93,7 +74,6 @@ def test_text_only_lesson(db_session: Session, test_module):
         mux_playback_id=None,
         mux_asset_id=None,
         duration_seconds=0,
-        is_preview=False,
         sort_order=2,
     )
     db_session.add(lesson)
@@ -167,7 +147,6 @@ def test_course_with_modules(db_session: Session):
         description="First lesson",
         mux_playback_id="mux_1_1",
         duration_seconds=600,
-        is_preview=True,
         sort_order=0,
     )
     lesson1_2 = Lesson(
@@ -176,7 +155,6 @@ def test_course_with_modules(db_session: Session):
         description="Second lesson",
         mux_playback_id="mux_1_2",
         duration_seconds=900,
-        is_preview=False,
         sort_order=1,
     )
     db_session.add_all([lesson1_1, lesson1_2])
@@ -199,7 +177,6 @@ def test_course_with_modules(db_session: Session):
         description="Third lesson",
         mux_playback_id="mux_2_1",
         duration_seconds=1200,
-        is_preview=False,
         sort_order=0,
     )
     db_session.add(lesson2_1)
