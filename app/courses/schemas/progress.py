@@ -26,6 +26,18 @@ class LessonProgressResponse(BaseModel):
         from_attributes = True
 
 
+class LessonProgressInCourse(BaseModel):
+    """Simplified lesson progress for course summary."""
+
+    lesson_id: str
+    watched_seconds: int = 0
+    last_position_seconds: int = 0
+    completion_percentage: int = 0
+    is_completed: bool = False
+    completed_at: UTCDatetime | None = None
+    last_updated_at: UTCDatetime | None = None
+
+
 class CourseProgressSummary(BaseModel):
     course_id: str
     total_lessons: int
@@ -33,6 +45,7 @@ class CourseProgressSummary(BaseModel):
     progress_percentage: int
     total_watch_time_seconds: int
     last_accessed_at: UTCDatetime | None = None
+    lessons: list[LessonProgressInCourse] = []
 
 
 class WeeklyStatsResponse(BaseModel):
