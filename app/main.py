@@ -54,6 +54,7 @@ from app.packages.routes import (
     sales_windows_router,
     webhooks_router,
 )
+from app.storage.routes import admin_cleanup as storage_admin_routes
 
 setup_logging()
 logger = structlog.get_logger(__name__)
@@ -188,6 +189,11 @@ app.include_router(
     admin_messages_routes.router,
     prefix=f"{settings.API_V1_PREFIX}/admin/messages",
     tags=["admin-messages"],
+)
+app.include_router(
+    storage_admin_routes.router,
+    prefix=f"{settings.API_V1_PREFIX}/admin",
+    tags=["admin-storage"],
 )
 
 

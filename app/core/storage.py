@@ -1,5 +1,7 @@
 import os
 import uuid
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
 
@@ -7,6 +9,15 @@ import boto3
 from botocore.config import Config as BotoConfig
 
 from app.core.config import settings
+
+
+@dataclass
+class StorageObject:
+    """Represents a file object in storage."""
+
+    key: str
+    last_modified: datetime
+    size: int
 
 
 class StorageBackend(Protocol):
@@ -26,6 +37,10 @@ class StorageBackend(Protocol):
         """Check if a file exists."""
         ...
 
+    def list_objects(self, prefix: str) -> list[StorageObject]:
+        """List all objects with the given prefix/folder."""
+        ...
+
 
 class LocalStorage:
     """Local filesystem storage for development."""
@@ -39,17 +54,50 @@ class LocalStorage:
         file_path = upload_dir / filename
         with open(file_path, "wb") as f:
             f.write(file_content)
-        return str(file_path)
+        return f"{folder}/{filename}"
 
     def download_url(self, path: str) -> str:
-        return f"{settings.BACKEND_URL}/uploads/{Path(path).relative_to(self._base_dir)}"
+        return f"{settings.BACKEND_URL}/uploads/{path}"
+
+    def _resolve_safe_path(self, path: str) -> Path:
+        """Resolve path and validate it stays within base directory."""
+        base_resolved = self._base_dir.resolve()
+        full_path = (self._base_dir / path).resolve()
+        if (
+            not str(full_path).startswith(str(base_resolved) + os.sep)
+            and full_path != base_resolved
+        ):
+            raise ValueError(f"Path traversal attempt detected: {path}")
+        return full_path
 
     def delete(self, path: str) -> None:
-        if os.path.exists(path):
-            os.remove(path)
+        full_path = self._resolve_safe_path(path)
+        if full_path.exists():
+            full_path.unlink()
 
     def exists(self, path: str) -> bool:
-        return os.path.exists(path)
+        full_path = self._resolve_safe_path(path)
+        return full_path.exists()
+
+    def list_objects(self, prefix: str) -> list[StorageObject]:
+        """List all files in the given folder (recursively)."""
+        folder_path = self._base_dir / prefix
+        if not folder_path.exists():
+            return []
+
+        result = []
+        for file_path in folder_path.rglob("*"):
+            if file_path.is_file():
+                stat = file_path.stat()
+                relative_path = file_path.relative_to(self._base_dir)
+                result.append(
+                    StorageObject(
+                        key=str(relative_path),
+                        last_modified=datetime.fromtimestamp(stat.st_mtime, tz=UTC),
+                        size=stat.st_size,
+                    )
+                )
+        return result
 
 
 class R2Storage:
@@ -97,6 +145,22 @@ class R2Storage:
             return True
         except self._client.exceptions.ClientError:
             return False
+
+    def list_objects(self, prefix: str) -> list[StorageObject]:
+        """List all objects in R2 with the given prefix."""
+        result = []
+        paginator = self._client.get_paginator("list_objects_v2")
+
+        for page in paginator.paginate(Bucket=self._bucket, Prefix=prefix):
+            for obj in page.get("Contents", []):
+                result.append(
+                    StorageObject(
+                        key=obj["Key"],
+                        last_modified=obj["LastModified"],
+                        size=obj["Size"],
+                    )
+                )
+        return result
 
 
 def get_storage() -> StorageBackend:

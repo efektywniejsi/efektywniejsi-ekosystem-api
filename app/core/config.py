@@ -68,6 +68,11 @@ class Settings(BaseSettings):
     # Storage backend: "local" for development, "r2" for production
     STORAGE_BACKEND: str = "local"
 
+    # Storage cleanup settings
+    STORAGE_CLEANUP_GRACE_HOURS: int = 24  # Don't delete files newer than this
+    STORAGE_CLEANUP_BATCH_SIZE: int = 100  # Files to process per batch
+    STORAGE_CLEANUP_DRY_RUN: bool = False  # Default to actual deletion in production
+
     class Config:
         env_file = ".env"
         case_sensitive = True
