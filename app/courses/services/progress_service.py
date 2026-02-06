@@ -234,13 +234,13 @@ class ProgressService:
     @staticmethod
     def get_course_progress_summary(user_id: UUID, course_id: UUID, db: Session) -> dict:
         """Get user's progress summary for a course."""
-        lesson_ids = (
+        lesson_id_rows = (
             db.query(Lesson.id)
             .join(Module, Lesson.module_id == Module.id)
             .filter(Module.course_id == course_id)
             .all()
         )
-        lesson_ids = [lid[0] for lid in lesson_ids]
+        lesson_ids: list[UUID] = [lid[0] for lid in lesson_id_rows]
 
         total_lessons = len(lesson_ids)
 
