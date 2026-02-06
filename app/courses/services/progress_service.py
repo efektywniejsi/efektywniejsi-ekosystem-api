@@ -131,23 +131,47 @@ class ProgressService:
     @staticmethod
     def mark_lesson_complete(user_id: UUID, lesson_id: UUID, db: Session) -> LessonProgress:
         """Manually mark a lesson as complete."""
+        # First, check if lesson exists and get its type
+        lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
+        if not lesson:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Lesson not found",
+            )
+
+        # Check if this is a text-only lesson (no video)
+        is_text_only = lesson.mux_playback_id is None or lesson.duration_seconds == 0
+
         progress = (
             db.query(LessonProgress)
             .filter(LessonProgress.user_id == user_id, LessonProgress.lesson_id == lesson_id)
             .first()
         )
 
+        # For text-only lessons, create progress record if it doesn't exist
         if not progress:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Progress record not found",
-            )
+            if is_text_only:
+                progress = LessonProgress(user_id=user_id, lesson_id=lesson_id)
+                db.add(progress)
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        "Musisz najpierw rozpocząć oglądanie lekcji wideo, "
+                        "aby móc ją oznaczyć jako ukończoną"
+                    ),
+                )
 
-        # Check if user watched at least 95% before allowing manual completion
-        if progress.completion_percentage < ProgressService.COMPLETION_THRESHOLD:
+        # For video lessons, check if user watched at least 95%
+        threshold = ProgressService.COMPLETION_THRESHOLD
+        if not is_text_only and progress.completion_percentage < threshold:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Must watch at least 95% of the lesson before marking complete",
+                detail=(
+                    f"Musisz obejrzeć co najmniej {threshold}% lekcji wideo, "
+                    f"aby móc ją oznaczyć jako ukończoną "
+                    f"(obecny postęp: {progress.completion_percentage}%)"
+                ),
             )
 
         # Always set to 100% when manually marking complete

@@ -84,6 +84,24 @@ def test_preview_lesson(db_session: Session, test_module):
 
 
 @pytest.fixture
+def test_text_only_lesson(db_session: Session, test_module):
+    """Create a text-only lesson (no video)."""
+    lesson = Lesson(
+        module_id=test_module.id,
+        title="Text Only Lesson",
+        description="A lesson with only text content, no video",
+        mux_playback_id=None,
+        mux_asset_id=None,
+        duration_seconds=0,
+        is_preview=False,
+        sort_order=2,
+    )
+    db_session.add(lesson)
+    db_session.flush()
+    return lesson
+
+
+@pytest.fixture
 def test_achievement(db_session: Session):
     """Create a test achievement."""
     achievement = Achievement(

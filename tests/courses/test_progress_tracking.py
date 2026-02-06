@@ -242,3 +242,102 @@ async def test_progress_without_enrollment_fails(
     )
 
     assert response.status_code == 403
+
+
+# ============================================================================
+# Text-only lesson tests
+# ============================================================================
+
+
+@pytest.mark.asyncio
+async def test_mark_text_only_lesson_complete_without_prior_progress(
+    test_client: AsyncClient,
+    test_user_token,
+    test_text_only_lesson,
+    test_enrollment,
+):
+    """Test marking text-only lesson as complete without any prior progress."""
+    response = await test_client.post(
+        f"/api/v1/progress/lessons/{test_text_only_lesson.id}/complete",
+        cookies={"access_token": test_user_token},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["is_completed"] is True
+    assert data["completion_percentage"] == 100
+
+
+@pytest.mark.asyncio
+async def test_text_only_lesson_creates_progress_record(
+    test_client: AsyncClient,
+    test_user_token,
+    test_text_only_lesson,
+    test_enrollment,
+):
+    """Test that marking text-only lesson complete creates progress record."""
+    # Mark complete
+    await test_client.post(
+        f"/api/v1/progress/lessons/{test_text_only_lesson.id}/complete",
+        cookies={"access_token": test_user_token},
+    )
+
+    # Verify progress record exists
+    response = await test_client.get(
+        f"/api/v1/progress/lessons/{test_text_only_lesson.id}",
+        cookies={"access_token": test_user_token},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["lesson_id"] == str(test_text_only_lesson.id)
+    assert data["is_completed"] is True
+
+
+@pytest.mark.asyncio
+async def test_video_lesson_requires_prior_progress(
+    test_client: AsyncClient,
+    test_user_token,
+    test_lesson,
+    test_enrollment,
+):
+    """Test video lesson cannot be marked complete without watching first."""
+    # Try to mark complete without any prior progress
+    response = await test_client.post(
+        f"/api/v1/progress/lessons/{test_lesson.id}/complete",
+        cookies={"access_token": test_user_token},
+    )
+
+    assert response.status_code == 400
+    assert "rozpocząć oglądanie" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_video_lesson_error_shows_current_progress(
+    test_client: AsyncClient,
+    test_user_token,
+    test_lesson,
+    test_enrollment,
+):
+    """Test video lesson error message shows current progress percentage."""
+    # Watch only 30%
+    await test_client.post(
+        f"/api/v1/progress/lessons/{test_lesson.id}",
+        json={
+            "watched_seconds": 90,
+            "last_position_seconds": 90,
+            "completion_percentage": 30,
+        },
+        cookies={"access_token": test_user_token},
+    )
+
+    # Try to mark complete
+    response = await test_client.post(
+        f"/api/v1/progress/lessons/{test_lesson.id}/complete",
+        cookies={"access_token": test_user_token},
+    )
+
+    assert response.status_code == 400
+    detail = response.json()["detail"]
+    assert "95%" in detail
+    assert "30%" in detail  # Current progress shown in message
