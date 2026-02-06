@@ -145,3 +145,29 @@ async def mark_lesson_complete(
         completed_at=progress.completed_at,
         last_updated_at=progress.last_updated_at,
     )
+
+
+@router.post(
+    "/progress/lessons/{lesson_id}/uncomplete",
+    response_model=LessonProgressResponse,
+    dependencies=[Depends(RequireLessonEnrollment())],
+)
+async def mark_lesson_uncomplete(
+    lesson_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> LessonProgressResponse:
+    """Mark a completed lesson as uncomplete."""
+    progress = ProgressService.mark_lesson_uncomplete(current_user.id, lesson_id, db)
+
+    return LessonProgressResponse(
+        id=str(progress.id),
+        user_id=str(progress.user_id),
+        lesson_id=str(progress.lesson_id),
+        watched_seconds=progress.watched_seconds,
+        last_position_seconds=progress.last_position_seconds,
+        completion_percentage=progress.completion_percentage,
+        is_completed=progress.is_completed,
+        completed_at=progress.completed_at,
+        last_updated_at=progress.last_updated_at,
+    )
