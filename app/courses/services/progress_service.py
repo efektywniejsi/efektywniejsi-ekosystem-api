@@ -234,33 +234,58 @@ class ProgressService:
     @staticmethod
     def get_course_progress_summary(user_id: UUID, course_id: UUID, db: Session) -> dict:
         """Get user's progress summary for a course."""
-        lesson_ids = (
+        lesson_id_rows = (
             db.query(Lesson.id)
             .join(Module, Lesson.module_id == Module.id)
             .filter(Module.course_id == course_id)
             .all()
         )
-        lesson_ids = [lid[0] for lid in lesson_ids]
+        lesson_ids: list[UUID] = [lid[0] for lid in lesson_id_rows]
 
         total_lessons = len(lesson_ids)
 
-        completed_lessons = (
+        # Get all progress records for lessons in this course
+        progress_records = (
             db.query(LessonProgress)
             .filter(
                 LessonProgress.user_id == user_id,
                 LessonProgress.lesson_id.in_(lesson_ids),
-                LessonProgress.is_completed,
             )
-            .count()
-        )
-
-        total_watch_time = (
-            db.query(LessonProgress)
-            .filter(LessonProgress.user_id == user_id, LessonProgress.lesson_id.in_(lesson_ids))
-            .with_entities(LessonProgress.watched_seconds)
             .all()
         )
-        total_watch_time_seconds = sum(wt[0] for wt in total_watch_time)
+
+        # Build per-lesson progress list
+        progress_by_lesson = {p.lesson_id: p for p in progress_records}
+        lessons_progress = []
+        for lid in lesson_ids:
+            progress = progress_by_lesson.get(lid)
+            if progress:
+                lessons_progress.append(
+                    {
+                        "lesson_id": str(lid),
+                        "watched_seconds": progress.watched_seconds,
+                        "last_position_seconds": progress.last_position_seconds,
+                        "completion_percentage": progress.completion_percentage,
+                        "is_completed": progress.is_completed,
+                        "completed_at": progress.completed_at,
+                        "last_updated_at": progress.last_updated_at,
+                    }
+                )
+            else:
+                lessons_progress.append(
+                    {
+                        "lesson_id": str(lid),
+                        "watched_seconds": 0,
+                        "last_position_seconds": 0,
+                        "completion_percentage": 0,
+                        "is_completed": False,
+                        "completed_at": None,
+                        "last_updated_at": None,
+                    }
+                )
+
+        completed_lessons = sum(1 for p in progress_records if p.is_completed)
+        total_watch_time_seconds = sum(p.watched_seconds for p in progress_records)
 
         progress_percentage = (
             int(completed_lessons / total_lessons * 100) if total_lessons > 0 else 0
@@ -279,6 +304,7 @@ class ProgressService:
             "progress_percentage": progress_percentage,
             "total_watch_time_seconds": total_watch_time_seconds,
             "last_accessed_at": enrollment.last_accessed_at if enrollment else None,
+            "lessons": lessons_progress,
         }
 
     @staticmethod
