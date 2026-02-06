@@ -149,13 +149,10 @@ async def delete_lesson(
             detail="Lekcja nie znaleziona",
         )
 
-    # Delete Mux asset if present
     if lesson.mux_asset_id:
         try:
             mux_service.delete_asset(lesson.mux_asset_id)
         except Exception as e:
-            # Log warning but don't fail the deletion
-            # The asset might already be deleted or Mux might be unavailable
             logger.warning("Failed to delete Mux asset %s: %s", lesson.mux_asset_id, e)
 
     db.delete(lesson)
@@ -177,7 +174,6 @@ async def reorder_lessons(
             detail="Moduł nie znaleziony",
         )
 
-    # Verify all lesson IDs belong to this module
     lesson_ids = [UUID(lid) for lid in request.lesson_ids]
     lessons = db.query(Lesson).filter(Lesson.id.in_(lesson_ids)).all()
 
@@ -187,7 +183,6 @@ async def reorder_lessons(
             detail="Jeden lub więcej identyfikatorów lekcji jest nieprawidłowych",
         )
 
-    # Verify all lessons belong to this module
     for lesson in lessons:
         if lesson.module_id != module_id:
             raise HTTPException(
@@ -195,7 +190,6 @@ async def reorder_lessons(
                 detail=f"Lekcja {lesson.id} nie należy do tego modułu",
             )
 
-    # Update sort_order for each lesson
     for index, lesson_id in enumerate(lesson_ids):
         lesson = next(les for les in lessons if les.id == lesson_id)
         lesson.sort_order = index

@@ -131,7 +131,6 @@ class ProgressService:
     @staticmethod
     def mark_lesson_complete(user_id: UUID, lesson_id: UUID, db: Session) -> LessonProgress:
         """Manually mark a lesson as complete."""
-        # First, check if lesson exists and get its type
         lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
         if not lesson:
             raise HTTPException(
@@ -139,7 +138,6 @@ class ProgressService:
                 detail="Lesson not found",
             )
 
-        # Check if this is a text-only lesson (no video)
         is_text_only = lesson.mux_playback_id is None or lesson.duration_seconds == 0
 
         progress = (
@@ -148,7 +146,6 @@ class ProgressService:
             .first()
         )
 
-        # For text-only lessons, create progress record if it doesn't exist
         if not progress:
             if is_text_only:
                 progress = LessonProgress(user_id=user_id, lesson_id=lesson_id)
@@ -162,7 +159,6 @@ class ProgressService:
                     ),
                 )
 
-        # For video lessons, check if user watched at least 95%
         threshold = ProgressService.COMPLETION_THRESHOLD
         if not is_text_only and progress.completion_percentage < threshold:
             raise HTTPException(
@@ -174,7 +170,6 @@ class ProgressService:
                 ),
             )
 
-        # Always set to 100% when manually marking complete
         progress.completion_percentage = 100
 
         if not progress.is_completed:
@@ -222,7 +217,6 @@ class ProgressService:
                 detail="Ta lekcja nie jest oznaczona jako ukończona",
             )
 
-        # Reset completion status but keep watched progress
         progress.is_completed = False
         progress.completed_at = None
 
@@ -244,7 +238,6 @@ class ProgressService:
 
         total_lessons = len(lesson_ids)
 
-        # Get all progress records for lessons in this course
         progress_records = (
             db.query(LessonProgress)
             .filter(
@@ -254,7 +247,6 @@ class ProgressService:
             .all()
         )
 
-        # Build per-lesson progress list
         progress_by_lesson = {p.lesson_id: p for p in progress_records}
         lessons_progress = []
         for lid in lesson_ids:
@@ -311,8 +303,8 @@ class ProgressService:
     def get_weekly_stats(user_id: UUID, db: Session) -> dict:
         """Get user's learning stats for the current week (Monday–Sunday)."""
         today = date.today()
-        week_start = today - timedelta(days=today.weekday())  # Monday
-        week_end = week_start + timedelta(days=6)  # Sunday
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=6)
         week_start_dt = datetime.combine(week_start, datetime.min.time())
 
         active_date_rows = (

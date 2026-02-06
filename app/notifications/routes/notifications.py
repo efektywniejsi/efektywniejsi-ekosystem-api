@@ -100,7 +100,6 @@ async def get_announcement_recipients(
         .all()
     )
 
-    # Fallback for notifications created before announcement_log_id existed
     if not rows and log.completed_at:
         rows = (
             db.query(Notification, User.name, User.email)

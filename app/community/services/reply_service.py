@@ -87,7 +87,6 @@ class ReplyService:
         thread_id = reply.thread_id
         self.db.delete(reply)
 
-        # Update reply count
         thread = self._get_thread_or_404(thread_id)
         thread.reply_count = max(0, thread.reply_count - 1)
 
@@ -98,7 +97,6 @@ class ReplyService:
         thread = self._get_thread_or_404(thread_id)
         self._check_author_or_admin(thread, user)
 
-        # Unmark any existing solution
         self.db.query(ThreadReply).filter(
             ThreadReply.thread_id == thread_id,
             ThreadReply.is_solution == True,  # noqa: E712

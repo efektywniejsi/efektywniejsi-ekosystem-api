@@ -57,7 +57,7 @@ def send_course_update_notification(
         skipped = 0
 
         for user in users:
-            # Bind loop variables to avoid B023
+
             def make_email_builder(u: User) -> Any:
                 def email_builder() -> Any:
                     return build_course_update_email(
@@ -134,7 +134,7 @@ def send_announcement_notification(
         failed = 0
 
         for user in users:
-            # Bind loop variables to avoid B023
+
             def make_announcement_builder(u: User) -> Any:
                 def email_builder() -> Any:
                     return build_announcement_email(

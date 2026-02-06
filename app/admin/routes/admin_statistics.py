@@ -20,7 +20,14 @@ from app.admin.schemas.admin_statistics import (
     SalesWindowsResponse,
     UserStatisticsResponse,
 )
-from app.admin.services.statistics_service import StatisticsService
+from app.admin.services.statistics import (
+    DashboardService,
+    EducationService,
+    OrderStatisticsService,
+    RankingsService,
+    RevenueService,
+    UserStatisticsService,
+)
 from app.auth.dependencies import require_admin
 from app.auth.models.user import User
 from app.db.session import get_db
@@ -43,7 +50,7 @@ async def get_dashboard_summary(
     - Education (enrollments, completions, certificates)
     - Top 5 packages and courses
     """
-    return StatisticsService.get_dashboard_summary(db)
+    return DashboardService.get_summary(db)
 
 
 @router.get("/revenue", response_model=RevenueStatisticsResponse)
@@ -64,9 +71,7 @@ async def get_revenue_statistics(
     - Change percentage
     - Data points for chart visualization
     """
-    return StatisticsService.get_revenue_statistics(
-        db, start_date, end_date, granularity, compare_previous
-    )
+    return RevenueService.get_statistics(db, start_date, end_date, granularity, compare_previous)
 
 
 @router.get("/orders", response_model=OrderStatisticsResponse)
@@ -85,7 +90,7 @@ async def get_order_statistics(
     - Orders by payment provider (Stripe, PayU)
     - Recent 10 orders summary
     """
-    return StatisticsService.get_order_statistics(db, start_date, end_date)
+    return OrderStatisticsService.get_statistics(db, start_date, end_date)
 
 
 @router.get("/rankings", response_model=RankingsResponse)
@@ -101,7 +106,7 @@ async def get_rankings(
     - Top packages by sales count and revenue
     - Top courses by enrollment count and completion rate
     """
-    return StatisticsService.get_rankings(db, limit)
+    return RankingsService.get_rankings(db, limit)
 
 
 @router.get("/sales-windows", response_model=SalesWindowsResponse)
@@ -117,7 +122,7 @@ async def get_sales_windows_stats(
     - Total revenue
     - Unique customers
     """
-    return StatisticsService.get_sales_windows_stats(db)
+    return RankingsService.get_sales_windows_stats(db)
 
 
 @router.get("/users", response_model=UserStatisticsResponse)
@@ -136,7 +141,7 @@ async def get_user_statistics(
     - DAU/MAU ratio
     - Daily activity data points
     """
-    return StatisticsService.get_user_statistics(db, days)
+    return UserStatisticsService.get_statistics(db, days)
 
 
 @router.get("/education", response_model=EducationStatisticsResponse)
@@ -154,7 +159,7 @@ async def get_education_statistics(
     - Certificates issued
     - Per-course statistics with progress metrics
     """
-    return StatisticsService.get_education_statistics(db)
+    return EducationService.get_statistics(db)
 
 
 @router.get("/orders/details", response_model=OrderDetailsListResponse)
@@ -175,7 +180,7 @@ async def get_order_details(
     - Total count
     - Total revenue (completed orders only)
     """
-    return StatisticsService.get_order_details(db, period, status, limit)
+    return OrderStatisticsService.get_order_details(db, period, status, limit)
 
 
 @router.get("/users/monthly", response_model=MonthlyUsersResponse)
@@ -191,7 +196,7 @@ async def get_monthly_new_users(
     - Total count
     - List of users with their details
     """
-    return StatisticsService.get_monthly_new_users(db, limit)
+    return UserStatisticsService.get_monthly_new_users(db, limit)
 
 
 @router.get("/education/completions", response_model=CompletionsListResponse)
@@ -207,7 +212,7 @@ async def get_completions(
     - Total count
     - List of completions with user and course details
     """
-    return StatisticsService.get_completions(db, limit)
+    return EducationService.get_completions(db, limit)
 
 
 @router.get("/education/certificates", response_model=CertificatesListResponse)
@@ -223,7 +228,7 @@ async def get_certificates(
     - Total count
     - List of certificates with user and course details
     """
-    return StatisticsService.get_certificates(db, limit)
+    return EducationService.get_certificates(db, limit)
 
 
 @router.get("/users/daily-details", response_model=DailyUserDetailsResponse)
@@ -243,4 +248,4 @@ async def get_daily_user_details(
     - Total count
     - List of users with their details
     """
-    return StatisticsService.get_daily_user_details(db, date, user_type, limit)
+    return UserStatisticsService.get_daily_details(db, date, user_type, limit)

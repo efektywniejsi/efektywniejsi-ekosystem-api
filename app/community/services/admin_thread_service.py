@@ -150,7 +150,6 @@ class AdminThreadService:
             or 0
         )
 
-        # Category counts
         rows = (
             self.db.query(CommunityThread.category, func.count(CommunityThread.id))
             .group_by(CommunityThread.category)
@@ -158,7 +157,6 @@ class AdminThreadService:
         )
         category_counts = {str(category): int(count) for category, count in rows}
 
-        # Top authors
         top_authors_rows = (
             self.db.query(
                 User.id,

@@ -1,6 +1,6 @@
 """Base utilities and helpers for statistics services."""
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -92,22 +92,3 @@ def count_active_users(
     if until is not None:
         query = query.filter(UserDailyActivity.date < until.date())
     return query.scalar() or 0
-
-
-def get_date_range(start: datetime, end: datetime) -> list[date]:
-    """Generate a list of dates between start and end (inclusive).
-
-    Args:
-        start: Start datetime.
-        end: End datetime.
-
-    Returns:
-        List of date objects.
-    """
-    dates = []
-    current = start.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_date = end.replace(hour=0, minute=0, second=0, microsecond=0)
-    while current <= end_date:
-        dates.append(current.date())
-        current = current + timedelta(days=1)
-    return dates
