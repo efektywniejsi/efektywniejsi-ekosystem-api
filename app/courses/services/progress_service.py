@@ -202,6 +202,36 @@ class ProgressService:
         return cast(LessonProgress, progress)
 
     @staticmethod
+    def mark_lesson_uncomplete(user_id: UUID, lesson_id: UUID, db: Session) -> LessonProgress:
+        """Mark a completed lesson as uncomplete."""
+        progress = (
+            db.query(LessonProgress)
+            .filter(LessonProgress.user_id == user_id, LessonProgress.lesson_id == lesson_id)
+            .first()
+        )
+
+        if not progress:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Nie znaleziono postępu dla tej lekcji",
+            )
+
+        if not progress.is_completed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Ta lekcja nie jest oznaczona jako ukończona",
+            )
+
+        # Reset completion status but keep watched progress
+        progress.is_completed = False
+        progress.completed_at = None
+
+        db.commit()
+        db.refresh(progress)
+
+        return cast(LessonProgress, progress)
+
+    @staticmethod
     def get_course_progress_summary(user_id: UUID, course_id: UUID, db: Session) -> dict:
         """Get user's progress summary for a course."""
         lesson_ids = (
