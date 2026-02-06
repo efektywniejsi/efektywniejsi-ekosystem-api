@@ -341,3 +341,74 @@ async def test_video_lesson_error_shows_current_progress(
     detail = response.json()["detail"]
     assert "95%" in detail
     assert "30%" in detail  # Current progress shown in message
+
+
+# ============================================================================
+# Mark as uncomplete tests
+# ============================================================================
+
+
+@pytest.mark.asyncio
+async def test_mark_lesson_uncomplete(
+    test_client: AsyncClient,
+    test_user_token,
+    test_lesson,
+    test_enrollment,
+):
+    """Test marking a completed lesson as uncomplete."""
+    # First complete the lesson
+    await test_client.post(
+        f"/api/v1/progress/lessons/{test_lesson.id}",
+        json={
+            "watched_seconds": 290,
+            "last_position_seconds": 290,
+            "completion_percentage": 96,
+        },
+        cookies={"access_token": test_user_token},
+    )
+    await test_client.post(
+        f"/api/v1/progress/lessons/{test_lesson.id}/complete",
+        cookies={"access_token": test_user_token},
+    )
+
+    # Now mark as uncomplete
+    response = await test_client.post(
+        f"/api/v1/progress/lessons/{test_lesson.id}/uncomplete",
+        cookies={"access_token": test_user_token},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["is_completed"] is False
+    assert data["completed_at"] is None
+    # Progress should be preserved
+    assert data["completion_percentage"] == 100
+
+
+@pytest.mark.asyncio
+async def test_cannot_uncomplete_non_completed_lesson(
+    test_client: AsyncClient,
+    test_user_token,
+    test_lesson,
+    test_enrollment,
+):
+    """Test cannot mark uncomplete a lesson that is not completed."""
+    # Create progress but don't complete
+    await test_client.post(
+        f"/api/v1/progress/lessons/{test_lesson.id}",
+        json={
+            "watched_seconds": 60,
+            "last_position_seconds": 60,
+            "completion_percentage": 20,
+        },
+        cookies={"access_token": test_user_token},
+    )
+
+    # Try to mark uncomplete
+    response = await test_client.post(
+        f"/api/v1/progress/lessons/{test_lesson.id}/uncomplete",
+        cookies={"access_token": test_user_token},
+    )
+
+    assert response.status_code == 400
+    assert "nie jest oznaczona" in response.json()["detail"]
