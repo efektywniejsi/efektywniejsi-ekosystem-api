@@ -162,14 +162,13 @@ async def download_attachment(
             detail="Course not found",
         )
 
-    if not lesson.is_preview:
-        is_enrolled = EnrollmentService.check_enrollment(current_user.id, course.id, db)
+    is_enrolled = EnrollmentService.check_enrollment(current_user.id, course.id, db)
 
-        if not is_enrolled:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You must be enrolled in this course to download this attachment",
-            )
+    if not is_enrolled:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must be enrolled in this course to download this attachment",
+        )
 
     storage = get_storage()
     if not storage.exists(attachment.file_path):
