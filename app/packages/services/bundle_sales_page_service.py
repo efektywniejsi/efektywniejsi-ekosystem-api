@@ -40,7 +40,6 @@ def update_bundle_sales_page(db: Session, bundle_id: UUID, data: SalesPageData) 
             detail="Bundle not found",
         )
 
-    # Validate each section's config against its type schema
     for section in data.sections:
         config_cls = SECTION_CONFIG_MAP.get(section.type)
         if config_cls:

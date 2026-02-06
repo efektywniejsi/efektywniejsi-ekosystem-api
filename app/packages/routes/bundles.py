@@ -77,15 +77,11 @@ def get_bundle_by_slug(
     return BundleListResponse.from_orm(bundle)
 
 
-# Admin endpoints - require authentication
-
-
 def _build_bundle_detail_response(db: Session, bundle: Package) -> BundleDetailResponse:
     """Build BundleDetailResponse with packages and courses."""
     from app.courses.models.course import Course
     from app.packages.schemas.package import PackageListResponse
 
-    # Get child packages
     package_items = (
         db.query(PackageBundleItem)
         .filter(PackageBundleItem.bundle_id == bundle.id)
@@ -99,7 +95,6 @@ def _build_bundle_detail_response(db: Session, bundle: Package) -> BundleDetailR
         if pkg:
             packages.append(PackageListResponse.model_validate(pkg))
 
-    # Get courses
     course_items = (
         db.query(BundleCourseItem)
         .filter(BundleCourseItem.bundle_id == bundle.id)
@@ -121,7 +116,6 @@ def _build_bundle_detail_response(db: Session, bundle: Package) -> BundleDetailR
                 )
             )
 
-    # Calculate badge
     badge = None
     if bundle.original_price and bundle.original_price > bundle.price:
         discount = int((1 - bundle.price / bundle.original_price) * 100)
@@ -193,7 +187,6 @@ def create_bundle(
     - Courses (via course_items or course_ids for backward compatibility)
     - Or both
     """
-    # Check if slug already exists
     existing = db.query(Package).filter(Package.slug == bundle_data.slug).first()
     if existing:
         raise HTTPException(
@@ -201,7 +194,6 @@ def create_bundle(
             detail=f"Pakiet ze slugiem '{bundle_data.slug}' już istnieje",
         )
 
-    # Create bundle package
     new_bundle = Package(
         slug=bundle_data.slug,
         title=bundle_data.name,
@@ -212,23 +204,21 @@ def create_bundle(
         currency=bundle_data.currency,
         difficulty=bundle_data.difficulty,
         total_time_saved=bundle_data.total_time_saved,
-        tools="[]",  # Empty for bundles
+        tools="[]",
         is_published=True,
         is_featured=bundle_data.is_featured,
-        is_bundle=True,  # CRITICAL
+        is_bundle=True,
     )
 
     db.add(new_bundle)
-    db.flush()  # Get ID
+    db.flush()
 
-    # Add package items
     for idx, package_id in enumerate(bundle_data.package_ids):
         try:
             pkg_uuid = uuid.UUID(package_id)
         except ValueError:
             raise HTTPException(400, f"Nieprawidłowy ID pakietu: {package_id}") from None
 
-        # Verify package exists
         pkg = db.query(Package).filter(Package.id == pkg_uuid).first()
         if not pkg:
             raise HTTPException(404, f"Pakiet {package_id} nie znaleziony")
@@ -240,7 +230,6 @@ def create_bundle(
         )
         db.add(bundle_item)
 
-    # Add course items — prefer course_items, fallback to course_ids
     from app.courses.models.course import Course
 
     if bundle_data.course_items:
@@ -262,7 +251,6 @@ def create_bundle(
             )
             db.add(course_item)
     else:
-        # Backward compatibility: use course_ids with no duration
         for idx, course_id in enumerate(bundle_data.course_ids):
             try:
                 course_uuid = uuid.UUID(course_id)
@@ -283,7 +271,6 @@ def create_bundle(
     db.commit()
     db.refresh(new_bundle)
 
-    # Build response with full content
     return _build_bundle_detail_response(db, new_bundle)
 
 
@@ -310,26 +297,20 @@ def update_bundle(
     if not bundle:
         raise HTTPException(404, "Bundle nie znaleziony")
 
-    # Update basic fields
     if bundle_data.name is not None:
         bundle.title = bundle_data.name
     if bundle_data.description is not None:
         bundle.description = bundle_data.description
     if bundle_data.price is not None:
         bundle.price = bundle_data.price
-    # Always update original_price if it's in the request body
-    # (allows clearing by sending null)
     if "original_price" in (bundle_data.model_dump(exclude_unset=True) or {}):
         bundle.original_price = bundle_data.original_price
     if bundle_data.is_featured is not None:
         bundle.is_featured = bundle_data.is_featured
 
-    # Update package items
     if bundle_data.package_ids is not None:
-        # Remove old items
         db.query(PackageBundleItem).filter(PackageBundleItem.bundle_id == bundle_uuid).delete()
 
-        # Add new items
         for idx, package_id in enumerate(bundle_data.package_ids):
             pkg_uuid = uuid.UUID(package_id)
             bundle_item = PackageBundleItem(
@@ -339,7 +320,6 @@ def update_bundle(
             )
             db.add(bundle_item)
 
-    # Update course items — prefer course_items, fallback to course_ids
     if bundle_data.course_items is not None:
         db.query(BundleCourseItem).filter(BundleCourseItem.bundle_id == bundle_uuid).delete()
 
@@ -353,7 +333,6 @@ def update_bundle(
             )
             db.add(course_item)
     elif bundle_data.course_ids is not None:
-        # Backward compatibility: use course_ids with no duration
         db.query(BundleCourseItem).filter(BundleCourseItem.bundle_id == bundle_uuid).delete()
 
         for idx, course_id in enumerate(bundle_data.course_ids):
@@ -396,7 +375,6 @@ def delete_bundle(
     if not bundle:
         raise HTTPException(404, "Bundle nie znaleziony")
 
-    # Soft delete
     bundle.is_published = False
     db.commit()
 

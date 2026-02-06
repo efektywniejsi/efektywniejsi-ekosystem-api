@@ -67,7 +67,6 @@ def _build_welcome_package_email(
     reset_url = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
     dashboard_url = f"{settings.FRONTEND_URL}/dashboard/packages"
 
-    # Build package list
     package_list_html = "".join(
         [
             f'<li style="margin: 10px 0;">{enrollment.package.title}</li>'
@@ -76,7 +75,6 @@ def _build_welcome_package_email(
     )
     package_list_text = "\n".join([f"  • {enrollment.package.title}" for enrollment in enrollments])
 
-    # Format price (from grosz to PLN)
     total_pln = order.total / 100
 
     html_body = f"""
@@ -167,7 +165,6 @@ def _build_purchase_confirmation_email(
     """Build purchase confirmation email for existing users."""
     dashboard_url = f"{settings.FRONTEND_URL}/dashboard/packages"
 
-    # Build package list
     package_list_html = "".join(
         [
             f'<li style="margin: 10px 0;">{enrollment.package.title}</li>'
@@ -176,7 +173,6 @@ def _build_purchase_confirmation_email(
     )
     package_list_text = "\n".join([f"  • {enrollment.package.title}" for enrollment in enrollments])
 
-    # Format price (from grosz to PLN)
     total_pln = order.total / 100
 
     html_body = f"""
