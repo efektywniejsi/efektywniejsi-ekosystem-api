@@ -34,6 +34,7 @@ from app.courses.routes import (
     courses,
     enrollment,
     gamification,
+    lesson_images,
     lessons,
     modules,
     progress,
@@ -54,6 +55,7 @@ from app.packages.routes import (
     sales_windows_router,
     webhooks_router,
 )
+from app.storage.routes import admin_cleanup as storage_admin_routes
 
 setup_logging()
 logger = structlog.get_logger(__name__)
@@ -102,7 +104,7 @@ app.add_middleware(
 )
 app.add_middleware(RequestLoggingMiddleware)
 
-uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
+uploads_dir = settings.UPLOAD_DIR
 os.makedirs(uploads_dir, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
@@ -138,6 +140,7 @@ app.include_router(
 )
 app.include_router(webhooks.router, prefix=settings.API_V1_PREFIX, tags=["webhooks"])
 app.include_router(sales_page.router, prefix=settings.API_V1_PREFIX, tags=["sales-page"])
+app.include_router(lesson_images.router, prefix=settings.API_V1_PREFIX, tags=["lesson-images"])
 
 app.include_router(
     bundle_sales_page_router, prefix=settings.API_V1_PREFIX, tags=["bundle-sales-page"]
@@ -188,6 +191,11 @@ app.include_router(
     admin_messages_routes.router,
     prefix=f"{settings.API_V1_PREFIX}/admin/messages",
     tags=["admin-messages"],
+)
+app.include_router(
+    storage_admin_routes.router,
+    prefix=f"{settings.API_V1_PREFIX}/admin",
+    tags=["admin-storage"],
 )
 
 

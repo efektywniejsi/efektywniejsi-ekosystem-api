@@ -138,13 +138,13 @@ async def test_download_certificate(
     cert_file = upload_dir / "TEST-CERT-2026-002.pdf"
     cert_file.write_bytes(b"%PDF-1.4\nDummy PDF")
 
-    # Create certificate with storage-compatible path
+    # Create certificate with storage key (folder/filename format, not full path)
     certificate = Certificate(
         user_id=test_user.id,
         course_id=test_course.id,
         certificate_code="TEST-CERT-2026-002",
         issued_at=datetime.utcnow(),
-        file_path=str(cert_file),
+        file_path="certificates/TEST-CERT-2026-002.pdf",
     )
     db_session.add(certificate)
     db_session.flush()
