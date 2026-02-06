@@ -15,9 +15,6 @@ class Granularity(str, Enum):
     MONTHLY = "monthly"
 
 
-# ============ KPI Models ============
-
-
 class RevenueKPI(BaseModel):
     """Revenue key performance indicators."""
 
@@ -56,9 +53,6 @@ class EducationKPI(BaseModel):
     average_completion_rate: float = Field(description="Average completion rate percentage")
 
 
-# ============ Ranked Items ============
-
-
 class RankedItem(BaseModel):
     """Ranked item for top lists."""
 
@@ -67,9 +61,6 @@ class RankedItem(BaseModel):
     slug: str
     count: int = Field(description="Sales count or enrollment count")
     revenue: int = Field(default=0, description="Revenue in grosz")
-
-
-# ============ Dashboard Summary ============
 
 
 class DashboardSummaryResponse(BaseModel):
@@ -81,9 +72,6 @@ class DashboardSummaryResponse(BaseModel):
     education: EducationKPI
     top_packages: list[RankedItem] = Field(description="Top 5 packages by sales")
     top_courses: list[RankedItem] = Field(description="Top 5 courses by enrollments")
-
-
-# ============ Revenue Statistics ============
 
 
 class RevenueDataPoint(BaseModel):
@@ -112,9 +100,6 @@ class RevenueStatisticsResponse(BaseModel):
     data_points: list[RevenueDataPoint] = Field(description="Data points for chart")
 
 
-# ============ Order Statistics ============
-
-
 class OrderStatusCount(BaseModel):
     """Count of orders by status."""
 
@@ -139,9 +124,6 @@ class OrderStatisticsResponse(BaseModel):
     by_status: list[OrderStatusCount]
     by_provider: list[OrderProviderCount]
     recent_orders: list[dict] = Field(description="Last 10 orders summary")
-
-
-# ============ Rankings ============
 
 
 class PackageRanking(BaseModel):
@@ -175,9 +157,6 @@ class RankingsResponse(BaseModel):
     courses: list[CourseRanking]
 
 
-# ============ Sales Windows ============
-
-
 class SalesWindowStats(BaseModel):
     """Statistics for a sales window."""
 
@@ -196,9 +175,6 @@ class SalesWindowsResponse(BaseModel):
     """Sales windows comparison response."""
 
     windows: list[SalesWindowStats]
-
-
-# ============ User Statistics ============
 
 
 class UserActivityDataPoint(BaseModel):
@@ -221,9 +197,6 @@ class UserStatisticsResponse(BaseModel):
     new_users_month: int
     dau_mau_ratio: float = Field(description="Daily/Monthly active users ratio")
     activity_data_points: list[UserActivityDataPoint]
-
-
-# ============ Education Statistics ============
 
 
 class CourseProgressStats(BaseModel):
@@ -250,9 +223,6 @@ class EducationStatisticsResponse(BaseModel):
     courses: list[CourseProgressStats]
 
 
-# ============ Daily User Details ============
-
-
 class UserDetail(BaseModel):
     """User detail for daily user list."""
 
@@ -270,9 +240,6 @@ class DailyUserDetailsResponse(BaseModel):
     type: str = Field(description="Type: 'active' or 'new'")
     total: int = Field(description="Total count of users")
     users: list[UserDetail] = Field(description="List of users")
-
-
-# ============ Order Details (Modal) ============
 
 
 class OrderDetailItem(BaseModel):
@@ -303,17 +270,11 @@ class OrderDetailsListResponse(BaseModel):
     total_revenue: int = Field(description="Total revenue in grosz")
 
 
-# ============ Monthly Users (Modal) ============
-
-
 class MonthlyUsersResponse(BaseModel):
     """Response for monthly new users endpoint."""
 
     total: int
     users: list[UserDetail]
-
-
-# ============ Completions & Certificates (Modal) ============
 
 
 class CompletionDetail(BaseModel):

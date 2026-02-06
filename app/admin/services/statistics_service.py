@@ -53,8 +53,6 @@ from app.packages.models.sales_window import SalesWindow
 class StatisticsService:
     """Service for calculating and aggregating statistics."""
 
-    # ============ Helper Methods ============
-
     @staticmethod
     def _get_period_boundaries(period: str) -> tuple[datetime, datetime]:
         """Get start and end datetime for a period."""
@@ -106,20 +104,15 @@ class StatisticsService:
             query = query.filter(UserDailyActivity.date < until.date())
         return query.scalar() or 0
 
-    # ============ Revenue Methods ============
-
     @staticmethod
     def get_revenue_for_period(db: Session, start: datetime, end: datetime) -> tuple[int, int]:
         """Get total revenue and order count for a period."""
-        # Use payment_completed_at if available, otherwise fall back to created_at
         result = (
             db.query(func.sum(Order.total), func.count(Order.id))
             .filter(
                 Order.status == OrderStatus.COMPLETED,
                 or_(
-                    # Has payment_completed_at in range
                     (Order.payment_completed_at >= start) & (Order.payment_completed_at <= end),
-                    # Or payment_completed_at is NULL but created_at is in range
                     (Order.payment_completed_at.is_(None))
                     & (Order.created_at >= start)
                     & (Order.created_at <= end),
@@ -131,8 +124,6 @@ class StatisticsService:
             return 0, 0
         return result[0] or 0, result[1] or 0
 
-    # ============ Dashboard Summary ============
-
     @staticmethod
     def get_dashboard_summary(db: Session) -> DashboardSummaryResponse:
         """Get complete dashboard summary with all KPIs."""
@@ -143,7 +134,6 @@ class StatisticsService:
         prev_month_start = (month_start - timedelta(days=1)).replace(day=1)
         prev_week_start = week_start - timedelta(days=7)
 
-        # Revenue KPIs
         today_revenue, _ = StatisticsService.get_revenue_for_period(db, today_start, now)
         week_revenue, _ = StatisticsService.get_revenue_for_period(db, week_start, now)
         month_revenue, _ = StatisticsService.get_revenue_for_period(db, month_start, now)
@@ -166,7 +156,6 @@ class StatisticsService:
             ),
         )
 
-        # Orders KPIs
         today_orders = db.query(Order).filter(Order.created_at >= today_start).count()
         pending_orders = db.query(Order).filter(Order.status == OrderStatus.PENDING).count()
         completed_month = (
@@ -190,13 +179,11 @@ class StatisticsService:
             failed_this_month=failed_month,
         )
 
-        # Users KPIs
         total_users = (
             db.query(User).filter(User.is_active == True).count()  # noqa: E712
         )
         new_users_month = db.query(User).filter(User.created_at >= month_start).count()
 
-        # Active users based on course access OR daily activity log
         active_today = StatisticsService._count_active_users(db, today_start)
         active_week = StatisticsService._count_active_users(db, week_start)
 
@@ -207,7 +194,6 @@ class StatisticsService:
             active_this_week=active_week,
         )
 
-        # Education KPIs
         total_enrollments = db.query(Enrollment).count()
         enrollments_month = (
             db.query(Enrollment).filter(Enrollment.enrolled_at >= month_start).count()
@@ -224,7 +210,6 @@ class StatisticsService:
             db.query(Certificate).filter(Certificate.issued_at >= month_start).count()
         )
 
-        # Average completion rate
         total_completed = db.query(Enrollment).filter(Enrollment.completed_at.isnot(None)).count()
         avg_completion = (
             round((total_completed / total_enrollments) * 100, 2) if total_enrollments > 0 else 0.0
@@ -238,7 +223,6 @@ class StatisticsService:
             average_completion_rate=avg_completion,
         )
 
-        # Top Packages by sales
         top_packages_query = (
             db.query(
                 Package.id,
@@ -263,7 +247,6 @@ class StatisticsService:
             for p in top_packages_query
         ]
 
-        # Top Courses by enrollments
         top_courses_query = (
             db.query(
                 Course.id,
@@ -292,8 +275,6 @@ class StatisticsService:
             top_courses=top_courses,
         )
 
-    # ============ Revenue Statistics ============
-
     @staticmethod
     def get_revenue_statistics(
         db: Session,
@@ -303,7 +284,6 @@ class StatisticsService:
         compare_previous: bool = True,
     ) -> RevenueStatisticsResponse:
         """Get detailed revenue statistics with chart data."""
-        # Current period
         current_revenue, current_count = StatisticsService.get_revenue_for_period(
             db, start_date, end_date
         )
@@ -315,7 +295,6 @@ class StatisticsService:
             average_order_value=avg_order_value,
         )
 
-        # Previous period
         previous_summary = None
         change_percent = None
         if compare_previous:
@@ -333,7 +312,6 @@ class StatisticsService:
                 current_revenue, prev_revenue
             )
 
-        # Data points for chart
         data_points = StatisticsService._get_revenue_data_points(
             db, start_date, end_date, granularity
         )
@@ -408,8 +386,6 @@ class StatisticsService:
 
         return data_points
 
-    # ============ Order Statistics ============
-
     @staticmethod
     def get_order_statistics(
         db: Session, start_date: datetime | None = None, end_date: datetime | None = None
@@ -423,7 +399,6 @@ class StatisticsService:
 
         total_orders = query.count()
 
-        # By status
         status_counts = (
             query.with_entities(Order.status, func.count(Order.id)).group_by(Order.status).all()
         )
@@ -436,7 +411,6 @@ class StatisticsService:
             for s, c in status_counts
         ]
 
-        # By provider
         provider_stats = (
             query.filter(Order.status == OrderStatus.COMPLETED)
             .with_entities(
@@ -458,7 +432,6 @@ class StatisticsService:
             for p, c, r in provider_stats
         ]
 
-        # Recent orders
         recent = db.query(Order).order_by(Order.created_at.desc()).limit(10).all()
         recent_orders = [
             {
@@ -479,12 +452,9 @@ class StatisticsService:
             recent_orders=recent_orders,
         )
 
-    # ============ Rankings ============
-
     @staticmethod
     def get_rankings(db: Session, limit: int = 10) -> RankingsResponse:
         """Get rankings for packages and courses."""
-        # Package rankings
         package_stats = (
             db.query(
                 Package.id,
@@ -517,7 +487,6 @@ class StatisticsService:
             for p in package_stats
         ]
 
-        # Course rankings
         course_stats = (
             db.query(
                 Course.id,
@@ -533,7 +502,6 @@ class StatisticsService:
             .all()
         )
 
-        # Build course rankings with completion rates
         courses = []
         for c in course_stats:
             completion_count = (
@@ -558,8 +526,6 @@ class StatisticsService:
 
         return RankingsResponse(packages=packages, courses=courses)
 
-    # ============ Sales Windows ============
-
     @staticmethod
     def get_sales_windows_stats(db: Session) -> SalesWindowsResponse:
         """Get statistics for sales windows."""
@@ -567,7 +533,6 @@ class StatisticsService:
 
         window_stats = []
         for w in windows:
-            # Get orders during window period
             orders_query = db.query(Order).filter(
                 Order.status == OrderStatus.COMPLETED,
                 Order.payment_completed_at >= w.starts_at,
@@ -611,8 +576,6 @@ class StatisticsService:
 
         return SalesWindowsResponse(windows=window_stats)
 
-    # ============ User Statistics ============
-
     @staticmethod
     def get_user_statistics(db: Session, days: int = 30) -> UserStatisticsResponse:
         """Get user statistics with activity trends."""
@@ -626,20 +589,16 @@ class StatisticsService:
             db.query(User).filter(User.is_active == True).count()  # noqa: E712
         )
 
-        # Active users counts (course access OR login)
         active_today = StatisticsService._count_active_users(db, today_start)
         active_week = StatisticsService._count_active_users(db, week_start)
         active_month = StatisticsService._count_active_users(db, month_start)
 
-        # New users counts
         new_today = db.query(User).filter(User.created_at >= today_start).count()
         new_week = db.query(User).filter(User.created_at >= week_start).count()
         new_month = db.query(User).filter(User.created_at >= month_start).count()
 
-        # DAU/MAU ratio
         dau_mau = round(active_today / active_month, 4) if active_month > 0 else 0.0
 
-        # Activity data points — single grouped query
         activity_rows = (
             db.query(
                 UserDailyActivity.date,
@@ -690,8 +649,6 @@ class StatisticsService:
             activity_data_points=data_points,
         )
 
-    # ============ Education Statistics ============
-
     @staticmethod
     def get_education_statistics(db: Session) -> EducationStatisticsResponse:
         """Get education statistics with course details."""
@@ -713,7 +670,6 @@ class StatisticsService:
             else 0.0
         )
 
-        # Per-course statistics
         courses_data = db.query(Course).filter(Course.is_published == True).all()  # noqa: E712
 
         courses = []
@@ -737,7 +693,6 @@ class StatisticsService:
             )
             certs = db.query(Certificate).filter(Certificate.course_id == course.id).count()
 
-            # Calculate average progress
             progress_data = (
                 db.query(func.avg(LessonProgress.completion_percentage))
                 .join(
@@ -771,8 +726,6 @@ class StatisticsService:
             courses=courses,
         )
 
-    # ============ Daily User Details ============
-
     @staticmethod
     def get_daily_user_details(
         db: Session, date: str, user_type: str, limit: int = 50
@@ -780,7 +733,6 @@ class StatisticsService:
         """Get list of active or new users for a specific day."""
         from datetime import datetime
 
-        # Parse the date
         target_date = datetime.strptime(date, "%Y-%m-%d")
         day_start = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
         day_end = day_start + timedelta(days=1)
@@ -824,7 +776,6 @@ class StatisticsService:
             )
 
         elif user_type == "new":
-            # Get users created on this day
             users = (
                 db.query(User)
                 .filter(
@@ -837,7 +788,6 @@ class StatisticsService:
             )
 
             for user in users:
-                # Get last activity from enrollments
                 last_activity = (
                     db.query(func.max(Enrollment.last_accessed_at))
                     .filter(Enrollment.user_id == user.id)
@@ -853,7 +803,6 @@ class StatisticsService:
                     )
                 )
 
-            # Get total count
             total = (
                 db.query(User)
                 .filter(
@@ -871,8 +820,6 @@ class StatisticsService:
             total=total,
             users=users_list,
         )
-
-    # ============ Order Details (Modal) ============
 
     @staticmethod
     def get_order_details(
@@ -896,7 +843,6 @@ class StatisticsService:
 
         total_count = query.count()
 
-        # Total revenue (completed only within the same filters)
         revenue_query = db.query(func.sum(Order.total)).filter(
             Order.status == OrderStatus.COMPLETED,
         )
@@ -935,8 +881,6 @@ class StatisticsService:
             total_count=total_count,
             total_revenue=total_revenue,
         )
-
-    # ============ Monthly Users (Modal) ============
 
     @staticmethod
     def get_monthly_new_users(db: Session, limit: int = 50) -> MonthlyUsersResponse:
@@ -981,8 +925,6 @@ class StatisticsService:
 
         return MonthlyUsersResponse(total=total, users=users_list)
 
-    # ============ Completions (Modal) ============
-
     @staticmethod
     def get_completions(db: Session, limit: int = 50) -> CompletionsListResponse:
         """Get all course completions (most recent first)."""
@@ -1010,8 +952,6 @@ class StatisticsService:
             )
 
         return CompletionsListResponse(total=total, completions=completions)
-
-    # ============ Certificates (Modal) ============
 
     @staticmethod
     def get_certificates(db: Session, limit: int = 50) -> CertificatesListResponse:

@@ -97,7 +97,6 @@ class RankingsService:
         Returns:
             RankingsResponse with package and course rankings.
         """
-        # Package rankings with full details
         package_stats = (
             db.query(
                 Package.id,
@@ -130,7 +129,6 @@ class RankingsService:
             for p in package_stats
         ]
 
-        # Course rankings with completion rates
         course_stats = (
             db.query(
                 Course.id,
@@ -184,7 +182,6 @@ class RankingsService:
 
         window_stats = []
         for w in windows:
-            # Get orders during window period
             orders_query = db.query(Order).filter(
                 Order.status == OrderStatus.COMPLETED,
                 Order.payment_completed_at >= w.starts_at,
