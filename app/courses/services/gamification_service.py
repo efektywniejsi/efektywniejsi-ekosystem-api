@@ -12,11 +12,11 @@ class GamificationService:
     POINTS_COURSE_COMPLETED = 100
 
     STREAK_DAILY_BONUS = {
-        1: 2,  # days 1-2: +2 XP
-        3: 5,  # days 3-6: +5 XP
-        7: 10,  # days 7-13: +10 XP
-        14: 15,  # days 14-29: +15 XP
-        30: 25,  # days 30+: +25 XP
+        1: 2,
+        3: 5,
+        7: 10,
+        14: 15,
+        30: 25,
     }
 
     LEVEL_THRESHOLDS = [

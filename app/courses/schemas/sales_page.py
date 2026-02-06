@@ -23,9 +23,6 @@ SectionType = Literal[
 ]
 
 
-# --- Individual section config schemas ---
-
-
 class HeroConfig(BaseModel):
     headline: str = ""
     subheadline: str = ""
@@ -164,15 +161,13 @@ class GalleryConfig(BaseModel):
 
 
 class RichTextConfig(BaseModel):
-    content: Any = None  # TipTap JSON document
+    content: Any = None
 
 
 class CustomHtmlConfig(BaseModel):
     html: str = ""
     css: str = ""
 
-
-# --- Section type to config mapping ---
 
 SECTION_CONFIG_MAP: dict[str, type[BaseModel]] = {
     "hero": HeroConfig,
@@ -191,9 +186,6 @@ SECTION_CONFIG_MAP: dict[str, type[BaseModel]] = {
     "rich_text": RichTextConfig,
     "custom_html": CustomHtmlConfig,
 }
-
-
-# --- Section wrapper ---
 
 
 class SalesPageSection(BaseModel):

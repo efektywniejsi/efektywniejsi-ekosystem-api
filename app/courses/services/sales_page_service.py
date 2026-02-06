@@ -32,7 +32,6 @@ def update_sales_page(db: Session, course_id: UUID, data: SalesPageData) -> dict
             detail="Course not found",
         )
 
-    # Validate each section's config against its type schema
     for section in data.sections:
         config_cls = SECTION_CONFIG_MAP.get(section.type)
         if config_cls:

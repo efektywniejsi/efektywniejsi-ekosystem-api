@@ -9,10 +9,10 @@ class UserCourseProgress(BaseModel):
     user_id: str
     user_name: str | None
     user_email: str
-    progress_percentage: int  # 0-100
+    progress_percentage: int
     completed_lessons: int
     total_lessons: int
-    session_count: int  # distinct days with activity
+    session_count: int
     first_activity_at: UTCDatetime | None
     last_activity_at: UTCDatetime | None
     total_watch_time_seconds: int

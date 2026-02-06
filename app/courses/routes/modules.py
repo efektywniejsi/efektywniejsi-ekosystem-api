@@ -218,7 +218,6 @@ async def delete_module(
             detail="Moduł nie znaleziony",
         )
 
-    # Check if module has any lessons
     if module.lessons:
         lesson_count = len(module.lessons)
         raise HTTPException(
@@ -246,7 +245,6 @@ async def reorder_modules(
             detail="Kurs nie znaleziony",
         )
 
-    # Verify all module IDs belong to this course
     module_ids = [UUID(mid) for mid in request.module_ids]
     modules = db.query(Module).filter(Module.id.in_(module_ids)).all()
 
@@ -256,7 +254,6 @@ async def reorder_modules(
             detail="Jeden lub więcej identyfikatorów modułów jest nieprawidłowych",
         )
 
-    # Verify all modules belong to this course
     for module in modules:
         if module.course_id != course_id:
             raise HTTPException(
@@ -264,7 +261,6 @@ async def reorder_modules(
                 detail=f"Moduł {module.id} nie należy do tego kursu",
             )
 
-    # Update sort_order for each module
     for index, module_id in enumerate(module_ids):
         module = next(m for m in modules if m.id == module_id)
         module.sort_order = index
@@ -272,9 +268,6 @@ async def reorder_modules(
     db.commit()
 
     return {"message": "Kolejność modułów zmieniona"}
-
-
-# --------------------- Lesson Endpoints ---------------------
 
 
 @router.post(
@@ -403,12 +396,10 @@ async def delete_lesson(
             detail="Lekcja nie znaleziona",
         )
 
-    # Delete Mux asset if present
     if lesson.mux_asset_id:
         try:
             mux_service.delete_asset(lesson.mux_asset_id)
         except Exception as e:
-            # Log warning but don't fail the deletion
             logger.warning("Failed to delete Mux asset %s: %s", lesson.mux_asset_id, e)
 
     db.delete(lesson)
@@ -430,7 +421,6 @@ async def reorder_lessons(
             detail="Moduł nie znaleziony",
         )
 
-    # Verify all lesson IDs belong to this module
     lesson_ids = [UUID(lid) for lid in request.lesson_ids]
     lessons = db.query(Lesson).filter(Lesson.id.in_(lesson_ids)).all()
 
@@ -440,7 +430,6 @@ async def reorder_lessons(
             detail="Jeden lub więcej identyfikatorów lekcji jest nieprawidłowych",
         )
 
-    # Verify all lessons belong to this module
     for lesson in lessons:
         if lesson.module_id != module_id:
             raise HTTPException(
@@ -448,7 +437,6 @@ async def reorder_lessons(
                 detail=f"Lekcja {lesson.id} nie należy do tego modułu",
             )
 
-    # Update sort_order for each lesson
     for index, lesson_id in enumerate(lesson_ids):
         lesson = next(les for les in lessons if les.id == lesson_id)
         lesson.sort_order = index

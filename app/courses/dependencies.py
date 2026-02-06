@@ -74,7 +74,6 @@ class RequireLessonEnrollment:
                 detail="Lesson not found",
             )
 
-        # Check lesson status for non-admin users
         if not (self.skip_for_admin and _is_admin(current_user)):
             if lesson.status == LessonStatus.UNAVAILABLE:
                 raise HTTPException(
@@ -101,11 +100,9 @@ class RequireLessonEnrollment:
                 detail="Course not found",
             )
 
-        # Preview lessons are accessible to everyone
         if lesson.is_preview:
             return
 
-        # Admins bypass enrollment check if configured
         if self.skip_for_admin and _is_admin(current_user):
             return
 
