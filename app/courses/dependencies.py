@@ -100,9 +100,6 @@ class RequireLessonEnrollment:
                 detail="Course not found",
             )
 
-        if lesson.is_preview:
-            return
-
         if self.skip_for_admin and _is_admin(current_user):
             return
 
