@@ -49,7 +49,6 @@ async def create_lesson(
         mux_playback_id=request.mux_playback_id,
         mux_asset_id=request.mux_asset_id,
         duration_seconds=request.duration_seconds,
-        is_preview=request.is_preview,
         status=LessonStatus(request.status),
         sort_order=request.sort_order,
     )
@@ -73,7 +72,6 @@ async def create_lesson(
         mux_playback_id=lesson.mux_playback_id,
         mux_asset_id=lesson.mux_asset_id,
         duration_seconds=lesson.duration_seconds,
-        is_preview=lesson.is_preview,
         status=lesson.status.value,
         sort_order=lesson.sort_order,
         created_at=lesson.created_at,
@@ -107,8 +105,6 @@ async def update_lesson(
         lesson.mux_asset_id = request.mux_asset_id
     if request.duration_seconds is not None:
         lesson.duration_seconds = request.duration_seconds
-    if request.is_preview is not None:
-        lesson.is_preview = request.is_preview
     if request.status is not None:
         lesson.status = LessonStatus(request.status)
     if request.sort_order is not None:
@@ -125,7 +121,6 @@ async def update_lesson(
         mux_playback_id=lesson.mux_playback_id,
         mux_asset_id=lesson.mux_asset_id,
         duration_seconds=lesson.duration_seconds,
-        is_preview=lesson.is_preview,
         status=lesson.status.value,
         sort_order=lesson.sort_order,
         created_at=lesson.created_at,
