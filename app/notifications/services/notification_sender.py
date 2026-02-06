@@ -52,7 +52,6 @@ class NotificationSender:
     4. Updating the notification status
     """
 
-    # Map notification types to preference keys
     PREFERENCE_KEYS: dict[NotificationType, str] = {
         NotificationType.COURSE_UPDATE: "course_updates",
         NotificationType.ANNOUNCEMENT: "admin_announcements",
@@ -139,7 +138,7 @@ class NotificationSender:
         self,
         user: User,
         notification_type: NotificationType,
-        email_builder: Any,  # Callable that returns EmailMessage
+        email_builder: Any,
         **extra_ctx: Any,
     ) -> SendResult:
         """Process a single user notification with the full workflow.
