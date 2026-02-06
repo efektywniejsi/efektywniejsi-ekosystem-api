@@ -26,8 +26,8 @@ from app.db.session import get_db
 
 router = APIRouter()
 
-ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png"}
-MAX_AVATAR_SIZE = 2 * 1024 * 1024
+ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"}
+MAX_AVATAR_SIZE = 5 * 1024 * 1024
 
 
 @router.put("/profile")
@@ -50,19 +50,26 @@ async def upload_avatar(
     if file.content_type not in ALLOWED_AVATAR_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Dozwolone są tylko pliki JPG i PNG",
+            detail=f"Niedozwolony format: {file.content_type}. Użyj JPG, PNG, WebP lub HEIC",
         )
 
     contents = await file.read()
     if len(contents) > MAX_AVATAR_SIZE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Rozmiar pliku przekracza limit 2MB",
+            detail=f"Rozmiar pliku ({len(contents) // 1024 // 1024}MB) przekracza limit 5MB",
         )
 
     storage = get_storage()
 
-    ext = "jpg" if file.content_type == "image/jpeg" else "png"
+    ext_map = {
+        "image/jpeg": "jpg",
+        "image/png": "png",
+        "image/webp": "webp",
+        "image/heic": "heic",
+        "image/heif": "heif",
+    }
+    ext = ext_map.get(file.content_type, "jpg")
     filename = f"{uuid.uuid4()}.{ext}"
 
     stored_path = storage.upload(contents, "avatars", filename)
