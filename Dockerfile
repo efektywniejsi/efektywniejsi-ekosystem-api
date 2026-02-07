@@ -51,8 +51,8 @@ RUN uv pip install --no-deps -e .
 
 # Create non-root user and writable directories
 RUN useradd --create-home appuser && \
-    mkdir -p /app/app/uploads && \
-    chown -R appuser:appuser /app/app/uploads /opt/venv
+    mkdir -p /app/uploads && \
+    chown -R appuser:appuser /app/uploads /opt/venv
 USER appuser
 
 EXPOSE 8000
