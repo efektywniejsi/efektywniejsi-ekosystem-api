@@ -223,7 +223,6 @@ async def get_course(
                         mux_playback_id=lesson.mux_playback_id,
                         mux_asset_id=lesson.mux_asset_id,
                         duration_seconds=lesson.duration_seconds,
-                        is_preview=lesson.is_preview,
                         status=lesson.status.value,
                         sort_order=lesson.sort_order,
                         created_at=lesson.created_at,

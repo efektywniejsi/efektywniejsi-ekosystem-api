@@ -99,18 +99,3 @@ async def test_no_enrollment_no_access(test_client: AsyncClient, test_user_token
 
     assert response.status_code == 403
     assert "enrolled" in response.json()["detail"].lower()
-
-
-@pytest.mark.asyncio
-async def test_preview_lessons_accessible_without_enrollment(
-    test_client: AsyncClient, test_user_token, test_preview_lesson
-):
-    """Test preview lessons are accessible without enrollment."""
-    response = await test_client.get(
-        f"/api/v1/lessons/{test_preview_lesson.id}",
-        cookies={"access_token": test_user_token},
-    )
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["is_preview"] is True

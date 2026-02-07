@@ -86,7 +86,6 @@ class LessonBase(BaseModel):
     mux_playback_id: str | None = Field(None, max_length=255)
     mux_asset_id: str | None = Field(None, max_length=255)
     duration_seconds: int = Field(default=0, ge=0)
-    is_preview: bool = False
     status: LessonStatusType = "available"
     sort_order: int = 0
 
@@ -101,7 +100,6 @@ class LessonUpdate(BaseModel):
     mux_playback_id: str | None = Field(None, min_length=1, max_length=255)
     mux_asset_id: str | None = Field(None, max_length=255)
     duration_seconds: int | None = Field(None, ge=0)
-    is_preview: bool | None = None
     status: LessonStatusType | None = None
     sort_order: int | None = None
 
