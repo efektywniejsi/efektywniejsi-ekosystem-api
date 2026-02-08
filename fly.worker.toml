@@ -8,7 +8,7 @@ primary_region = "arn"
   WORKER = "true"
 
 [processes]
-  worker = "celery -A app.core.celery_app worker --loglevel=info --concurrency=2"
+  worker = "celery -A app.core.celery_app worker -B --loglevel=info --concurrency=2"
 
 # Worker must run continuously — no auto-stop
 [[vm]]
