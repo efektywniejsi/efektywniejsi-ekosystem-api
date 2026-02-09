@@ -23,6 +23,12 @@ class CheckoutService:
         success_url: str,
         cancel_url: str,
         customer_ip: str = "127.0.0.1",
+        wants_invoice: bool = False,
+        buyer_tax_no: str | None = None,
+        buyer_company_name: str | None = None,
+        buyer_street: str | None = None,
+        buyer_post_code: str | None = None,
+        buyer_city: str | None = None,
     ) -> dict[str, str]:
         packages = self._validate_packages(package_ids)
 
@@ -41,6 +47,12 @@ class CheckoutService:
             currency="PLN",
             payment_provider=payment_provider,
             webhook_processed=False,
+            # Invoice billing info (optional)
+            buyer_tax_no=buyer_tax_no if wants_invoice else None,
+            buyer_company_name=buyer_company_name if wants_invoice else None,
+            buyer_street=buyer_street if wants_invoice else None,
+            buyer_post_code=buyer_post_code if wants_invoice else None,
+            buyer_city=buyer_city if wants_invoice else None,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
         )
