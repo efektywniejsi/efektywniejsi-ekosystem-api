@@ -52,6 +52,19 @@ class Order(Base):
 
     webhook_processed: Mapped[bool] = mapped_column(default=False, index=True)  # Idempotency flag
 
+    # Invoice (Fakturownia integration)
+    fakturownia_invoice_id: Mapped[int | None] = mapped_column(default=None, index=True)
+    invoice_number: Mapped[str | None] = mapped_column(default=None)  # e.g., "FV/2026/02/001"
+    invoice_token: Mapped[str | None] = mapped_column(default=None)  # Public access token for PDF
+    invoice_issued_at: Mapped[datetime | None] = mapped_column(default=None)
+
+    # Optional buyer tax info (for B2B invoices)
+    buyer_tax_no: Mapped[str | None] = mapped_column(default=None)  # NIP
+    buyer_company_name: Mapped[str | None] = mapped_column(default=None)
+    buyer_street: Mapped[str | None] = mapped_column(default=None)
+    buyer_post_code: Mapped[str | None] = mapped_column(default=None)
+    buyer_city: Mapped[str | None] = mapped_column(default=None)
+
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
 
