@@ -68,8 +68,6 @@ class Settings(BaseSettings):
     FAKTUROWNIA_SELLER_POST_CODE: str = ""
     FAKTUROWNIA_SELLER_CITY: str = ""
     FAKTUROWNIA_SELLER_COUNTRY: str = "PL"
-    FAKTUROWNIA_SELLER_BANK: str = ""
-    FAKTUROWNIA_SELLER_BANK_ACCOUNT: str = ""
 
     # Cloudflare R2 storage (S3-compatible)
     R2_ACCOUNT_ID: str = ""

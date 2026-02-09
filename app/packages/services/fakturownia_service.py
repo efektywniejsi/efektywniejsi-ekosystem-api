@@ -148,8 +148,6 @@ class FakturowniaService:
                 "seller_post_code": settings.FAKTUROWNIA_SELLER_POST_CODE,
                 "seller_city": settings.FAKTUROWNIA_SELLER_CITY,
                 "seller_country": settings.FAKTUROWNIA_SELLER_COUNTRY,
-                "seller_bank": settings.FAKTUROWNIA_SELLER_BANK,
-                "seller_bank_account": settings.FAKTUROWNIA_SELLER_BANK_ACCOUNT,
                 # Buyer info
                 "buyer_name": buyer_name,
                 "buyer_email": order.email,

@@ -72,8 +72,6 @@ def create_mock_settings(**overrides):
         "FAKTUROWNIA_SELLER_POST_CODE": "00-001",
         "FAKTUROWNIA_SELLER_CITY": "Warszawa",
         "FAKTUROWNIA_SELLER_COUNTRY": "PL",
-        "FAKTUROWNIA_SELLER_BANK": "Test Bank",
-        "FAKTUROWNIA_SELLER_BANK_ACCOUNT": "12 1234 5678 9012 3456 7890 1234",
     }
     defaults.update(overrides)
 
