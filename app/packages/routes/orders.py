@@ -1,6 +1,11 @@
 """
 Order API endpoints.
+
+Note: Invoices are generated and sent automatically via Fakturownia.
+Users receive invoices via email directly from Fakturownia, not from our platform.
 """
+
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -71,8 +76,6 @@ def get_order_details(
         403: User doesn't own this order
         404: Order not found
     """
-    import uuid
-
     try:
         order_uuid = uuid.UUID(order_id)
     except ValueError:
@@ -87,4 +90,4 @@ def get_order_details(
     if order.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Brak dostępu")
 
-    return OrderResponse.from_orm(order)
+    return OrderResponse.model_validate(order)
