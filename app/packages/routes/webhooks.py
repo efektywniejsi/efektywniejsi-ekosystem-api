@@ -5,6 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, Header, Request
 from sqlalchemy.orm import Session
 
+from app.core.rate_limit import limiter
 from app.db.session import get_db
 from app.packages.services.payu_webhook_handler import get_payu_handler
 from app.packages.services.stripe_webhook_handler import get_stripe_handler
@@ -26,6 +27,7 @@ def _result_to_response(result: WebhookResult) -> dict[str, str]:
 
 
 @router.post("/stripe")
+@limiter.limit("100/minute")
 async def stripe_webhook(
     request: Request,
     stripe_signature: str = Header(None, alias="Stripe-Signature"),
@@ -39,6 +41,7 @@ async def stripe_webhook(
 
 
 @router.post("/payu")
+@limiter.limit("100/minute")
 async def payu_webhook(
     request: Request,
     openpayu_signature: str = Header(None, alias="OpenPayu-Signature"),

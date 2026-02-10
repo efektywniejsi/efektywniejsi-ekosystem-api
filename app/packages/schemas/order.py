@@ -1,5 +1,8 @@
 """
 Pydantic schemas for orders.
+
+Note: Invoice information (invoice_number, invoice_issued_at) is stored internally
+but not exposed to users. Invoices are sent via Fakturownia email automatically.
 """
 
 import uuid

@@ -39,6 +39,12 @@ async def initiate_checkout(
             success_url=f"{settings.FRONTEND_URL}/zamowienie/sukces",
             cancel_url=f"{settings.FRONTEND_URL}/zamowienie/anulowano",
             customer_ip=client_ip,
+            wants_invoice=checkout_request.wants_invoice,
+            buyer_tax_no=checkout_request.buyer_tax_no,
+            buyer_company_name=checkout_request.buyer_company_name,
+            buyer_street=checkout_request.buyer_street,
+            buyer_post_code=checkout_request.buyer_post_code,
+            buyer_city=checkout_request.buyer_city,
         )
 
         return CheckoutInitiateResponse(
@@ -54,11 +60,16 @@ async def initiate_checkout(
 
 
 @router.get("/order/{order_id}", response_model=OrderStatusResponse)
-def get_order_status(
+@limiter.limit("30/minute")
+async def get_order_status(
+    request: Request,
     order_id: str,
     db: Session = Depends(get_db),
 ) -> OrderStatusResponse:
-    """Used by frontend to poll order status after payment redirect."""
+    """Used by frontend to poll order status after payment redirect.
+
+    Note: Invoice is sent automatically via Fakturownia email after payment.
+    """
     checkout_service = CheckoutService(db)
     order = checkout_service.get_order_by_id(order_id)
 

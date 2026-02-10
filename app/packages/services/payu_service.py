@@ -84,19 +84,33 @@ class PayUService(PaymentService):
             raise ValueError("PAYU_WEBHOOK_SECRET not configured")
 
         # PayU sends signature header in format:
-        # sender=checkout;signature=<sig>;algorithm=SHA-256;content=DOCUMENT
+        # sender=checkout;signature=<sig>;algorithm=MD5|SHA-256;content=DOCUMENT
         signature_value = None
+        algorithm = "MD5"  # Default to MD5 for backwards compatibility
         for part in signature.split(";"):
             key_value = part.split("=", 1)
-            if len(key_value) == 2 and key_value[0].strip() == "signature":
-                signature_value = key_value[1].strip()
-                break
+            if len(key_value) == 2:
+                key = key_value[0].strip()
+                value = key_value[1].strip()
+                if key == "signature":
+                    signature_value = value
+                elif key == "algorithm":
+                    algorithm = value.upper()
 
         if not signature_value:
             raise ValueError("Could not parse signature from OpenPayu-Signature header")
 
-        # PayU notification signature: md5(json_body + secondKey)
-        expected_signature = hashlib.md5(payload + self.webhook_secret.encode()).hexdigest()
+        # PayU notification signature: hash(json_body + secondKey)
+        # Use the algorithm specified in the header
+        if algorithm == "SHA-256" or algorithm == "SHA256":
+            expected_signature = hashlib.sha256(payload + self.webhook_secret.encode()).hexdigest()
+        elif algorithm == "SHA-384" or algorithm == "SHA384":
+            expected_signature = hashlib.sha384(payload + self.webhook_secret.encode()).hexdigest()
+        elif algorithm == "SHA-512" or algorithm == "SHA512":
+            expected_signature = hashlib.sha512(payload + self.webhook_secret.encode()).hexdigest()
+        else:
+            # MD5 (legacy, but still used by PayU in some configurations)
+            expected_signature = hashlib.md5(payload + self.webhook_secret.encode()).hexdigest()
 
         if signature_value != expected_signature:
             raise ValueError("Invalid webhook signature")

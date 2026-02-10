@@ -16,6 +16,7 @@ from app.packages.services.email_service import (
     send_purchase_confirmation_email,
     send_welcome_with_package_email,
 )
+from app.packages.services.fakturownia_service import get_fakturownia_service
 from app.packages.services.order_service import OrderService
 
 logger = logging.getLogger(__name__)
@@ -168,9 +169,52 @@ class WebhookHandler(ABC):
             # Log but don't fail -- the payment was already processed successfully
             logger.error(f"Failed to send email: {e}")
 
+        # Generate invoice via Fakturownia (non-blocking)
+        await self._generate_invoice(order)
+
         logger.info(
             f"Successfully processed order {order.order_number}: "
             f"{len(enrollments)} enrollments created"
         )
 
         return {"status": "success"}
+
+    async def _generate_invoice(self, order: Order) -> None:
+        """Generate invoice for the order via Fakturownia.
+
+        This is a non-critical operation - failures are logged but don't
+        affect the overall payment processing.
+        """
+        try:
+            fakturownia = get_fakturownia_service()
+
+            if not fakturownia.is_configured:
+                logger.debug("Fakturownia not configured, skipping invoice generation")
+                return
+
+            result = await fakturownia.create_invoice(order)
+
+            if result.success:
+                # Update order with invoice data
+                from datetime import UTC, datetime
+
+                order.fakturownia_invoice_id = result.invoice_id
+                order.invoice_number = result.invoice_number
+                order.invoice_token = result.invoice_token
+                order.invoice_issued_at = datetime.now(UTC)
+                self.db.commit()
+
+                logger.info(
+                    f"Invoice {result.invoice_number} created for order {order.order_number}"
+                )
+            else:
+                logger.warning(
+                    f"Failed to create invoice for order {order.order_number}: {result.error}"
+                )
+
+        except Exception as e:
+            # Never fail payment processing due to invoice generation errors
+            logger.error(
+                f"Invoice generation error for order {order.order_number}: {e}",
+                exc_info=True,
+            )

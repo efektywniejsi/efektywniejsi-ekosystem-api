@@ -58,6 +58,17 @@ class Settings(BaseSettings):
 
     TOTP_ENCRYPTION_KEY: str = ""
 
+    # Fakturownia (Polish invoicing service)
+    # Invoice is created and sent automatically via Fakturownia email
+    FAKTUROWNIA_API_TOKEN: str = ""
+    FAKTUROWNIA_SUBDOMAIN: str = ""  # e.g., "mycompany" for mycompany.fakturownia.pl
+    FAKTUROWNIA_SELLER_NAME: str = ""
+    FAKTUROWNIA_SELLER_TAX_NO: str = ""  # NIP
+    FAKTUROWNIA_SELLER_STREET: str = ""
+    FAKTUROWNIA_SELLER_POST_CODE: str = ""
+    FAKTUROWNIA_SELLER_CITY: str = ""
+    FAKTUROWNIA_SELLER_COUNTRY: str = "PL"
+
     # Cloudflare R2 storage (S3-compatible)
     R2_ACCOUNT_ID: str = ""
     R2_ACCESS_KEY_ID: str = ""
