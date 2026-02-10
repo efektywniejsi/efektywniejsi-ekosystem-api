@@ -16,6 +16,10 @@ from app.courses.models.attachment import Attachment
 from app.courses.models.certificate import Certificate
 from app.courses.models.course import Course, Lesson, Module
 from app.courses.models.enrollment import Enrollment
+from app.integrations.models.integration import Integration
+from app.integrations.models.integration_proposal import IntegrationProposal
+from app.integrations.models.integration_type import IntegrationType
+from app.integrations.models.lesson_integration import LessonIntegration
 from app.messaging.models.conversation import Conversation
 from app.messaging.models.conversation_participant import ConversationParticipant
 from app.messaging.models.message import Message
@@ -54,4 +58,8 @@ __all__ = [
     "Conversation",
     "ConversationParticipant",
     "Message",
+    "Integration",
+    "IntegrationProposal",
+    "IntegrationType",
+    "LessonIntegration",
 ]
