@@ -42,6 +42,15 @@ from app.courses.routes import (
     webhooks,
 )
 from app.db.session import SessionLocal
+from app.integrations.routes import (
+    admin_router as integrations_admin_router,
+)
+from app.integrations.routes import (
+    proposals_router as integrations_proposals_router,
+)
+from app.integrations.routes import (
+    public_router as integrations_public_router,
+)
 from app.messaging.routes import admin_messages as admin_messages_routes
 from app.messaging.routes import messages as messages_routes
 from app.notifications.routes import notifications as notifications_routes
@@ -196,6 +205,23 @@ app.include_router(
     storage_admin_routes.router,
     prefix=f"{settings.API_V1_PREFIX}/admin",
     tags=["admin-storage"],
+)
+
+# Integrations routes
+app.include_router(
+    integrations_public_router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["integrations"],
+)
+app.include_router(
+    integrations_admin_router,
+    prefix=f"{settings.API_V1_PREFIX}/admin",
+    tags=["admin-integrations"],
+)
+app.include_router(
+    integrations_proposals_router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["integration-proposals"],
 )
 
 
