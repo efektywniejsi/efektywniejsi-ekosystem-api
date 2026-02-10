@@ -83,6 +83,14 @@ class OrderService:
         )
 
         if existing_user:
+            # If user never set their password, generate a new reset token
+            # so they can set it via the welcome email
+            if existing_user.hashed_password == "!":
+                raw_token, hashed_token, expiry = generate_reset_token()
+                existing_user.password_reset_token = hashed_token
+                existing_user.password_reset_token_expires = expiry
+                # Store raw token for email - transient, not persisted
+                existing_user._raw_reset_token = raw_token  # type: ignore[attr-defined]
             return existing_user
 
         # Create new user with unusable password
