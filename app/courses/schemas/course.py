@@ -155,3 +155,16 @@ class ModuleReorderRequest(BaseModel):
 
 class LessonReorderRequest(BaseModel):
     lesson_ids: list[str] = Field(..., min_length=1)
+
+
+class DeleteCourseRequest(BaseModel):
+    """Request body for deleting a course with password confirmation."""
+
+    password: str = Field(..., min_length=8)
+
+
+class DeleteCourseResponse(BaseModel):
+    """Response for course deletion with optional warnings."""
+
+    message: str
+    warnings: list[str] = Field(default_factory=list)
