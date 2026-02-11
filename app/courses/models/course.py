@@ -92,6 +92,9 @@ class Lesson(Base):
         "LessonProgress", back_populates="lesson", cascade="all, delete-orphan"
     )
     attachments = relationship("Attachment", back_populates="lesson", cascade="all, delete-orphan")
+    integrations = relationship(
+        "LessonIntegration", back_populates="lesson", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Lesson(id={self.id}, title={self.title}, module_id={self.module_id})>"
