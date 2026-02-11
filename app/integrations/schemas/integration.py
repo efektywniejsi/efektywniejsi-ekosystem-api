@@ -27,6 +27,7 @@ class IntegrationBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     slug: str = Field(..., min_length=1, max_length=255)
     icon: str = Field(..., min_length=1, max_length=100)
+    image_url: str | None = None  # Custom image URL (overrides icon when set)
     category: IntegrationCategoryValue
     description: str = Field(..., min_length=1)
     auth_guide: str | None = None
@@ -45,6 +46,7 @@ class IntegrationUpdate(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=255)
     slug: str | None = Field(None, min_length=1, max_length=255)
     icon: str | None = Field(None, min_length=1, max_length=100)
+    image_url: str | None = None  # Set to empty string to clear
     category: IntegrationCategoryValue | None = None
     description: str | None = None
     auth_guide: str | None = None
@@ -60,6 +62,7 @@ class IntegrationResponse(BaseModel):
     slug: str
     name: str
     icon: str
+    image_url: str | None = None
     category: str
     description: str
     official_docs_url: str | None = None

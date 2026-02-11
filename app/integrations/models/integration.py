@@ -14,6 +14,7 @@ class Integration(Base):
     slug: Mapped[str] = mapped_column(unique=True, index=True)
     name: Mapped[str] = mapped_column()
     icon: Mapped[str] = mapped_column()
+    image_url: Mapped[str | None] = mapped_column(default=None)  # Custom image (overrides icon)
     category: Mapped[str] = mapped_column(index=True)
     description: Mapped[str] = mapped_column(Text)
     auth_guide: Mapped[str | None] = mapped_column(Text, default=None)
