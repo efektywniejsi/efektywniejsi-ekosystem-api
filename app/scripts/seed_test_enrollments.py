@@ -6,6 +6,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+import app.db.base  # noqa: F401  # Import all models for SQLAlchemy
+
 from app.auth.models.user import User
 from app.courses.models import Course, Enrollment, UserPoints, UserStreak
 from app.db.session import get_db
@@ -21,11 +23,19 @@ def seed_test_enrollments(dry_run: bool = False) -> None:
             print("❌ User user@test.pl not found. Run seed_users.py first.")
             return
 
-        demo_course = db.query(Course).filter(Course.slug == "demo-getting-started").first()
-        masterclass = db.query(Course).filter(Course.slug == "masterclass-lowcode").first()
+        # Find available courses to enroll
+        course_slugs = ["demo-getting-started", "masterclass-lowcode"]
+        courses_to_enroll = []
 
-        if not demo_course or not masterclass:
-            print("❌ Courses not found. Run seed_demo_course.py first.")
+        for slug in course_slugs:
+            course = db.query(Course).filter(Course.slug == slug).first()
+            if course:
+                courses_to_enroll.append(course)
+            else:
+                print(f"⚠️  Course '{slug}' not found - skipping")
+
+        if not courses_to_enroll:
+            print("❌ No courses found to enroll. Run seed_demo_course.py first.")
             return
 
         print(f"{'[DRY RUN] ' if dry_run else ''}Seeding test enrollments for {user.email}...")
@@ -33,8 +43,6 @@ def seed_test_enrollments(dry_run: bool = False) -> None:
 
         enrollments_created = 0
         enrollments_skipped = 0
-
-        courses_to_enroll = [demo_course, masterclass]
 
         for course in courses_to_enroll:
             existing = (

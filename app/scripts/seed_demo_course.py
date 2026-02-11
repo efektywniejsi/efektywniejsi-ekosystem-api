@@ -13,6 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+import app.db.base  # noqa: F401  # Import all models for SQLAlchemy
 from sqlalchemy.orm import Session
 
 from app.courses.models import Course, Lesson, Module
@@ -62,11 +63,10 @@ def seed_demo_course(db: Session) -> None:
         mux_playback_id="PLACEHOLDER_MUX_ID_001",
         mux_asset_id="PLACEHOLDER_ASSET_ID_001",
         duration_seconds=180,
-        is_preview=True,
         sort_order=1,
     )
     db.add(lesson_1_1)
-    print(f"✅ Created lesson: {lesson_1_1.title} (preview)")
+    print(f"✅ Created lesson: {lesson_1_1.title}")
 
     lesson_1_2 = Lesson(
         module_id=module_1.id,
@@ -75,7 +75,6 @@ def seed_demo_course(db: Session) -> None:
         mux_playback_id="PLACEHOLDER_MUX_ID_002",
         mux_asset_id="PLACEHOLDER_ASSET_ID_002",
         duration_seconds=240,
-        is_preview=False,
         sort_order=2,
     )
     db.add(lesson_1_2)
@@ -98,7 +97,6 @@ def seed_demo_course(db: Session) -> None:
         mux_playback_id="PLACEHOLDER_MUX_ID_003",
         mux_asset_id="PLACEHOLDER_ASSET_ID_003",
         duration_seconds=300,
-        is_preview=False,
         sort_order=1,
     )
     db.add(lesson_2_1)
@@ -111,7 +109,6 @@ def seed_demo_course(db: Session) -> None:
         mux_playback_id="PLACEHOLDER_MUX_ID_004",
         mux_asset_id="PLACEHOLDER_ASSET_ID_004",
         duration_seconds=360,
-        is_preview=False,
         sort_order=2,
     )
     db.add(lesson_2_2)
@@ -124,7 +121,6 @@ def seed_demo_course(db: Session) -> None:
         mux_playback_id="PLACEHOLDER_MUX_ID_005",
         mux_asset_id="PLACEHOLDER_ASSET_ID_005",
         duration_seconds=240,
-        is_preview=False,
         sort_order=3,
     )
     db.add(lesson_2_3)
@@ -136,7 +132,7 @@ def seed_demo_course(db: Session) -> None:
     print("🎉 Demo course seeding complete!")
     print(f"   Course: {demo_course.title}")
     print("   Modules: 2")
-    print("   Lessons: 5 (1 preview)")
+    print("   Lessons: 5")
     print("   Total duration: ~22 minutes")
     print("=" * 60)
 

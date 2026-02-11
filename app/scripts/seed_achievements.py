@@ -13,6 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+import app.db.base  # noqa: F401  # Import all models for SQLAlchemy
 from sqlalchemy.orm import Session
 
 from app.courses.models import Achievement
