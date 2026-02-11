@@ -46,6 +46,9 @@ from app.integrations.routes import (
     admin_router as integrations_admin_router,
 )
 from app.integrations.routes import (
+    images_router as integrations_images_router,
+)
+from app.integrations.routes import (
     proposals_router as integrations_proposals_router,
 )
 from app.integrations.routes import (
@@ -217,6 +220,11 @@ app.include_router(
     integrations_admin_router,
     prefix=f"{settings.API_V1_PREFIX}/admin",
     tags=["admin-integrations"],
+)
+app.include_router(
+    integrations_images_router,
+    prefix=f"{settings.API_V1_PREFIX}/admin",
+    tags=["integration-images"],
 )
 app.include_router(
     integrations_proposals_router,
