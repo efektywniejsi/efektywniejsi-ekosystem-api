@@ -13,6 +13,8 @@ from app.integrations.schemas import (
     IntegrationUpdate,
     LessonIntegrationCreate,
     LessonIntegrationResponse,
+    ProcessIntegrationCreate,
+    ProcessIntegrationResponse,
 )
 from app.integrations.services import IntegrationService
 
@@ -105,3 +107,39 @@ def detach_integration_from_lesson(
     """Detach integration from a lesson - Admin only."""
     service = IntegrationService(db)
     service.detach_integration_from_lesson(lesson_id, integration_id)
+
+
+# ─────────────────────────────────────────────────────────────
+# Process Integration Endpoints
+# ─────────────────────────────────────────────────────────────
+
+
+@router.post(
+    "/processes/{process_id}/integrations",
+    response_model=ProcessIntegrationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def attach_integration_to_process(
+    process_id: UUID,
+    data: ProcessIntegrationCreate,
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ProcessIntegrationResponse:
+    """Attach integration to a package process - Admin only."""
+    service = IntegrationService(db)
+    return service.attach_integration_to_process(process_id, data)
+
+
+@router.delete(
+    "/processes/{process_id}/integrations/{integration_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def detach_integration_from_process(
+    process_id: UUID,
+    integration_id: UUID,
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> None:
+    """Detach integration from a package process - Admin only."""
+    service = IntegrationService(db)
+    service.detach_integration_from_process(process_id, integration_id)

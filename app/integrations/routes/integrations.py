@@ -11,6 +11,7 @@ from app.integrations.schemas import (
     IntegrationDetailResponse,
     IntegrationResponse,
     LessonIntegrationResponse,
+    ProcessIntegrationResponse,
 )
 from app.integrations.services import IntegrationService
 
@@ -59,3 +60,14 @@ def get_lesson_integrations(
     """Get integrations attached to a lesson."""
     service = IntegrationService(db)
     return service.get_lesson_integrations(lesson_id)
+
+
+@router.get("/processes/{process_id}/integrations", response_model=list[ProcessIntegrationResponse])
+def get_process_integrations(
+    process_id: UUID,
+    _current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[ProcessIntegrationResponse]:
+    """Get integrations attached to a package process."""
+    service = IntegrationService(db)
+    return service.get_process_integrations(process_id)

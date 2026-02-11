@@ -8,6 +8,8 @@ from app.integrations.schemas.integration import (
     LessonBriefResponse,
     LessonIntegrationCreate,
     LessonIntegrationResponse,
+    ProcessIntegrationCreate,
+    ProcessIntegrationResponse,
 )
 from app.integrations.schemas.proposal import (
     ProposalCreate,
@@ -25,6 +27,8 @@ __all__ = [
     "LessonBriefResponse",
     "LessonIntegrationCreate",
     "LessonIntegrationResponse",
+    "ProcessIntegrationCreate",
+    "ProcessIntegrationResponse",
     "ProposalCreate",
     "ProposalUpdate",
     "ProposalResponse",
