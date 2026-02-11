@@ -11,6 +11,7 @@ from app.integrations.models import (
     IntegrationProposal,
     IntegrationType,
     LessonIntegration,
+    ProcessIntegration,
 )
 from app.integrations.schemas import (
     CategoryCountResponse,
@@ -21,10 +22,13 @@ from app.integrations.schemas import (
     LessonBriefResponse,
     LessonIntegrationCreate,
     LessonIntegrationResponse,
+    ProcessIntegrationCreate,
+    ProcessIntegrationResponse,
     ProposalCreate,
     ProposalResponse,
     ProposalUpdate,
 )
+from app.packages.models.package import PackageProcess
 
 
 class IntegrationService:
@@ -367,6 +371,121 @@ class IntegrationService:
             )
 
         self.db.delete(lesson_integration)
+        self.db.commit()
+
+    # ─────────────────────────────────────────────────────────────
+    # Process Integration Methods
+    # ─────────────────────────────────────────────────────────────
+
+    def get_process_integrations(self, process_id: UUID) -> list[ProcessIntegrationResponse]:
+        # Verify process exists
+        process = self.db.query(PackageProcess).filter(PackageProcess.id == process_id).first()
+        if not process:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Proces nie znaleziony",
+            )
+
+        process_integrations = (
+            self.db.query(ProcessIntegration)
+            .options(
+                joinedload(ProcessIntegration.integration).joinedload(Integration.integration_types)
+            )
+            .filter(ProcessIntegration.process_id == process_id)
+            .order_by(ProcessIntegration.sort_order)
+            .all()
+        )
+
+        # Get usage counts for these integrations
+        integration_ids = [pi.integration_id for pi in process_integrations]
+        usage_counts = self._get_usage_counts_for_ids(integration_ids)
+
+        return [
+            ProcessIntegrationResponse(
+                id=pi.id,
+                integration=self._to_response(
+                    pi.integration, usage_counts.get(pi.integration_id, 0)
+                ),
+                context_note=pi.context_note,
+                sort_order=pi.sort_order,
+            )
+            for pi in process_integrations
+        ]
+
+    def attach_integration_to_process(
+        self, process_id: UUID, data: ProcessIntegrationCreate
+    ) -> ProcessIntegrationResponse:
+        # Verify process exists
+        process = self.db.query(PackageProcess).filter(PackageProcess.id == process_id).first()
+        if not process:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Proces nie znaleziony",
+            )
+
+        # Verify integration exists
+        integration = (
+            self.db.query(Integration)
+            .options(joinedload(Integration.integration_types))
+            .filter(Integration.id == data.integration_id)
+            .first()
+        )
+        if not integration:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Integracja nie znaleziona",
+            )
+
+        # Check if already attached
+        existing = (
+            self.db.query(ProcessIntegration)
+            .filter(
+                ProcessIntegration.process_id == process_id,
+                ProcessIntegration.integration_id == data.integration_id,
+            )
+            .first()
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Integracja jest już przypisana do tego procesu",
+            )
+
+        process_integration = ProcessIntegration(
+            process_id=process_id,
+            integration_id=data.integration_id,
+            context_note=data.context_note,
+            sort_order=data.sort_order,
+        )
+        self.db.add(process_integration)
+        self.db.commit()
+        self.db.refresh(process_integration)
+
+        usage_count = self._get_usage_count_for_integration(data.integration_id)
+        return ProcessIntegrationResponse(
+            id=process_integration.id,
+            integration=self._to_response(integration, usage_count),
+            context_note=process_integration.context_note,
+            sort_order=process_integration.sort_order,
+        )
+
+    def detach_integration_from_process(self, process_id: UUID, integration_id: UUID) -> None:
+        process_integration = (
+            self.db.query(ProcessIntegration)
+            .filter(
+                ProcessIntegration.process_id == process_id,
+                ProcessIntegration.integration_id == integration_id,
+            )
+            .first()
+        )
+
+        if not process_integration:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Powiązanie nie znalezione",
+            )
+
+        self.db.delete(process_integration)
         self.db.commit()
 
     # ─────────────────────────────────────────────────────────────

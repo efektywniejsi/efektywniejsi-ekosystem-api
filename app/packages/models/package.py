@@ -79,6 +79,9 @@ class PackageProcess(Base):
 
     # Relationships
     package = relationship("Package", back_populates="processes")
+    integrations = relationship(
+        "ProcessIntegration", back_populates="process", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<PackageProcess(id={self.id}, name={self.name}, package_id={self.package_id})>"

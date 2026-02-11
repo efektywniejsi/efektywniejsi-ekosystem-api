@@ -112,3 +112,18 @@ class LessonIntegrationResponse(BaseModel):
     sort_order: int
 
     model_config = {"from_attributes": True}
+
+
+class ProcessIntegrationCreate(BaseModel):
+    integration_id: UUID
+    context_note: str | None = None
+    sort_order: int = 0
+
+
+class ProcessIntegrationResponse(BaseModel):
+    id: UUID
+    integration: IntegrationResponse
+    context_note: str | None = None
+    sort_order: int
+
+    model_config = {"from_attributes": True}

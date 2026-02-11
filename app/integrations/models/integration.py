@@ -35,6 +35,9 @@ class Integration(Base):
     lesson_integrations: Mapped[list["LessonIntegration"]] = relationship(
         "LessonIntegration", back_populates="integration", cascade="all, delete-orphan"
     )
+    process_integrations: Mapped[list["ProcessIntegration"]] = relationship(
+        "ProcessIntegration", back_populates="integration", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Integration(id={self.id}, slug={self.slug}, name={self.name})>"
@@ -43,3 +46,4 @@ class Integration(Base):
 # Import for type hints (avoid circular imports)
 from app.integrations.models.integration_type import IntegrationType  # noqa: E402
 from app.integrations.models.lesson_integration import LessonIntegration  # noqa: E402
+from app.integrations.models.process_integration import ProcessIntegration  # noqa: E402

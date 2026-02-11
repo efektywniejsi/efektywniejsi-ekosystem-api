@@ -20,6 +20,7 @@ from app.integrations.models.integration import Integration
 from app.integrations.models.integration_proposal import IntegrationProposal
 from app.integrations.models.integration_type import IntegrationType
 from app.integrations.models.lesson_integration import LessonIntegration
+from app.integrations.models.process_integration import ProcessIntegration
 from app.messaging.models.conversation import Conversation
 from app.messaging.models.conversation_participant import ConversationParticipant
 from app.messaging.models.message import Message
@@ -62,4 +63,5 @@ __all__ = [
     "IntegrationProposal",
     "IntegrationType",
     "LessonIntegration",
+    "ProcessIntegration",
 ]
