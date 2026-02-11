@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.auth.dependencies import get_optional_current_user, require_admin
 from app.auth.models.user import User
+from app.core import security
 from app.core.config import settings
 from app.courses.models import Course, LessonStatus, Module
 from app.courses.schemas.course import (
@@ -19,9 +20,12 @@ from app.courses.schemas.course import (
     CourseDetailResponse,
     CourseResponse,
     CourseUpdate,
+    DeleteCourseRequest,
+    DeleteCourseResponse,
     LessonResponse,
     ModuleWithLessonsResponse,
 )
+from app.courses.services.mux_service import MuxService, get_mux_service
 from app.db.session import get_db
 
 logger = logging.getLogger(__name__)
@@ -352,6 +356,91 @@ async def delete_course(
 
     db.delete(course)
     db.commit()
+
+
+@router.post(
+    "/courses/{course_id}/delete-with-password",
+    response_model=DeleteCourseResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def delete_course_with_password(
+    course_id: UUID,
+    request: DeleteCourseRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+    mux_service: MuxService = Depends(get_mux_service),
+) -> DeleteCourseResponse:
+    """
+    Delete a course with password confirmation (admin only).
+
+    This endpoint requires the admin to confirm the operation with their password.
+    It deletes the course along with all related data (modules, lessons, enrollments,
+    certificates, progress records) and removes associated Mux video assets.
+
+    Returns warnings if any Mux video assets could not be deleted.
+    """
+    # 1. Verify admin password
+    if not security.verify_password(request.password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Nieprawidłowe hasło",
+        )
+
+    # 2. Fetch course with modules and lessons
+    course = (
+        db.query(Course)
+        .options(joinedload(Course.modules).joinedload(Module.lessons))
+        .filter(Course.id == course_id)
+        .first()
+    )
+
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kurs nie znaleziony",
+        )
+
+    # 3. Delete Mux assets for all lessons, tracking failures
+    mux_warnings: list[str] = []
+    for module in course.modules:
+        for lesson in module.lessons:
+            if lesson.mux_asset_id:
+                try:
+                    mux_service.delete_asset(lesson.mux_asset_id)
+                    logger.info(
+                        "Deleted Mux asset %s for lesson %s",
+                        lesson.mux_asset_id,
+                        lesson.id,
+                    )
+                except Exception as e:
+                    warning_msg = (
+                        f"Nie udało się usunąć wideo z Mux dla lekcji '{lesson.title}' "
+                        f"(asset: {lesson.mux_asset_id})"
+                    )
+                    mux_warnings.append(warning_msg)
+                    logger.warning(
+                        "Failed to delete Mux asset %s for lesson %s: %s",
+                        lesson.mux_asset_id,
+                        lesson.id,
+                        e,
+                    )
+
+    course_title = course.title
+
+    # 4. Delete course (CASCADE will delete modules, lessons, enrollments, etc.)
+    db.delete(course)
+    db.commit()
+
+    logger.info(
+        "Course %s deleted by admin %s with password confirmation",
+        course_id,
+        current_user.id,
+    )
+
+    return DeleteCourseResponse(
+        message=f"Kurs '{course_title}' został usunięty",
+        warnings=mux_warnings,
+    )
 
 
 @router.post("/courses/{course_id}/learning-thumbnail")
