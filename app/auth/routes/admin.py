@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -58,10 +58,11 @@ async def create_user(
             detail="Email jest już zarejestrowany",
         )
 
-    if len(request.password) < 8:
+    password_error = security.validate_password(request.password)
+    if password_error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Hasło musi mieć co najmniej 8 znaków",
+            detail=password_error,
         )
 
     new_user = User(
@@ -342,7 +343,7 @@ async def update_user(
     if request.is_active is not None:
         user.is_active = request.is_active
 
-    user.updated_at = datetime.utcnow()
+    user.updated_at = datetime.now(UTC)
 
     db.commit()
     db.refresh(user)

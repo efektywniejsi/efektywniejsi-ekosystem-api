@@ -68,6 +68,19 @@ def generate_reset_token() -> tuple[str, str, datetime]:
     return raw_token, hashed_token, expiry
 
 
+def validate_password(password: str) -> str | None:
+    """Validate password strength. Returns error message or None if valid."""
+    if len(password) < 8:
+        return "Hasło musi mieć co najmniej 8 znaków"
+    if not any(c.isupper() for c in password):
+        return "Hasło musi zawierać co najmniej jedną wielką literę"
+    if not any(c.islower() for c in password):
+        return "Hasło musi zawierać co najmniej jedną małą literę"
+    if not any(c.isdigit() for c in password):
+        return "Hasło musi zawierać co najmniej jedną cyfrę"
+    return None
+
+
 def _cookie_samesite() -> Literal["lax"]:
     """Return SameSite policy: always 'lax' since API is proxied on the same domain."""
     return "lax"

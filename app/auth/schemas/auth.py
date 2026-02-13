@@ -6,6 +6,7 @@ from app.auth.schemas.user import UserResponse
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+    totp_code: str | None = None
 
 
 class LoginResponse(BaseModel):

@@ -1,7 +1,7 @@
 import logging
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -64,16 +64,18 @@ async def initiate_checkout(
 async def get_order_status(
     request: Request,
     order_id: str,
+    email: str = Query(..., description="Email użyty przy składaniu zamówienia"),
     db: Session = Depends(get_db),
 ) -> OrderStatusResponse:
     """Used by frontend to poll order status after payment redirect.
 
+    Requires the email used during checkout to verify ownership.
     Note: Invoice is sent automatically via Fakturownia email after payment.
     """
     checkout_service = CheckoutService(db)
     order = checkout_service.get_order_by_id(order_id)
 
-    if not order:
+    if not order or order.email.lower() != email.lower():
         raise HTTPException(status_code=404, detail="Zamówienie nie znalezione")
 
     return OrderStatusResponse(
