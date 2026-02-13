@@ -33,7 +33,6 @@ class ConversationListItem(BaseModel):
     other_participant: ParticipantInfo
     last_message: MessagePreview | None = None
     unread_count: int = 0
-    is_archived: bool = False
     updated_at: UTCDatetime
 
     class Config:

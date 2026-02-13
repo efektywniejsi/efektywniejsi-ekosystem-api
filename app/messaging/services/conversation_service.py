@@ -40,14 +40,12 @@ class ConversationService:
         page: int = 1,
         limit: int = 20,
         search: str | None = None,
-        is_archived: bool = False,
     ) -> ConversationListResponse:
         """Get paginated list of user's conversations."""
         participant_sub = (
             self.db.query(ConversationParticipant.conversation_id)
             .filter(
                 ConversationParticipant.user_id == user_id,
-                ConversationParticipant.is_deleted == is_archived,
             )
             .scalar_subquery()
         )
@@ -148,25 +146,12 @@ class ConversationService:
             total_messages=total_messages,
         )
 
-    def archive_conversation(self, conversation_id: UUID, user_id: UUID) -> None:
-        """Archive a conversation for a user."""
-        participant = self._get_participant_or_403(conversation_id, user_id)
-        participant.is_deleted = True
-        self.db.commit()
-
-    def unarchive_conversation(self, conversation_id: UUID, user_id: UUID) -> None:
-        """Unarchive a conversation for a user."""
-        participant = self._get_participant_or_403(conversation_id, user_id)
-        participant.is_deleted = False
-        self.db.commit()
-
     def get_unread_count(self, user_id: UUID) -> int:
         """Get count of conversations with unread messages."""
         participants = (
             self.db.query(ConversationParticipant)
             .filter(
                 ConversationParticipant.user_id == user_id,
-                ConversationParticipant.is_deleted == False,  # noqa: E712
             )
             .all()
         )
@@ -276,7 +261,6 @@ class ConversationService:
             if last_msg
             else None,
             unread_count=unread_count,
-            is_archived=current.is_deleted if current else False,
             updated_at=conversation.updated_at,
         )
 

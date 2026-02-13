@@ -151,7 +151,6 @@ async def list_users(
         select(func.count(ConversationParticipant.id))
         .where(
             ConversationParticipant.user_id == User.id,
-            ConversationParticipant.is_deleted == False,  # noqa: E712
         )
         .correlate(User)
         .scalar_subquery()

@@ -4,7 +4,7 @@ from typing import cast
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.auth.models.user import User
@@ -61,17 +61,6 @@ class MessageService:
             self.db.add(message)
             existing_conv.updated_at = datetime.now(UTC)
 
-            participant = (
-                self.db.query(ConversationParticipant)
-                .filter(
-                    ConversationParticipant.conversation_id == existing_conv.id,
-                    ConversationParticipant.user_id == sender.id,
-                )
-                .first()
-            )
-            if participant and participant.is_deleted:
-                participant.is_deleted = False
-
             self.db.commit()
             self._invalidate_unread_cache(data.recipient_id)
             self._send_dm_notification(
@@ -121,13 +110,11 @@ class MessageService:
         page: int = 1,
         limit: int = 20,
         search: str | None = None,
-        is_archived: bool = False,
     ) -> ConversationListResponse:
         participant_sub = (
             self.db.query(ConversationParticipant.conversation_id)
             .filter(
                 ConversationParticipant.user_id == user_id,
-                ConversationParticipant.is_deleted == is_archived,
             )
             .scalar_subquery()
         )
@@ -277,59 +264,20 @@ class MessageService:
         self.db.commit()
         self._invalidate_unread_cache(user_id)
 
-    def archive_conversation(self, conversation_id: UUID, user_id: UUID) -> None:
-        participant = self._get_participant_or_403(conversation_id, user_id)
-        participant.is_deleted = True
-        self.db.commit()
-
-    def unarchive_conversation(self, conversation_id: UUID, user_id: UUID) -> None:
-        participant = self._get_participant_or_403(conversation_id, user_id)
-        participant.is_deleted = False
-        self.db.commit()
-
     def get_unread_count(self, user_id: UUID) -> int:
-        participants = (
-            self.db.query(ConversationParticipant)
+        return (
+            self.db.query(func.count(func.distinct(ConversationParticipant.conversation_id)))
+            .join(Message, Message.conversation_id == ConversationParticipant.conversation_id)
             .filter(
                 ConversationParticipant.user_id == user_id,
-                ConversationParticipant.is_deleted == False,  # noqa: E712
-            )
-            .all()
-        )
-
-        unread = 0
-        for p in participants:
-            query = self.db.query(func.count(Message.id)).filter(
-                Message.conversation_id == p.conversation_id,
                 Message.sender_id != user_id,
+                or_(
+                    ConversationParticipant.last_read_at.is_(None),
+                    Message.created_at > ConversationParticipant.last_read_at,
+                ),
             )
-            if p.last_read_at:
-                query = query.filter(Message.created_at > p.last_read_at)
-            count = query.scalar() or 0
-            if count > 0:
-                unread += 1
-
-        return unread
-
-    async def get_unread_count_cached(self, user_id: UUID) -> int:
-        cache_key = f"dm:unread:{user_id}"
-        try:
-            if redis_module.redis_client:
-                cached = await redis_module.redis_client.get(cache_key)
-                if cached is not None:
-                    return int(cached)
-        except Exception:
-            logger.warning("Redis cache read failed for unread count")
-
-        count = self.get_unread_count(user_id)
-
-        try:
-            if redis_module.redis_client:
-                await redis_module.redis_client.setex(cache_key, 30, str(count))
-        except Exception:
-            logger.warning("Redis cache write failed for unread count")
-
-        return count
+            .scalar()
+        ) or 0
 
     def admin_get_conversations(
         self,
@@ -394,7 +342,6 @@ class MessageService:
                     if last_msg
                     else None,
                     unread_count=0,
-                    is_archived=conv.is_archived,
                     updated_at=conv.updated_at,
                 )
             )
@@ -605,9 +552,28 @@ class MessageService:
             if last_msg
             else None,
             unread_count=unread_count,
-            is_archived=current.is_deleted if current else False,
             updated_at=conversation.updated_at,
         )
+
+    async def get_unread_count_cached(self, user_id: UUID) -> int:
+        cache_key = f"dm:unread:{user_id}"
+        try:
+            if redis_module.redis_client:
+                cached = await redis_module.redis_client.get(cache_key)
+                if cached is not None:
+                    return int(cached)
+        except Exception:
+            logger.warning("Redis cache read failed for unread count")
+
+        count = self.get_unread_count(user_id)
+
+        try:
+            if redis_module.redis_client:
+                await redis_module.redis_client.setex(cache_key, 30, str(count))
+        except Exception:
+            logger.warning("Redis cache write failed for unread count")
+
+        return count
 
     @staticmethod
     def _build_participant_info(user: User) -> ParticipantInfo:
