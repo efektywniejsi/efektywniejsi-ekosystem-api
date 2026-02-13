@@ -153,4 +153,5 @@ class PackageUpdateRequest(BaseModel):
     tools: list[str] | None = None
     video_url: str | None = None
     is_featured: bool | None = None
+    is_published: bool | None = None
     package_ids: list[str] | None = None  # Update child packages if is_bundle=True

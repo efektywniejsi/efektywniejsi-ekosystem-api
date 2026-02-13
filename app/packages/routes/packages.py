@@ -318,6 +318,8 @@ def update_package(
         package.video_url = package_data.video_url
     if package_data.is_featured is not None:
         package.is_featured = package_data.is_featured
+    if package_data.is_published is not None:
+        package.is_published = package_data.is_published
 
     # Update child packages if this is a bundle
     if package.is_bundle and package_data.package_ids is not None:
