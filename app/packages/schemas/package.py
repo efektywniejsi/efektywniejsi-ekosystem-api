@@ -50,7 +50,9 @@ class PackageListResponse(BaseModel):
     video_url: str | None
     is_featured: bool
     is_bundle: bool
+    is_published: bool = True
     tools: list[str] = Field(default_factory=list)
+    created_at: UTCDatetime | None = None
 
     class Config:
         from_attributes = True
@@ -151,4 +153,5 @@ class PackageUpdateRequest(BaseModel):
     tools: list[str] | None = None
     video_url: str | None = None
     is_featured: bool | None = None
+    is_published: bool | None = None
     package_ids: list[str] | None = None  # Update child packages if is_bundle=True

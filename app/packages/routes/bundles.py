@@ -9,6 +9,7 @@ from app.auth.dependencies import require_admin
 from app.auth.models.user import User
 from app.db.session import get_db
 from app.packages.models.bundle import BundleCourseItem
+from app.packages.models.order import Order, OrderItem, OrderStatus
 from app.packages.models.package import Package, PackageBundleItem
 from app.packages.schemas.bundle import (
     BundleCourseDetailItem,
@@ -374,6 +375,21 @@ def delete_bundle(
 
     if not bundle:
         raise HTTPException(404, "Bundle nie znaleziony")
+
+    purchase_count = (
+        db.query(OrderItem)
+        .join(Order, Order.id == OrderItem.order_id)
+        .filter(
+            OrderItem.package_id == bundle_uuid,
+            Order.status == OrderStatus.COMPLETED,
+        )
+        .count()
+    )
+    if purchase_count > 0:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"Nie można usunąć oferty — {purchase_count} użytkowników dokonało zakupu",
+        )
 
     bundle.is_published = False
     db.commit()
