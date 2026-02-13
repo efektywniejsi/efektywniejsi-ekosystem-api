@@ -96,7 +96,6 @@ class AdminMessageService:
                     if last_msg
                     else None,
                     unread_count=0,
-                    is_archived=conv.is_archived,
                     updated_at=conv.updated_at,
                 )
             )

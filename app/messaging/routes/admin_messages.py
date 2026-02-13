@@ -66,7 +66,6 @@ def admin_get_user_message_count(
         db.query(func.count(ConversationParticipant.conversation_id))
         .filter(
             ConversationParticipant.user_id == user_id,
-            ConversationParticipant.is_deleted == False,  # noqa: E712
         )
         .scalar()
     ) or 0

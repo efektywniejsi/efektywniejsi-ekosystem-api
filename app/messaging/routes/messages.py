@@ -36,7 +36,6 @@ def list_conversations(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     search: str | None = None,
-    is_archived: bool = Query(False),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ConversationListResponse:
@@ -46,7 +45,6 @@ def list_conversations(
         page=page,
         limit=limit,
         search=search,
-        is_archived=is_archived,
     )
 
 
@@ -90,26 +88,6 @@ def mark_as_read(
 ) -> None:
     service = MessageService(db)
     service.mark_as_read(conversation_id, current_user.id)
-
-
-@router.put("/conversations/{conversation_id}/archive", status_code=204)
-def archive_conversation(
-    conversation_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> None:
-    service = MessageService(db)
-    service.archive_conversation(conversation_id, current_user.id)
-
-
-@router.put("/conversations/{conversation_id}/unarchive", status_code=204)
-def unarchive_conversation(
-    conversation_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> None:
-    service = MessageService(db)
-    service.unarchive_conversation(conversation_id, current_user.id)
 
 
 @router.get("/unread-count")

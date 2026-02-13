@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -21,7 +21,6 @@ class ConversationParticipant(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
 
     last_read_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None)
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     conversation = relationship("Conversation", back_populates="participants")
