@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import require_admin
 from app.auth.models.user import User
 from app.db.session import get_db
+from app.packages.models.enrollment import PackageEnrollment
 from app.packages.models.package import Package, PackageBundleItem
 from app.packages.schemas.package import (
     PackageCreateRequest,
@@ -378,7 +379,16 @@ def delete_package(
     package = db.query(Package).filter(Package.id == package_uuid).first()
 
     if not package:
-        raise HTTPException(404, "Package not found")
+        raise HTTPException(404, "Pakiet nie znaleziony")
+
+    enrollment_count = (
+        db.query(PackageEnrollment).filter(PackageEnrollment.package_id == package_uuid).count()
+    )
+    if enrollment_count > 0:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"Nie można usunąć pakietu — {enrollment_count} użytkowników ma aktywny dostęp",
+        )
 
     # Soft delete
     package.is_published = False

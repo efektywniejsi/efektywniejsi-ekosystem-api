@@ -15,6 +15,7 @@ from app.auth.models.user import User
 from app.core import security
 from app.core.config import settings
 from app.courses.models import Course, LessonStatus, Module
+from app.courses.models.enrollment import Enrollment
 from app.courses.schemas.course import (
     CourseCreate,
     CourseDetailResponse,
@@ -354,6 +355,13 @@ async def delete_course(
             detail="Kurs nie znaleziony",
         )
 
+    enrollment_count = db.query(Enrollment).filter(Enrollment.course_id == course_id).count()
+    if enrollment_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Nie można usunąć kursu — {enrollment_count} użytkowników ma aktywny dostęp",
+        )
+
     db.delete(course)
     db.commit()
 
@@ -398,6 +406,14 @@ async def delete_course_with_password(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Kurs nie znaleziony",
+        )
+
+    # 2b. Check if course has been purchased by any users
+    enrollment_count = db.query(Enrollment).filter(Enrollment.course_id == course_id).count()
+    if enrollment_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Nie można usunąć kursu — {enrollment_count} użytkowników ma aktywny dostęp",
         )
 
     # 3. Delete Mux assets for all lessons, tracking failures
