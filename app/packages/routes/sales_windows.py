@@ -1,6 +1,6 @@
 """Sales Windows API routes."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import and_
@@ -65,7 +65,7 @@ async def get_next_sales_window(
     Returns:
         ActiveSalesWindowResponse with salesWindow or None
     """
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     sales_window = (
         db.query(SalesWindow)
@@ -168,8 +168,8 @@ async def create_sales_window(
         landing_page_config=window_data.landingPage,
         early_bird_config=window_data.earlyBird,
         bundle_ids=window_data.bundleIds,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         created_by=admin.id,
         updated_by=admin.id,
     )
@@ -311,7 +311,7 @@ async def update_sales_window(
         )
 
     # Update audit fields
-    sales_window.updated_at = datetime.utcnow()
+    sales_window.updated_at = datetime.now(UTC)
     sales_window.updated_by = admin.id
 
     # Commit changes
@@ -362,7 +362,7 @@ async def delete_sales_window(
 
     # Set status to closed
     sales_window.status = "closed"
-    sales_window.updated_at = datetime.utcnow()
+    sales_window.updated_at = datetime.now(UTC)
     sales_window.updated_by = admin.id
 
     db.commit()

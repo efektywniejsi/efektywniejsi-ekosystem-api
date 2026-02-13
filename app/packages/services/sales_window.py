@@ -1,6 +1,6 @@
 """Service layer for Sales Window operations."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import cast
 
 from sqlalchemy import and_
@@ -54,7 +54,7 @@ class SalesWindowService:
         Returns:
             Active SalesWindow if found, None otherwise
         """
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         return cast(
             SalesWindow | None,
@@ -78,7 +78,7 @@ class SalesWindowService:
         Returns:
             Upcoming SalesWindow if found, None otherwise
         """
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         return cast(
             SalesWindow | None,

@@ -49,20 +49,27 @@ async def upload_attachment(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
-                f"Invalid file type. Allowed types: PDF, DOCX, ZIP, PNG, JPG. "
-                f"Received: {file.content_type}"
+                "Nieprawidłowy typ pliku. Dozwolone: PDF, DOCX, ZIP, PNG, JPG. "
+                f"Otrzymano: {file.content_type}"
             ),
         )
 
     max_size_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
-    file_content = await file.read()
-    file_size = len(file_content)
-
-    if file_size > max_size_bytes:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File size exceeds maximum allowed size of {settings.MAX_FILE_SIZE_MB}MB",
-        )
+    chunks: list[bytes] = []
+    total_size = 0
+    while chunk := await file.read(64 * 1024):
+        total_size += len(chunk)
+        if total_size > max_size_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=(
+                    "Rozmiar pliku przekracza maksymalny dozwolony rozmiar "
+                    f"{settings.MAX_FILE_SIZE_MB}MB"
+                ),
+            )
+        chunks.append(chunk)
+    file_content = b"".join(chunks)
+    file_size = total_size
 
     unique_filename = generate_unique_filename(file.filename or "file.pdf")
     storage = get_storage()
@@ -174,7 +181,7 @@ async def download_attachment(
     if not storage.exists(attachment.file_path):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="File not found on server",
+            detail="Plik nie znaleziony na serwerze",
         )
 
     url = storage.download_url(attachment.file_path)

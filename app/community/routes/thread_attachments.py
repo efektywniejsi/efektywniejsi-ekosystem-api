@@ -40,13 +40,13 @@ async def upload_thread_attachment(
     if not thread:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Thread not found",
+            detail="Wątek nie znaleziony",
         )
 
     if thread.author_id != current_user.id and current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the thread author or admin can upload attachments",
+            detail="Tylko autor wątku lub administrator może dodawać załączniki",
         )
 
     existing_count = (
@@ -74,7 +74,7 @@ async def upload_thread_attachment(
     if file_size > max_size_bytes:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File size exceeds maximum allowed size of {MAX_FILE_SIZE_MB}MB",
+            detail=f"Rozmiar pliku przekracza maksymalny dozwolony rozmiar {MAX_FILE_SIZE_MB}MB",
         )
 
     unique_filename = generate_unique_filename(file.filename or "file.bin")
@@ -113,7 +113,7 @@ def list_thread_attachments(
     if not thread:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Thread not found",
+            detail="Wątek nie znaleziony",
         )
 
     attachments = (
@@ -153,7 +153,7 @@ def download_thread_attachment(
     if not storage.exists(attachment.file_path):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="File not found on server",
+            detail="Plik nie znaleziony na serwerze",
         )
 
     url = storage.download_url(attachment.file_path)
@@ -179,7 +179,7 @@ def delete_thread_attachment(
     if attachment.uploader_id != current_user.id and current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the uploader or admin can delete this attachment",
+            detail="Tylko właściciel załącznika lub administrator może go usunąć",
         )
 
     storage = get_storage()

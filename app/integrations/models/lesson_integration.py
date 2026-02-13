@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Text
@@ -24,7 +24,7 @@ class LessonIntegration(Base):
     )
     context_note: Mapped[str | None] = mapped_column(Text, default=None)
     sort_order: Mapped[int] = mapped_column(default=0)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
     integration: Mapped["Integration"] = relationship(
         "Integration", back_populates="lesson_integrations"

@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import cast
 from uuid import UUID
 
@@ -163,7 +163,7 @@ class GamificationService:
                     user_achievement = UserAchievement(
                         user_id=user_id,
                         achievement_id=achievement.id,
-                        earned_at=datetime.utcnow(),
+                        earned_at=datetime.now(UTC),
                     )
                     db.add(user_achievement)
 
@@ -205,7 +205,7 @@ class GamificationService:
             reason=reason,
             reference_type=reference_type,
             reference_id=reference_id,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
         )
         db.add(points_history)
 
@@ -254,7 +254,7 @@ class GamificationService:
                 user_achievement = UserAchievement(
                     user_id=user_id,
                     achievement_id=achievement.id,
-                    earned_at=datetime.utcnow(),
+                    earned_at=datetime.now(UTC),
                 )
                 db.add(user_achievement)
 
@@ -289,7 +289,7 @@ class GamificationService:
                 user_achievement = UserAchievement(
                     user_id=user_id,
                     achievement_id=achievement.id,
-                    earned_at=datetime.utcnow(),
+                    earned_at=datetime.now(UTC),
                 )
                 db.add(user_achievement)
 

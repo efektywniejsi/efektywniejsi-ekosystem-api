@@ -1,6 +1,6 @@
 import logging
 import secrets
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -121,7 +121,7 @@ async def create_enrollment(
     enrollment = Enrollment(
         user_id=user.id,
         course_id=course_id,
-        enrolled_at=datetime.utcnow(),
+        enrolled_at=datetime.now(UTC),
         expires_at=request.expires_at,
     )
     db.add(enrollment)

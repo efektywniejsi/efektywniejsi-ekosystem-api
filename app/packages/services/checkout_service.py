@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import cast
 
 from sqlalchemy.orm import Session
@@ -53,8 +53,8 @@ class CheckoutService:
             buyer_street=buyer_street if wants_invoice else None,
             buyer_post_code=buyer_post_code if wants_invoice else None,
             buyer_city=buyer_city if wants_invoice else None,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
 
         self.db.add(order)
@@ -68,7 +68,7 @@ class CheckoutService:
                 package_title=package.title,
                 package_slug=package.slug,
                 price=package.price,
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(UTC),
             )
             self.db.add(order_item)
 

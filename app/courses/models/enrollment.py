@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import ForeignKey, Index, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -21,7 +21,7 @@ class Enrollment(Base):
     course_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("courses.id", ondelete="CASCADE"), index=True
     )
-    enrolled_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    enrolled_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     completed_at: Mapped[datetime | None] = mapped_column(default=None)
     certificate_issued_at: Mapped[datetime | None] = mapped_column(default=None)
     last_accessed_at: Mapped[datetime | None] = mapped_column(default=None)
@@ -34,7 +34,7 @@ class Enrollment(Base):
     def is_expired(self) -> bool:
         if self.expires_at is None:
             return False
-        return bool(datetime.utcnow() > self.expires_at)
+        return bool(datetime.now(UTC) > self.expires_at)
 
     def __repr__(self) -> str:
         return f"<Enrollment(id={self.id}, user_id={self.user_id}, course_id={self.course_id})>"

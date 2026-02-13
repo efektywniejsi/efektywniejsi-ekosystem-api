@@ -2,7 +2,7 @@
 
 import enum
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import Index, text
@@ -66,8 +66,11 @@ class SalesWindow(Base):
     bundle_ids: Mapped[list] = mapped_column(JSONB, server_default=text("'[]'::jsonb"))
 
     # Audit fields
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, index=True)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC), index=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
     created_by: Mapped[uuid.UUID | None] = mapped_column(nullable=True)
     updated_by: Mapped[uuid.UUID | None] = mapped_column(nullable=True)
 

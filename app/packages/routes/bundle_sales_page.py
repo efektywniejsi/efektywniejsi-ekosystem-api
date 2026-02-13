@@ -91,7 +91,7 @@ async def upload_bundle_sales_page_image(
     if len(file_content) > max_size_bytes:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File size exceeds maximum allowed size of 5MB",
+            detail="Rozmiar pliku przekracza maksymalny dozwolony rozmiar 5MB",
         )
 
     file_extension = Path(file.filename or "image.jpg").suffix

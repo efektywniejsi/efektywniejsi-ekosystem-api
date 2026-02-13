@@ -1,6 +1,6 @@
 import enum
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -36,5 +36,5 @@ class Notification(Base):
     announcement_log_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("announcement_logs.id", ondelete="SET NULL"), default=None
     )
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     sent_at: Mapped[datetime | None] = mapped_column(default=None)

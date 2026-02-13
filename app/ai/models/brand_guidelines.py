@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -24,8 +24,11 @@ class BrandGuidelines(Base):
     company_description: Mapped[str] = mapped_column(default="")
     additional_instructions: Mapped[str] = mapped_column(default="")
 
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
     def __repr__(self) -> str:
         return f"<BrandGuidelines(id={self.id}, name={self.name})>"

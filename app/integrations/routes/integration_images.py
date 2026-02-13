@@ -61,7 +61,7 @@ async def upload_integration_image(
     if len(file_content) > MAX_SIZE_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File size exceeds maximum allowed size of 2MB",
+            detail="Rozmiar pliku przekracza maksymalny dozwolony rozmiar 2MB",
         )
 
     # Validate actual file content (magic bytes) - skip for SVG (text-based)
@@ -70,7 +70,7 @@ async def upload_integration_image(
         if actual_type not in ALLOWED_IMGHDR_TYPES:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="File content does not match a valid image format",
+                detail="Zawartość pliku nie odpowiada prawidłowemu formatowi obrazu",
             )
 
     # Use extension derived from validated MIME type
@@ -104,7 +104,7 @@ async def serve_integration_image(
     if "/" in filename or "\\" in filename or ".." in filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid filename",
+            detail="Nieprawidłowa nazwa pliku",
         )
 
     storage = get_storage()
@@ -130,7 +130,7 @@ async def serve_integration_image(
     if not str(file_path).startswith(str(upload_root) + os.sep):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid filename",
+            detail="Nieprawidłowa nazwa pliku",
         )
 
     # Determine media type from extension
@@ -215,7 +215,7 @@ async def upload_auth_guide_image(
     if len(file_content) > AUTH_GUIDE_MAX_SIZE_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File size exceeds maximum allowed size of 5MB",
+            detail="Rozmiar pliku przekracza maksymalny dozwolony rozmiar 5MB",
         )
 
     # Validate actual file content (magic bytes)
@@ -223,7 +223,7 @@ async def upload_auth_guide_image(
     if actual_type not in ALLOWED_IMGHDR_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File content does not match a valid image format",
+            detail="Zawartość pliku nie odpowiada prawidłowemu formatowi obrazu",
         )
 
     # Use extension derived from validated MIME type
@@ -256,7 +256,7 @@ async def serve_auth_guide_image(
     if "/" in filename or "\\" in filename or ".." in filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid filename",
+            detail="Nieprawidłowa nazwa pliku",
         )
 
     storage = get_storage()
@@ -282,7 +282,7 @@ async def serve_auth_guide_image(
     if not str(file_path).startswith(str(upload_root) + os.sep):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid filename",
+            detail="Nieprawidłowa nazwa pliku",
         )
 
     # Determine media type from extension
