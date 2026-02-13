@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -25,7 +25,7 @@ class ThreadAttachment(Base):
     file_path: Mapped[str] = mapped_column(String(500))
     file_size_bytes: Mapped[int] = mapped_column(Integer)
     mime_type: Mapped[str] = mapped_column(String(100))
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
     thread = relationship("CommunityThread", back_populates="attachments")
     uploader = relationship("User", lazy="joined")

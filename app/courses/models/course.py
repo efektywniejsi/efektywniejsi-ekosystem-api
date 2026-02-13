@@ -1,6 +1,6 @@
 import enum
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Enum, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
@@ -34,8 +34,11 @@ class Course(Base):
     learning_description: Mapped[str | None] = mapped_column(default=None)
     learning_thumbnail_url: Mapped[str | None] = mapped_column(default=None)
     sales_page_sections: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
     modules = relationship("Module", back_populates="course", cascade="all, delete-orphan")
     enrollments = relationship("Enrollment", back_populates="course", cascade="all, delete-orphan")
@@ -57,8 +60,11 @@ class Module(Base):
     title: Mapped[str] = mapped_column()
     description: Mapped[str | None] = mapped_column(default=None)
     sort_order: Mapped[int] = mapped_column(default=0)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
     course = relationship("Course", back_populates="modules")
     lessons = relationship("Lesson", back_populates="module", cascade="all, delete-orphan")
@@ -84,8 +90,11 @@ class Lesson(Base):
         default=LessonStatus.AVAILABLE,
     )
     sort_order: Mapped[int] = mapped_column(default=0)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
     module = relationship("Module", back_populates="lessons")
     progress_records = relationship(

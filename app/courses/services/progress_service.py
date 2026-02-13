@@ -1,5 +1,5 @@
 import calendar
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import cast
 from uuid import UUID
 
@@ -41,14 +41,14 @@ class ProgressService:
         progress.watched_seconds = watched_seconds
         progress.last_position_seconds = last_position_seconds
         progress.completion_percentage = completion_percentage
-        progress.last_updated_at = datetime.utcnow()
+        progress.last_updated_at = datetime.now(UTC)
 
         if (
             completion_percentage >= ProgressService.COMPLETION_THRESHOLD
             and not progress.is_completed
         ):
             progress.is_completed = True
-            progress.completed_at = datetime.utcnow()
+            progress.completed_at = datetime.now(UTC)
 
             GamificationService.award_points(
                 user_id=user_id,
@@ -113,7 +113,7 @@ class ProgressService:
             )
 
             if enrollment and not enrollment.completed_at:
-                enrollment.completed_at = datetime.utcnow()
+                enrollment.completed_at = datetime.now(UTC)
 
                 GamificationService.award_points(
                     user_id=user_id,
@@ -174,7 +174,7 @@ class ProgressService:
 
         if not progress.is_completed:
             progress.is_completed = True
-            progress.completed_at = datetime.utcnow()
+            progress.completed_at = datetime.now(UTC)
 
             GamificationService.award_points(
                 user_id=user_id,

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import cast
 from uuid import UUID
 
@@ -41,7 +41,7 @@ class EnrollmentService:
         enrollment = Enrollment(
             user_id=user_id,
             course_id=course_id,
-            enrolled_at=datetime.utcnow(),
+            enrolled_at=datetime.now(UTC),
         )
         db.add(enrollment)
         db.commit()
@@ -97,7 +97,7 @@ class EnrollmentService:
         )
 
         if enrollment:
-            enrollment.last_accessed_at = datetime.utcnow()
+            enrollment.last_accessed_at = datetime.now(UTC)
             db.commit()
 
     @staticmethod
@@ -109,7 +109,7 @@ class EnrollmentService:
             id=str(course.id),
             user_id=str(user_id),
             course_id=str(course.id),
-            enrolled_at=datetime.utcnow(),
+            enrolled_at=datetime.now(UTC),
             completed_at=None,
             certificate_issued_at=None,
             last_accessed_at=None,

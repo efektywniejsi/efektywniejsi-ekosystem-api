@@ -141,7 +141,99 @@ class MessageService:
             .all()
         )
 
-        items = [self._build_conversation_list_item(conv, user_id) for conv in conversations]
+        if not conversations:
+            return ConversationListResponse(conversations=[], total=total)
+
+        conv_ids = [c.id for c in conversations]
+
+        # Batch load participants for all conversations
+        all_participants = (
+            self.db.query(ConversationParticipant)
+            .options(joinedload(ConversationParticipant.user))
+            .filter(ConversationParticipant.conversation_id.in_(conv_ids))
+            .all()
+        )
+        participants_by_conv: dict[UUID, list[ConversationParticipant]] = {}
+        for p in all_participants:
+            participants_by_conv.setdefault(p.conversation_id, []).append(p)
+
+        # Batch load last messages using a window function
+        last_msg_sub = (
+            self.db.query(
+                Message.id,
+                Message.conversation_id,
+                func.row_number()
+                .over(
+                    partition_by=Message.conversation_id,
+                    order_by=Message.created_at.desc(),
+                )
+                .label("rn"),
+            )
+            .filter(Message.conversation_id.in_(conv_ids))
+            .subquery()
+        )
+        last_messages = (
+            self.db.query(Message)
+            .options(joinedload(Message.sender))
+            .join(last_msg_sub, Message.id == last_msg_sub.c.id)
+            .filter(last_msg_sub.c.rn == 1)
+            .all()
+        )
+        last_msg_by_conv = {m.conversation_id: m for m in last_messages}
+
+        # Batch load unread counts
+        unread_sub = (
+            self.db.query(
+                Message.conversation_id,
+                func.count(Message.id).label("unread"),
+            )
+            .join(
+                ConversationParticipant,
+                (ConversationParticipant.conversation_id == Message.conversation_id)
+                & (ConversationParticipant.user_id == user_id),
+            )
+            .filter(
+                Message.conversation_id.in_(conv_ids),
+                Message.sender_id != user_id,
+                or_(
+                    ConversationParticipant.last_read_at.is_(None),
+                    Message.created_at > ConversationParticipant.last_read_at,
+                ),
+            )
+            .group_by(Message.conversation_id)
+            .all()
+        )
+        unread_by_conv = {row[0]: row[1] for row in unread_sub}
+
+        items = []
+        for conv in conversations:
+            participants = participants_by_conv.get(conv.id, [])
+            other = next(
+                (p for p in participants if p.user_id != user_id),
+                participants[0] if participants else None,
+            )
+            last_msg = last_msg_by_conv.get(conv.id)
+
+            items.append(
+                ConversationListItem(
+                    id=conv.id,
+                    subject=conv.subject,
+                    other_participant=self._build_participant_info(other.user)
+                    if other
+                    else ParticipantInfo(
+                        id=UUID(int=0), name="Usunięty", avatar_url=None, role="paid"
+                    ),
+                    last_message=MessagePreview(
+                        content=last_msg.content[:100],
+                        sender_name=last_msg.sender.name,
+                        created_at=last_msg.created_at,
+                    )
+                    if last_msg
+                    else None,
+                    unread_count=unread_by_conv.get(conv.id, 0),
+                    updated_at=conv.updated_at,
+                )
+            )
 
         return ConversationListResponse(conversations=items, total=total)
 
@@ -501,59 +593,6 @@ class MessageService:
                 detail="Brak dostępu do tej konwersacji",
             )
         return cast(ConversationParticipant, participant)
-
-    def _build_conversation_list_item(
-        self, conversation: Conversation, current_user_id: UUID
-    ) -> ConversationListItem:
-        participants = (
-            self.db.query(ConversationParticipant)
-            .options(joinedload(ConversationParticipant.user))
-            .filter(ConversationParticipant.conversation_id == conversation.id)
-            .all()
-        )
-
-        other = next(
-            (p for p in participants if p.user_id != current_user_id),
-            participants[0] if participants else None,
-        )
-
-        current = next(
-            (p for p in participants if p.user_id == current_user_id),
-            None,
-        )
-
-        last_msg = (
-            self.db.query(Message)
-            .options(joinedload(Message.sender))
-            .filter(Message.conversation_id == conversation.id)
-            .order_by(Message.created_at.desc())
-            .first()
-        )
-
-        unread_query = self.db.query(func.count(Message.id)).filter(
-            Message.conversation_id == conversation.id,
-            Message.sender_id != current_user_id,
-        )
-        if current and current.last_read_at:
-            unread_query = unread_query.filter(Message.created_at > current.last_read_at)
-        unread_count = unread_query.scalar() or 0
-
-        return ConversationListItem(
-            id=conversation.id,
-            subject=conversation.subject,
-            other_participant=self._build_participant_info(other.user)
-            if other
-            else ParticipantInfo(id=UUID(int=0), name="Usunięty", avatar_url=None, role="paid"),
-            last_message=MessagePreview(
-                content=last_msg.content[:100],
-                sender_name=last_msg.sender.name,
-                created_at=last_msg.created_at,
-            )
-            if last_msg
-            else None,
-            unread_count=unread_count,
-            updated_at=conversation.updated_at,
-        )
 
     async def get_unread_count_cached(self, user_id: UUID) -> int:
         cache_key = f"dm:unread:{user_id}"

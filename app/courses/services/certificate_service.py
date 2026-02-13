@@ -1,6 +1,6 @@
 import io
 import secrets
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import cast
 from uuid import UUID
 
@@ -82,7 +82,7 @@ class CertificateService:
 
         c.setFont("Helvetica", 14)
         c.setFillColorRGB(0.7, 0.7, 0.7)
-        date_str = datetime.utcnow().strftime("%B %d, %Y")
+        date_str = datetime.now(UTC).strftime("%B %d, %Y")
         text = f"Issued on {date_str}"
         text_width = c.stringWidth(text, "Helvetica", 14)
         c.drawString((page_width - text_width) / 2, page_height - 15.5 * cm, text)
@@ -161,12 +161,12 @@ class CertificateService:
             user_id=user_id,
             course_id=course_id,
             certificate_code=certificate_code,
-            issued_at=datetime.utcnow(),
+            issued_at=datetime.now(UTC),
             file_path=stored_path,
         )
         db.add(certificate)
 
-        enrollment.certificate_issued_at = datetime.utcnow()
+        enrollment.certificate_issued_at = datetime.now(UTC)
 
         db.commit()
         db.refresh(certificate)

@@ -1,7 +1,7 @@
 """Reply operations service for community threads."""
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import cast
 from uuid import UUID
 
@@ -29,7 +29,7 @@ class ReplyService:
         if thread.status == ThreadStatus.CLOSED.value:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot reply to a closed thread",
+                detail="Nie można odpowiadać w zamkniętym wątku",
             )
 
         reply = ThreadReply(
@@ -45,7 +45,7 @@ class ReplyService:
             .scalar()
             or 0
         ) + 1
-        thread.updated_at = datetime.utcnow()
+        thread.updated_at = datetime.now(UTC)
 
         self.db.commit()
         self.db.refresh(reply)
@@ -57,15 +57,15 @@ class ReplyService:
         if not reply:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Reply not found",
+                detail="Odpowiedź nie znaleziona",
             )
         if reply.author_id != user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only the author can edit this reply",
+                detail="Tylko autor może edytować tę odpowiedź",
             )
         reply.content = content
-        reply.updated_at = datetime.utcnow()
+        reply.updated_at = datetime.now(UTC)
         self.db.commit()
         self.db.refresh(reply)
         return cast(ThreadReply, reply)
@@ -76,12 +76,12 @@ class ReplyService:
         if not reply:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Reply not found",
+                detail="Odpowiedź nie znaleziona",
             )
         if reply.author_id != user.id and user.role != "admin":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized to delete this reply",
+                detail="Brak uprawnień do usunięcia tej odpowiedzi",
             )
 
         thread_id = reply.thread_id
@@ -107,7 +107,7 @@ class ReplyService:
         if thread.status == ThreadStatus.OPEN.value:
             thread.status = ThreadStatus.RESOLVED.value
             thread.resolved_by_id = user.id
-            thread.resolved_at = datetime.utcnow()
+            thread.resolved_at = datetime.now(UTC)
 
         self.db.commit()
         self.db.refresh(reply)
@@ -126,7 +126,7 @@ class ReplyService:
         if not reply:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Reply not found in this thread",
+                detail="Odpowiedź nie znaleziona w tym wątku",
             )
 
         reply.is_solution = False
@@ -146,7 +146,7 @@ class ReplyService:
         if not thread:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Thread not found",
+                detail="Wątek nie znaleziony",
             )
         return cast(CommunityThread, thread)
 
@@ -155,7 +155,7 @@ class ReplyService:
         if thread.author_id != user.id and user.role != "admin":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized for this action",
+                detail="Brak uprawnień do tej operacji",
             )
 
     def _mark_reply_solution(self, thread_id: UUID, reply_id: UUID) -> ThreadReply:
@@ -168,7 +168,7 @@ class ReplyService:
         if not reply:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Reply not found in this thread",
+                detail="Odpowiedź nie znaleziona w tym wątku",
             )
         reply.is_solution = True
         return cast(ThreadReply, reply)

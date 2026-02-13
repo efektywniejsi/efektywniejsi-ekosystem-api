@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -20,7 +20,7 @@ class Attachment(Base):
     file_size_bytes: Mapped[int] = mapped_column()
     mime_type: Mapped[str] = mapped_column()
     sort_order: Mapped[int] = mapped_column(default=0)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
     lesson = relationship("Lesson", back_populates="attachments")
 

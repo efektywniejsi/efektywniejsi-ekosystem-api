@@ -11,7 +11,7 @@ class TestCreateUserEndpoint:
         payload = {
             "email": "newuser@example.com",
             "name": "New User",
-            "password": "password123",
+            "password": "Password123",
             "role": "paid",
             "send_welcome_email": False,
         }
@@ -34,7 +34,7 @@ class TestCreateUserEndpoint:
         payload = {
             "email": test_user.email,
             "name": "Duplicate User",
-            "password": "password123",
+            "password": "Password123",
             "role": "paid",
         }
 
@@ -64,7 +64,7 @@ class TestCreateUserEndpoint:
         payload = {
             "email": "newuser@example.com",
             "name": "New User",
-            "password": "password123",
+            "password": "Password123",
             "role": "paid",
         }
 
@@ -78,7 +78,7 @@ class TestCreateUserEndpoint:
         payload = {
             "email": "newuser@example.com",
             "name": "New User",
-            "password": "password123",
+            "password": "Password123",
             "role": "paid",
         }
 

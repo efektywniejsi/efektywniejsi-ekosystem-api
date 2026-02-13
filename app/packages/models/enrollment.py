@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import ForeignKey, Index, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -25,7 +25,7 @@ class PackageEnrollment(Base):
         ForeignKey("orders.id", ondelete="SET NULL"), index=True, default=None
     )
 
-    enrolled_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    enrolled_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     last_accessed_at: Mapped[datetime | None] = mapped_column(default=None)
 
     # Relationships

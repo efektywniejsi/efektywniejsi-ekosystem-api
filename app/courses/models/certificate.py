@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -19,9 +19,9 @@ class Certificate(Base):
         ForeignKey("courses.id", ondelete="CASCADE"), index=True
     )
     certificate_code: Mapped[str] = mapped_column(unique=True, index=True)
-    issued_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    issued_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     file_path: Mapped[str | None] = mapped_column(default=None)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
     user = relationship("User", backref="certificates")
     course = relationship("Course", back_populates="certificates")

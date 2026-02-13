@@ -1,9 +1,9 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pyotp
 import stripe
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -21,7 +21,8 @@ from app.auth.schemas.settings import (
 from app.core import security
 from app.core.config import settings
 from app.core.encryption import decrypt_totp_secret, encrypt_totp_secret
-from app.core.storage import get_storage
+from app.core.rate_limit import limiter
+from app.core.storage import get_storage, url_to_storage_path
 from app.db.session import get_db
 
 router = APIRouter()
@@ -53,12 +54,18 @@ async def upload_avatar(
             detail=f"Niedozwolony format: {file.content_type}. Użyj JPG, PNG, WebP lub HEIC",
         )
 
-    contents = await file.read()
-    if len(contents) > MAX_AVATAR_SIZE:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Rozmiar pliku ({len(contents) // 1024 // 1024}MB) przekracza limit 5MB",
-        )
+    # Read in chunks with early termination to avoid loading huge files into memory
+    chunks: list[bytes] = []
+    total_size = 0
+    while chunk := await file.read(64 * 1024):
+        total_size += len(chunk)
+        if total_size > MAX_AVATAR_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Rozmiar pliku przekracza limit 5MB",
+            )
+        chunks.append(chunk)
+    contents = b"".join(chunks)
 
     storage = get_storage()
 
@@ -76,7 +83,7 @@ async def upload_avatar(
 
     if current_user.avatar_url:
         try:
-            storage.delete(current_user.avatar_url)
+            storage.delete(url_to_storage_path(current_user.avatar_url))
         except Exception:
             pass
 
@@ -95,7 +102,7 @@ async def delete_avatar(
     if current_user.avatar_url:
         storage = get_storage()
         try:
-            storage.delete(current_user.avatar_url)
+            storage.delete(url_to_storage_path(current_user.avatar_url))
         except Exception:
             pass
         current_user.avatar_url = None
@@ -104,7 +111,9 @@ async def delete_avatar(
 
 
 @router.post("/password")
+@limiter.limit("5/minute")
 async def change_password(
+    request: Request,
     data: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -121,15 +130,24 @@ async def change_password(
             detail="Obecne hasło jest nieprawidłowe",
         )
 
+    password_error = security.validate_password(data.new_password)
+    if password_error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=password_error,
+        )
+
     current_user.hashed_password = security.get_password_hash(data.new_password)
-    current_user.password_changed_at = datetime.utcnow()
+    current_user.password_changed_at = datetime.now(UTC)
     db.commit()
 
     return {"message": "Hasło zostało zmienione"}
 
 
 @router.post("/2fa/setup", response_model=TotpSetupResponse)
+@limiter.limit("5/minute")
 async def setup_2fa(
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> TotpSetupResponse:
@@ -144,7 +162,9 @@ async def setup_2fa(
 
 
 @router.post("/2fa/verify")
+@limiter.limit("5/minute")
 async def verify_2fa(
+    request: Request,
     data: TotpVerifyRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),

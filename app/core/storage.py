@@ -172,3 +172,21 @@ def get_storage() -> StorageBackend:
 def generate_unique_filename(original_filename: str) -> str:
     extension = Path(original_filename).suffix
     return f"{uuid.uuid4()}{extension}"
+
+
+def url_to_storage_path(url: str) -> str:
+    """Extract relative storage path from a download URL.
+
+    Handles both local URLs (http://host/uploads/avatars/file.jpg -> avatars/file.jpg)
+    and R2 public URLs (https://cdn.example.com/avatars/file.jpg -> avatars/file.jpg).
+    """
+    from urllib.parse import urlparse
+
+    parsed = urlparse(url)
+    path = parsed.path.lstrip("/")
+
+    # Local storage URLs have /uploads/ prefix
+    if path.startswith("uploads/"):
+        path = path[len("uploads/") :]
+
+    return path

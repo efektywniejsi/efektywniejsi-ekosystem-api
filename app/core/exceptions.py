@@ -160,14 +160,15 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
-def register_exception_handlers(app: FastAPI) -> None:
+def register_exception_handlers(app: FastAPI, *, debug: bool = False) -> None:
     """Register exception handlers with the FastAPI app.
 
     Call this function in main.py to register all exception handlers.
 
     Args:
         app: The FastAPI application instance.
+        debug: If True, unhandled exceptions propagate with stack traces.
     """
     app.add_exception_handler(AppError, app_exception_handler)  # type: ignore[arg-type]
-    # Uncomment to catch all unhandled exceptions:
-    # app.add_exception_handler(Exception, unhandled_exception_handler)
+    if not debug:
+        app.add_exception_handler(Exception, unhandled_exception_handler)

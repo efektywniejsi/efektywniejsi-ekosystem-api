@@ -1,7 +1,7 @@
 """Admin operations service for community threads."""
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import cast
 from uuid import UUID
 
@@ -52,7 +52,7 @@ class AdminThreadService:
         """Close a thread."""
         thread = self._get_thread_or_404(thread_id)
         thread.status = ThreadStatus.CLOSED.value
-        thread.updated_at = datetime.utcnow()
+        thread.updated_at = datetime.now(UTC)
         self.db.commit()
         self.db.refresh(thread)
         return thread
@@ -61,7 +61,7 @@ class AdminThreadService:
         """Reopen a thread."""
         thread = self._get_thread_or_404(thread_id)
         thread.status = ThreadStatus.OPEN.value
-        thread.updated_at = datetime.utcnow()
+        thread.updated_at = datetime.now(UTC)
         self.db.commit()
         self.db.refresh(thread)
         return thread
@@ -70,7 +70,7 @@ class AdminThreadService:
         """Move thread to different category."""
         thread = self._get_thread_or_404(thread_id)
         thread.category = category
-        thread.updated_at = datetime.utcnow()
+        thread.updated_at = datetime.now(UTC)
         self.db.commit()
         self.db.refresh(thread)
         return thread
@@ -87,7 +87,7 @@ class AdminThreadService:
             thread.category = cat.value if hasattr(cat, "value") else cat
         if data.is_pinned is not None:
             thread.is_pinned = data.is_pinned
-        thread.updated_at = datetime.utcnow()
+        thread.updated_at = datetime.now(UTC)
         self.db.commit()
         self.db.refresh(thread)
         return thread
@@ -115,7 +115,7 @@ class AdminThreadService:
 
     def get_statistics(self) -> AdminStatsResponse:
         """Get admin statistics for community."""
-        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
         total = self.db.query(func.count(CommunityThread.id)).scalar() or 0
         open_count = (
@@ -258,6 +258,6 @@ class AdminThreadService:
         if not thread:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Thread not found",
+                detail="Wątek nie znaleziony",
             )
         return cast(CommunityThread, thread)

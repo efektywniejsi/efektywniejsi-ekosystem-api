@@ -1,3 +1,4 @@
+import pyotp
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
@@ -16,6 +17,7 @@ from app.auth.schemas.auth import (
 from app.auth.schemas.user import UserResponse
 from app.auth.services.token_service import token_service
 from app.core import security
+from app.core.encryption import decrypt_totp_secret
 from app.core.rate_limit import limiter
 from app.db.session import get_db
 
@@ -48,6 +50,20 @@ async def login(
 
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Konto jest nieaktywne")
+
+    if user.totp_enabled and user.totp_secret:
+        if not credentials.totp_code:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Wymagany kod 2FA",
+                headers={"X-2FA-Required": "true"},
+            )
+        totp = pyotp.TOTP(decrypt_totp_secret(user.totp_secret))
+        if not totp.verify(credentials.totp_code):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Nieprawidłowy kod 2FA",
+            )
 
     token_data = {"sub": str(user.id), "email": user.email, "role": user.role}
 
@@ -105,10 +121,15 @@ async def refresh_token(
             detail="Użytkownik nie znaleziony lub nieaktywny",
         )
 
+    # Revoke old refresh token and issue a new one (token rotation)
+    await token_service.revoke_refresh_token(refresh_token)
+
     token_payload = {"sub": str(user.id), "email": user.email, "role": user.role}
     new_access_token = security.create_access_token(token_payload)
+    new_refresh_token = security.create_refresh_token(token_payload)
 
-    security.update_access_cookie(response, new_access_token)
+    await token_service.store_refresh_token(new_refresh_token, str(user.id))
+    security.set_auth_cookies(response, new_access_token, new_refresh_token)
 
     return RefreshResponse(message="Token odświeżony")
 

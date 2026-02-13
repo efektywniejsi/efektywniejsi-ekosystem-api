@@ -99,7 +99,10 @@ class WebhookHandler(ABC):
             event = await self.verify_signature(payload, signature)
         except ValueError as e:
             logger.error(f"{self.provider_name} webhook verification failed: {e}")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Weryfikacja sygnatury nie powiodła się",
+            ) from e
 
         payment_intent_id, should_process = self.extract_payment_info(event)
 
@@ -124,9 +127,12 @@ class WebhookHandler(ABC):
             await self._process_payment(order)
             return WebhookResult(status="success", order_id=str(order.id))
         except Exception as e:
-            logger.error(f"{self.provider_name} webhook processing error: {e}")
-            # Return 200 to prevent retries from the payment provider
-            return WebhookResult(status="error", message=str(e))
+            logger.error(
+                f"{self.provider_name} webhook processing error for order {order.id}: {e}",
+                exc_info=True,
+            )
+            # Return 200 to prevent retries; generic message hides internal state
+            return WebhookResult(status="error", message="Błąd przetwarzania płatności")
 
     async def _process_payment(self, order: Order) -> dict[str, str]:
         """Process a successful payment.

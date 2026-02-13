@@ -482,12 +482,17 @@ async def upload_learning_thumbnail(
         )
 
     max_size_bytes = 5 * 1024 * 1024  # 5 MB
-    file_content = await file.read()
-    if len(file_content) > max_size_bytes:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="Rozmiar pliku przekracza maksymalny dozwolony rozmiar 5MB",
-        )
+    chunks: list[bytes] = []
+    total_size = 0
+    while chunk := await file.read(64 * 1024):
+        total_size += len(chunk)
+        if total_size > max_size_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Rozmiar pliku przekracza maksymalny dozwolony rozmiar 5MB",
+            )
+        chunks.append(chunk)
+    file_content = b"".join(chunks)
 
     file_extension = Path(file.filename or "image.jpg").suffix
     unique_filename = f"{uuid_lib.uuid4()}{file_extension}"

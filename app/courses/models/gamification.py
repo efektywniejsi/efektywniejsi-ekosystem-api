@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -18,7 +18,7 @@ class Achievement(Base):
     points_reward: Mapped[int] = mapped_column(default=0)
     category: Mapped[str | None] = mapped_column(default=None)
     is_active: Mapped[bool] = mapped_column(default=True)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
     user_achievements = relationship(
         "UserAchievement", back_populates="achievement", cascade="all, delete-orphan"
@@ -39,7 +39,7 @@ class UserAchievement(Base):
     achievement_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("achievements.id", ondelete="CASCADE"), index=True
     )
-    earned_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    earned_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     progress_value: Mapped[int | None] = mapped_column(default=0)
 
     user = relationship("User", backref="achievements")
@@ -60,8 +60,11 @@ class UserStreak(Base):
     longest_streak: Mapped[int] = mapped_column(default=0)
     last_activity_date: Mapped[date] = mapped_column(default=date.today)
     grace_period_used_at: Mapped[date | None] = mapped_column(default=None)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
     user = relationship("User", backref="streak", uselist=False)
 
@@ -78,8 +81,11 @@ class UserPoints(Base):
     )
     total_points: Mapped[int] = mapped_column(default=0)
     level: Mapped[int] = mapped_column(default=1)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
     user = relationship("User", backref="points", uselist=False)
 
@@ -98,7 +104,7 @@ class PointsHistory(Base):
     reason: Mapped[str] = mapped_column()
     reference_type: Mapped[str | None] = mapped_column(default=None)
     reference_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC), index=True)
 
     user = relationship("User", backref="points_history")
 

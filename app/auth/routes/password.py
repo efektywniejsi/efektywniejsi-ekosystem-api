@@ -59,10 +59,11 @@ async def request_password_reset(
 
 
 @router.post("/reset", response_model=MessageResponse)
+@limiter.limit("5/minute")
 async def reset_password(
-    request: PasswordResetConfirm, db: Session = Depends(get_db)
+    request: Request, data: PasswordResetConfirm, db: Session = Depends(get_db)
 ) -> MessageResponse:
-    hashed_token = security.hash_token(request.token)
+    hashed_token = security.hash_token(data.token)
 
     user = db.query(User).filter(User.password_reset_token == hashed_token).first()
 
@@ -83,13 +84,14 @@ async def reset_password(
             detail="Token resetowania hasła wygasł",
         )
 
-    if len(request.new_password) < 8:
+    password_error = security.validate_password(data.new_password)
+    if password_error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Hasło musi mieć co najmniej 8 znaków",
+            detail=password_error,
         )
 
-    user.hashed_password = security.get_password_hash(request.new_password)
+    user.hashed_password = security.get_password_hash(data.new_password)
 
     user.password_reset_token = None
     user.password_reset_token_expires = None
