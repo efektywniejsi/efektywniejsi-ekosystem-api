@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import cast
 from uuid import UUID
 
@@ -93,7 +93,21 @@ class ThreadService:
         page: int = 1,
         limit: int = 20,
     ) -> ThreadListResponse:
-        query = self.db.query(CommunityThread).options(joinedload(CommunityThread.author))
+        # Subquery: last reply date per thread (avoids N+1)
+        last_reply_sub = (
+            self.db.query(
+                ThreadReply.thread_id,
+                func.max(ThreadReply.created_at).label("last_reply_at"),
+            )
+            .group_by(ThreadReply.thread_id)
+            .subquery()
+        )
+
+        query = (
+            self.db.query(CommunityThread, last_reply_sub.c.last_reply_at)
+            .options(joinedload(CommunityThread.author))
+            .outerjoin(last_reply_sub, last_reply_sub.c.thread_id == CommunityThread.id)
+        )
 
         if category:
             query = query.filter(CommunityThread.category == category)
@@ -103,7 +117,7 @@ class ThreadService:
             query = query.filter(CommunityThread.title.ilike(f"%{_escape_like(search)}%"))
 
         total = query.count()
-        threads = (
+        rows = (
             query.order_by(
                 CommunityThread.is_pinned.desc(),
                 CommunityThread.updated_at.desc(),
@@ -113,7 +127,26 @@ class ThreadService:
             .all()
         )
 
-        items = [self._build_list_item(t) for t in threads]
+        items = [
+            ThreadListItem(
+                id=thread.id,
+                title=thread.title,
+                status=thread.status,
+                category=thread.category,
+                is_pinned=thread.is_pinned,
+                reply_count=thread.reply_count,
+                view_count=thread.view_count,
+                created_at=thread.created_at,
+                updated_at=thread.updated_at,
+                author=self._build_author(thread.author),
+                last_activity=last_reply_at if last_reply_at else thread.created_at,
+                course_title=thread.course.title if thread.course else None,
+                module_title=thread.module.title if thread.module else None,
+                lesson_title=thread.lesson.title if thread.lesson else None,
+                tags=[tag.name for tag in thread.tags] if thread.tags else [],
+            )
+            for thread, last_reply_at in rows
+        ]
         return ThreadListResponse(threads=items, total=total)
 
     def get_thread_detail(self, thread_id: UUID) -> CommunityThread:
@@ -130,7 +163,7 @@ class ThreadService:
         if not thread:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Thread not found",
+                detail="Wątek nie znaleziony",
             )
         return thread
 
@@ -146,7 +179,7 @@ class ThreadService:
         if thread.status == ThreadStatus.CLOSED.value:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot reply to a closed thread",
+                detail="Nie można odpowiadać w zamkniętym wątku",
             )
 
         reply = ThreadReply(
@@ -162,7 +195,7 @@ class ThreadService:
             .scalar()
             or 0
         ) + 1
-        thread.updated_at = datetime.utcnow()
+        thread.updated_at = datetime.now(UTC)
 
         self.db.commit()
         self.db.refresh(reply)
@@ -176,7 +209,7 @@ class ThreadService:
 
         thread.status = ThreadStatus.RESOLVED.value
         thread.resolved_by_id = user.id
-        thread.resolved_at = datetime.utcnow()
+        thread.resolved_at = datetime.now(UTC)
 
         if solution_reply_id:
             self._mark_reply_solution(thread_id, solution_reply_id)
@@ -200,7 +233,7 @@ class ThreadService:
         if thread.status == ThreadStatus.OPEN.value:
             thread.status = ThreadStatus.RESOLVED.value
             thread.resolved_by_id = user.id
-            thread.resolved_at = datetime.utcnow()
+            thread.resolved_at = datetime.now(UTC)
 
         self.db.commit()
         self.db.refresh(reply)
@@ -218,7 +251,7 @@ class ThreadService:
         if not reply:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Reply not found in this thread",
+                detail="Odpowiedź nie znaleziona w tym wątku",
             )
 
         reply.is_solution = False
@@ -249,12 +282,12 @@ class ThreadService:
         if not reply:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Reply not found",
+                detail="Odpowiedź nie znaleziona",
             )
         if reply.author_id != user.id and user.role != "admin":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized to delete this reply",
+                detail="Brak uprawnień do usunięcia tej odpowiedzi",
             )
 
         thread_id = reply.thread_id
@@ -271,7 +304,7 @@ class ThreadService:
         if thread.author_id != user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only the author can edit this thread",
+                detail="Tylko autor może edytować ten wątek",
             )
         thread.title = data.title
         thread.content = data.content
@@ -288,7 +321,7 @@ class ThreadService:
             if data.lesson_id is not None:
                 thread.lesson_id = data.lesson_id
 
-        thread.updated_at = datetime.utcnow()
+        thread.updated_at = datetime.now(UTC)
         self.db.commit()
         self.db.refresh(thread)
         return thread
@@ -298,15 +331,15 @@ class ThreadService:
         if not reply:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Reply not found",
+                detail="Odpowiedź nie znaleziona",
             )
         if reply.author_id != user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only the author can edit this reply",
+                detail="Tylko autor może edytować tę odpowiedź",
             )
         reply.content = content
-        reply.updated_at = datetime.utcnow()
+        reply.updated_at = datetime.now(UTC)
         self.db.commit()
         self.db.refresh(reply)
         return cast(ThreadReply, reply)
@@ -314,7 +347,7 @@ class ThreadService:
     def close_thread(self, thread_id: UUID) -> CommunityThread:
         thread = self._get_thread_or_404(thread_id)
         thread.status = ThreadStatus.CLOSED.value
-        thread.updated_at = datetime.utcnow()
+        thread.updated_at = datetime.now(UTC)
         self.db.commit()
         self.db.refresh(thread)
         return thread
@@ -322,7 +355,7 @@ class ThreadService:
     def reopen_thread(self, thread_id: UUID) -> CommunityThread:
         thread = self._get_thread_or_404(thread_id)
         thread.status = ThreadStatus.OPEN.value
-        thread.updated_at = datetime.utcnow()
+        thread.updated_at = datetime.now(UTC)
         self.db.commit()
         self.db.refresh(thread)
         return thread
@@ -330,7 +363,7 @@ class ThreadService:
     def move_thread_category(self, thread_id: UUID, category: str) -> CommunityThread:
         thread = self._get_thread_or_404(thread_id)
         thread.category = category
-        thread.updated_at = datetime.utcnow()
+        thread.updated_at = datetime.now(UTC)
         self.db.commit()
         self.db.refresh(thread)
         return thread
@@ -346,7 +379,7 @@ class ThreadService:
             thread.category = cat.value if hasattr(cat, "value") else cat
         if data.is_pinned is not None:
             thread.is_pinned = data.is_pinned
-        thread.updated_at = datetime.utcnow()
+        thread.updated_at = datetime.now(UTC)
         self.db.commit()
         self.db.refresh(thread)
         return thread
@@ -372,7 +405,7 @@ class ThreadService:
         return BulkActionResponse(affected=affected, action=action)
 
     def get_admin_statistics(self) -> AdminStatsResponse:
-        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
         total = self.db.query(func.count(CommunityThread.id)).scalar() or 0
         open_count = (
@@ -554,7 +587,7 @@ class ThreadService:
         if not thread:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Thread not found",
+                detail="Wątek nie znaleziony",
             )
         return cast(CommunityThread, thread)
 
@@ -562,7 +595,7 @@ class ThreadService:
         if thread.author_id != user.id and user.role != "admin":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized for this action",
+                detail="Brak uprawnień do tej operacji",
             )
 
     def _mark_reply_solution(self, thread_id: UUID, reply_id: UUID) -> ThreadReply:
@@ -574,37 +607,10 @@ class ThreadService:
         if not reply:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Reply not found in this thread",
+                detail="Odpowiedź nie znaleziona w tym wątku",
             )
         reply.is_solution = True
         return cast(ThreadReply, reply)
-
-    def _build_list_item(self, thread: CommunityThread) -> ThreadListItem:
-        last_reply = (
-            self.db.query(ThreadReply.created_at)
-            .filter(ThreadReply.thread_id == thread.id)
-            .order_by(ThreadReply.created_at.desc())
-            .first()
-        )
-        last_activity = last_reply[0] if last_reply else thread.created_at
-
-        return ThreadListItem(
-            id=thread.id,
-            title=thread.title,
-            status=thread.status,
-            category=thread.category,
-            is_pinned=thread.is_pinned,
-            reply_count=thread.reply_count,
-            view_count=thread.view_count,
-            created_at=thread.created_at,
-            updated_at=thread.updated_at,
-            author=self._build_author(thread.author),
-            last_activity=last_activity,
-            course_title=thread.course.title if thread.course else None,
-            module_title=thread.module.title if thread.module else None,
-            lesson_title=thread.lesson.title if thread.lesson else None,
-            tags=[tag.name for tag in thread.tags] if thread.tags else [],
-        )
 
     @staticmethod
     def _build_author(user: User) -> AuthorInfo:
