@@ -9,7 +9,6 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.auth.models.user import User
-from app.core import redis as redis_module
 from app.messaging.models.conversation import Conversation
 from app.messaging.models.conversation_participant import ConversationParticipant
 from app.messaging.models.message import Message
@@ -120,7 +119,6 @@ class ConversationService:
 
         participant.last_read_at = datetime.now(UTC)
         self.db.commit()
-        self._invalidate_unread_cache(user_id)
 
         participants_info = [
             self._build_participant_info(p.user) for p in conversation.participants
@@ -169,27 +167,6 @@ class ConversationService:
                 unread += 1
 
         return unread
-
-    async def get_unread_count_cached(self, user_id: UUID) -> int:
-        """Get unread count with Redis caching."""
-        cache_key = f"dm:unread:{user_id}"
-        try:
-            if redis_module.redis_client:
-                cached = await redis_module.redis_client.get(cache_key)
-                if cached is not None:
-                    return int(cached)
-        except Exception:
-            logger.warning("Redis cache read failed for unread count")
-
-        count = self.get_unread_count(user_id)
-
-        try:
-            if redis_module.redis_client:
-                await redis_module.redis_client.setex(cache_key, 30, str(count))
-        except Exception:
-            logger.warning("Redis cache write failed for unread count")
-
-        return count
 
     def _get_participant_or_403(
         self, conversation_id: UUID, user_id: UUID
@@ -273,16 +250,3 @@ class ConversationService:
             avatar_url=user.avatar_url,
             role=user.role,
         )
-
-    @staticmethod
-    def _invalidate_unread_cache(user_id: UUID) -> None:
-        """Invalidate Redis cache for unread count."""
-        try:
-            if redis_module.redis_client:
-                import asyncio
-
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.ensure_future(redis_module.redis_client.delete(f"dm:unread:{user_id}"))
-        except Exception:
-            logger.warning("Failed to invalidate unread cache for user %s", user_id)

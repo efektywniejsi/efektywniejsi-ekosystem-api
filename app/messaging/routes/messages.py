@@ -91,12 +91,12 @@ def mark_as_read(
 
 
 @router.get("/unread-count")
-async def get_unread_count(
+def get_unread_count(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict[str, int]:
     service = MessageService(db)
-    count = await service.get_unread_count_cached(current_user.id)
+    count = service.get_unread_count(current_user.id)
     return {"unread_count": count}
 
 

@@ -240,6 +240,11 @@ async def root() -> dict[str, str]:
 
 @app.get("/health")
 async def health_check() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.get("/health/detailed")
+async def health_check_detailed() -> dict[str, str]:
     redis_status = "unknown"
     db_status = "unknown"
 
