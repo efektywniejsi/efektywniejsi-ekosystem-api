@@ -38,6 +38,33 @@ class CheckoutInitiateRequest(BaseModel):
     buyer_city: str | None = Field(default=None, max_length=100)
 
 
+class AuthenticatedCheckoutRequest(BaseModel):
+    """Request to initiate checkout for authenticated dashboard users."""
+
+    package_ids: list[str] = Field(
+        ...,
+        min_length=1,
+        description="List of package UUIDs to purchase",
+    )
+    payment_provider: PaymentProvider = Field(..., description="Selected payment provider")
+
+    # Optional invoice/billing information (for B2B)
+    wants_invoice: bool = Field(default=False, description="Whether customer wants a VAT invoice")
+    buyer_tax_no: str | None = Field(
+        default=None,
+        max_length=20,
+        description="Buyer NIP/VAT number (required if wants_invoice=True for companies)",
+    )
+    buyer_company_name: str | None = Field(
+        default=None,
+        max_length=200,
+        description="Company name for invoice",
+    )
+    buyer_street: str | None = Field(default=None, max_length=200)
+    buyer_post_code: str | None = Field(default=None, max_length=20)
+    buyer_city: str | None = Field(default=None, max_length=100)
+
+
 class CheckoutInitiateResponse(BaseModel):
     """Response from checkout initiation."""
 
