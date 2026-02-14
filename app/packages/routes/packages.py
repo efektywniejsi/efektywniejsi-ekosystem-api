@@ -8,7 +8,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import require_admin
+from app.auth.dependencies import get_current_user, require_admin
 from app.auth.models.user import User
 from app.db.session import get_db
 from app.packages.models.enrollment import PackageEnrollment
@@ -75,6 +75,36 @@ def list_all_packages(
         db.query(Package)
         .filter(Package.is_bundle == False)  # noqa: E712 - Exclude bundles
         .order_by(Package.created_at.desc())
+        .all()
+    )
+
+    return [PackageListResponse.from_orm(pkg) for pkg in packages]
+
+
+@router.get("/store", response_model=list[PackageListResponse])
+def get_store_packages(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[PackageListResponse]:
+    """
+    Get published packages that the current user does NOT already own.
+
+    Used by the dashboard store to show available packages for purchase.
+    Must be registered before /{slug} to avoid FastAPI matching "store" as slug.
+    """
+    owned_package_ids = (
+        db.query(PackageEnrollment.package_id)
+        .filter(PackageEnrollment.user_id == current_user.id)
+        .subquery()
+    )
+
+    packages = (
+        db.query(Package)
+        .filter(
+            Package.is_published == True,  # noqa: E712
+            Package.id.notin_(owned_package_ids),
+        )
+        .order_by(Package.is_featured.desc(), Package.created_at.desc())
         .all()
     )
 

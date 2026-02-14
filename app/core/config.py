@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str = "Efektywniejsi"
 
     FRONTEND_URL: str = "http://localhost:5173"
+    DASHBOARD_URL: str = "http://localhost:3001"
     BACKEND_URL: str = "http://localhost:8000"
 
     PASSWORD_RESET_TOKEN_EXPIRE_HOURS: int = 1
