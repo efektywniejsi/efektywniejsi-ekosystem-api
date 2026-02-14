@@ -1,3 +1,5 @@
+import logging
+
 import pyotp
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
@@ -20,6 +22,8 @@ from app.core import security
 from app.core.encryption import decrypt_totp_secret
 from app.core.rate_limit import limiter
 from app.db.session import get_db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -70,7 +74,10 @@ async def login(
     access_token = security.create_access_token(token_data)
     refresh_token = security.create_refresh_token(token_data)
 
-    await token_service.store_refresh_token(refresh_token, str(user.id))
+    try:
+        await token_service.store_refresh_token(refresh_token, str(user.id))
+    except Exception:
+        logger.warning("redis_unavailable_during_login", extra={"user_id": str(user.id)})
 
     security.set_auth_cookies(response, access_token, refresh_token)
 
@@ -99,7 +106,11 @@ async def refresh_token(
 ) -> RefreshResponse:
     payload = await get_validated_token_payload(refresh_token, expected_type="refresh")
 
-    token_data = await token_service.validate_refresh_token(refresh_token)
+    try:
+        token_data = await token_service.validate_refresh_token(refresh_token)
+    except Exception:
+        logger.warning("redis_unavailable_during_token_validation")
+        token_data = None
     if token_data is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -122,13 +133,20 @@ async def refresh_token(
         )
 
     # Revoke old refresh token and issue a new one (token rotation)
-    await token_service.revoke_refresh_token(refresh_token)
+    try:
+        await token_service.revoke_refresh_token(refresh_token)
+    except Exception:
+        logger.warning("redis_unavailable_during_revoke", extra={"user_id": user_id})
 
     token_payload = {"sub": str(user.id), "email": user.email, "role": user.role}
     new_access_token = security.create_access_token(token_payload)
     new_refresh_token = security.create_refresh_token(token_payload)
 
-    await token_service.store_refresh_token(new_refresh_token, str(user.id))
+    try:
+        await token_service.store_refresh_token(new_refresh_token, str(user.id))
+    except Exception:
+        logger.warning("redis_unavailable_during_refresh", extra={"user_id": str(user.id)})
+
     security.set_auth_cookies(response, new_access_token, new_refresh_token)
 
     return RefreshResponse(message="Token odświeżony")
@@ -141,7 +159,10 @@ async def logout(
     refresh_token: str | None = Depends(get_refresh_token_from_cookie),
 ) -> LogoutResponse:
     if refresh_token:
-        await token_service.revoke_refresh_token(refresh_token)
+        try:
+            await token_service.revoke_refresh_token(refresh_token)
+        except Exception:
+            logger.warning("redis_unavailable_during_logout")
 
     security.clear_auth_cookies(response)
 
