@@ -4,6 +4,8 @@ from typing import cast
 
 from sqlalchemy.orm import Session
 
+from app.auth.models.user import User
+from app.packages.models.enrollment import PackageEnrollment
 from app.packages.models.order import Order, OrderItem, OrderStatus, PaymentProvider
 from app.packages.models.package import Package
 from app.packages.services.payment_service import PaymentServiceFactory
@@ -23,6 +25,7 @@ class CheckoutService:
         success_url: str,
         cancel_url: str,
         customer_ip: str = "127.0.0.1",
+        user_id: uuid.UUID | None = None,
         wants_invoice: bool = False,
         buyer_tax_no: str | None = None,
         buyer_company_name: str | None = None,
@@ -32,13 +35,18 @@ class CheckoutService:
     ) -> dict[str, str]:
         packages = self._validate_packages(package_ids)
 
+        if user_id:
+            self._check_existing_enrollments(user_id, packages)
+        else:
+            self._check_existing_enrollments_by_email(email, packages)
+
         subtotal = sum(pkg.price for pkg in packages)
         total = subtotal
 
         order = Order(
             id=uuid.uuid4(),
             order_number=generate_order_number(),
-            user_id=None,
+            user_id=user_id,
             email=email,
             name=name,
             status=OrderStatus.PENDING,
@@ -87,6 +95,43 @@ class CheckoutService:
             "payment_url": payment_result["url"],
             "order_id": str(order.id),
         }
+
+    def _check_existing_enrollments(self, user_id: uuid.UUID, packages: list[Package]) -> None:
+        package_ids = [pkg.id for pkg in packages]
+        enrolled_ids = {
+            row[0]
+            for row in self.db.query(PackageEnrollment.package_id)
+            .filter(
+                PackageEnrollment.user_id == user_id,
+                PackageEnrollment.package_id.in_(package_ids),
+            )
+            .all()
+        }
+        for pkg in packages:
+            if pkg.id in enrolled_ids:
+                raise ValueError(f"Masz już dostęp do pakietu: {pkg.title}")
+
+    def _check_existing_enrollments_by_email(self, email: str, packages: list[Package]) -> None:
+        user = self.db.query(User).filter(User.email == email).first()
+        if not user:
+            return
+
+        package_ids = [pkg.id for pkg in packages]
+        enrolled_ids = {
+            row[0]
+            for row in self.db.query(PackageEnrollment.package_id)
+            .filter(
+                PackageEnrollment.user_id == user.id,
+                PackageEnrollment.package_id.in_(package_ids),
+            )
+            .all()
+        }
+        for pkg in packages:
+            if pkg.id in enrolled_ids:
+                raise ValueError(
+                    f"Masz już dostęp do pakietu: {pkg.title}. "
+                    "Zaloguj się do dashboardu, aby uzyskać dostęp."
+                )
 
     def _validate_packages(self, package_ids: list[str]) -> list[Package]:
         if not package_ids:
