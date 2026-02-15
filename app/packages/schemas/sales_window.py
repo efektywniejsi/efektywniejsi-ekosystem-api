@@ -1,6 +1,6 @@
 """Pydantic schemas for Sales Window endpoints."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
@@ -64,6 +64,14 @@ class SalesWindowUpdate(BaseModel):
     startsAt: datetime | None = None
     endsAt: datetime | None = None
 
+    @field_validator("startsAt", "endsAt", mode="before")
+    @classmethod
+    def ensure_timezone_aware(cls, v: Any) -> Any:
+        """Ensure datetime values are timezone-aware (UTC if naive)."""
+        if isinstance(v, datetime) and v.tzinfo is None:
+            return v.replace(tzinfo=UTC)
+        return v
+
     @field_validator("endsAt")
     @classmethod
     def validate_ends_at(cls, v: datetime | None, info: ValidationInfo) -> datetime | None:
@@ -86,6 +94,14 @@ class SalesWindowCreate(BaseModel):
     landingPage: dict[str, Any]  # {"slug": "...", "title": "...", "subtitle": "...", "hero": {...}}
     earlyBird: dict[str, Any] | None = None
     bundleIds: list[str]
+
+    @field_validator("startsAt", "endsAt", mode="before")
+    @classmethod
+    def ensure_timezone_aware(cls, v: Any) -> Any:
+        """Ensure datetime values are timezone-aware (UTC if naive)."""
+        if isinstance(v, datetime) and v.tzinfo is None:
+            return v.replace(tzinfo=UTC)
+        return v
 
     @field_validator("endsAt")
     @classmethod
