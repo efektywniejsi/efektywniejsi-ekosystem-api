@@ -42,6 +42,7 @@ from app.courses.routes import (
     webhooks,
 )
 from app.db.session import SessionLocal
+from app.implementation_packages.routes import router as implementation_packages_router
 from app.integrations.routes import (
     admin_router as integrations_admin_router,
 )
@@ -66,6 +67,12 @@ from app.packages.routes import (
     packages_router,
     sales_windows_router,
     webhooks_router,
+)
+from app.processes.routes import (
+    admin_router as processes_admin_router,
+)
+from app.processes.routes import (
+    public_router as processes_public_router,
 )
 from app.storage.routes import admin_cleanup as storage_admin_routes
 
@@ -166,6 +173,11 @@ app.include_router(orders_router, prefix=settings.API_V1_PREFIX, tags=["orders"]
 app.include_router(
     sales_windows_router, prefix=f"{settings.API_V1_PREFIX}/sales-windows", tags=["sales-windows"]
 )
+app.include_router(
+    implementation_packages_router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["implementation-packages"],
+)
 
 app.include_router(
     notifications_routes.router,
@@ -230,6 +242,18 @@ app.include_router(
     integrations_proposals_router,
     prefix=settings.API_V1_PREFIX,
     tags=["integration-proposals"],
+)
+
+# Process routes
+app.include_router(
+    processes_public_router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["processes"],
+)
+app.include_router(
+    processes_admin_router,
+    prefix=f"{settings.API_V1_PREFIX}/admin",
+    tags=["admin-processes"],
 )
 
 
