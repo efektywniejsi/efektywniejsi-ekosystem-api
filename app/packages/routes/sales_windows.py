@@ -331,8 +331,7 @@ async def update_sales_window(
     db.refresh(sales_window)
 
     # Build success message
-    fields_str = ", ".join(updated_fields) if updated_fields else "no fields"
-    message = f"Sales window updated successfully. Updated fields: {fields_str}"
+    message = "Okno sprzedażowe zostało zaktualizowane"
 
     return SalesWindowUpdateResponse(
         salesWindow=SalesWindowResponse.model_validate(sales_window),
