@@ -59,7 +59,6 @@ def _fetch_course_data(db: Session, course_id: uuid.UUID) -> dict[str, Any]:
     return {
         "title": course.title,
         "description": course.description,
-        "difficulty": course.difficulty,
         "estimated_hours": course.estimated_hours,
         "category": course.category,
         "modules": modules_data,
@@ -111,7 +110,6 @@ def _fetch_bundle_data(db: Session, bundle_id: uuid.UUID) -> dict[str, Any]:
         "description": bundle.description,
         "price": bundle.price,
         "original_price": bundle.original_price,
-        "difficulty": bundle.difficulty,
         "category": bundle.category,
         "bundle_items": bundle_items_data,
         "course_items": course_items_data,
