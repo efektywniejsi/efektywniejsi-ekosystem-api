@@ -45,7 +45,6 @@ class PackageListResponse(BaseModel):
     price: int  # In grosz
     original_price: int | None
     currency: str
-    difficulty: str
     total_time_saved: str | None
     video_url: str | None
     is_featured: bool
@@ -77,7 +76,6 @@ class PackageDetailResponse(BaseModel):
     price: int  # In grosz
     original_price: int | None
     currency: str
-    difficulty: str
     total_time_saved: str | None
     video_url: str | None
     is_featured: bool
@@ -112,7 +110,6 @@ class PackageWithChildrenResponse(BaseModel):
     price: int
     original_price: int | None
     currency: str
-    difficulty: str
     total_time_saved: str | None
     tools: list[str] = Field(default_factory=list)
     child_packages: list[PackageListResponse] = Field(default_factory=list)
@@ -131,7 +128,6 @@ class PackageCreateRequest(BaseModel):
     price: int  # In grosz
     original_price: int | None = None
     currency: str = "PLN"
-    difficulty: str
     total_time_saved: str | None = None
     tools: list[str] = Field(default_factory=list)
     video_url: str | None = None
@@ -148,7 +144,6 @@ class PackageUpdateRequest(BaseModel):
     category: str | None = None
     price: int | None = None
     original_price: int | None = None
-    difficulty: str | None = None
     total_time_saved: str | None = None
     tools: list[str] | None = None
     video_url: str | None = None

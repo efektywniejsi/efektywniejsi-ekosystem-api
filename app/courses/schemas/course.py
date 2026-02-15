@@ -12,7 +12,6 @@ class CourseBase(BaseModel):
     slug: str = Field(..., min_length=1, max_length=255)
     description: str
     thumbnail_url: str | None = None
-    difficulty: Literal["beginner", "intermediate", "advanced"] = "beginner"
     estimated_hours: int = Field(default=0, ge=0)
     is_published: bool = False
     category: str | None = None
@@ -28,7 +27,6 @@ class CourseUpdate(BaseModel):
     slug: str | None = Field(None, min_length=1, max_length=255)
     description: str | None = None
     thumbnail_url: str | None = None
-    difficulty: Literal["beginner", "intermediate", "advanced"] | None = None
     estimated_hours: int | None = Field(None, ge=0)
     is_published: bool | None = None
     category: str | None = None

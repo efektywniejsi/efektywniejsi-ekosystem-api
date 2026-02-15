@@ -206,7 +206,6 @@ def get_package_bundle_contents(
         price=package.price,
         original_price=package.original_price,
         currency=package.currency,
-        difficulty=package.difficulty,
         total_time_saved=package.total_time_saved,
         tools=tools,
         child_packages=child_packages,
@@ -252,7 +251,6 @@ def create_package(
         price=package_data.price,
         original_price=package_data.original_price,
         currency=package_data.currency,
-        difficulty=package_data.difficulty,
         total_time_saved=package_data.total_time_saved,
         tools=json.dumps(package_data.tools),  # Convert list to JSON string
         video_url=package_data.video_url,
@@ -339,8 +337,6 @@ def update_package(
         package.price = package_data.price
     if package_data.original_price is not None:
         package.original_price = package_data.original_price
-    if package_data.difficulty is not None:
-        package.difficulty = package_data.difficulty
     if package_data.total_time_saved is not None:
         package.total_time_saved = package_data.total_time_saved
     if package_data.tools is not None:

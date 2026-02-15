@@ -24,7 +24,6 @@ def create_test_package(db: Session, title: str = "Test Package") -> Package:
         description="Test package description",
         category="productivity",
         price=9900,
-        difficulty="beginner",
         tools="[]",
         is_published=True,
         is_bundle=False,

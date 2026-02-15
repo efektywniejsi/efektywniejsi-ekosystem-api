@@ -23,7 +23,6 @@ class ImplementationPackage(Base):
     currency: Mapped[str] = mapped_column(default="PLN")
 
     # Metadata
-    difficulty: Mapped[str] = mapped_column(default="beginner")
     total_time_saved: Mapped[str | None] = mapped_column(default=None)
     tools: Mapped[str] = mapped_column(default="[]")  # JSON array as string
     video_url: Mapped[str | None] = mapped_column(default=None)

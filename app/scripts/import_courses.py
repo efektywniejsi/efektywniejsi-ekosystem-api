@@ -90,7 +90,6 @@ class CourseImporter:
                 slug=slug,
                 title=course_data.get("title"),
                 description=course_data.get("description"),
-                difficulty=course_data.get("difficulty", "beginner"),
                 estimated_hours=course_data.get("estimated_hours", 0),
                 is_published=course_data.get("is_published", False),
                 is_featured=course_data.get("is_featured", False),

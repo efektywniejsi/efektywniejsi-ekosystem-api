@@ -261,7 +261,6 @@ def create_bundle(
         price=bundle_data.price,
         original_price=bundle_data.original_price,
         currency=bundle_data.currency,
-        difficulty=bundle_data.difficulty,
         total_time_saved=bundle_data.total_time_saved,
         tools="[]",
         is_published=True,

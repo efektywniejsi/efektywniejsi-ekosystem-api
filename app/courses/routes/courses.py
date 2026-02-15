@@ -59,7 +59,6 @@ async def create_course(
         slug=request.slug,
         description=request.description,
         thumbnail_url=request.thumbnail_url,
-        difficulty=request.difficulty,
         estimated_hours=request.estimated_hours,
         is_published=request.is_published,
         category=request.category,
@@ -75,7 +74,6 @@ async def create_course(
         slug=course.slug,
         description=course.description,
         thumbnail_url=course.thumbnail_url,
-        difficulty=course.difficulty,
         estimated_hours=course.estimated_hours,
         is_published=course.is_published,
         category=course.category,
@@ -109,7 +107,6 @@ async def list_courses(
             slug=c.slug,
             description=c.description,
             thumbnail_url=c.thumbnail_url,
-            difficulty=c.difficulty,
             estimated_hours=c.estimated_hours,
             is_published=c.is_published,
             category=c.category,
@@ -150,7 +147,6 @@ async def list_all_courses(
             slug=c.slug,
             description=c.description,
             thumbnail_url=c.thumbnail_url,
-            difficulty=c.difficulty,
             estimated_hours=c.estimated_hours,
             is_published=c.is_published,
             category=c.category,
@@ -235,7 +231,6 @@ async def get_course(
         slug=course.slug,
         description=course.description,
         thumbnail_url=course.thumbnail_url,
-        difficulty=course.difficulty,
         estimated_hours=course.estimated_hours,
         is_published=course.is_published,
         category=course.category,
@@ -284,8 +279,6 @@ async def update_course(
         course.description = request.description
     if request.thumbnail_url is not None:
         course.thumbnail_url = request.thumbnail_url
-    if request.difficulty is not None:
-        course.difficulty = request.difficulty
     if request.estimated_hours is not None:
         course.estimated_hours = request.estimated_hours
     if request.is_published is not None:
@@ -310,7 +303,6 @@ async def update_course(
         slug=course.slug,
         description=course.description,
         thumbnail_url=course.thumbnail_url,
-        difficulty=course.difficulty,
         estimated_hours=course.estimated_hours,
         is_published=course.is_published,
         category=course.category,

@@ -41,8 +41,6 @@ def _product_context_course(course_data: dict[str, Any]) -> str:
         f"- Tytuł: {course_data.get('title', '')}",
         f"- Opis: {course_data.get('description', '')}",
     ]
-    if course_data.get("difficulty"):
-        lines.append(f"- Poziom trudności: {course_data['difficulty']}")
     if course_data.get("estimated_hours"):
         lines.append(f"- Szacowany czas: {course_data['estimated_hours']}h")
     if course_data.get("category"):
@@ -77,8 +75,6 @@ def _product_context_bundle(bundle_data: dict[str, Any]) -> str:
     if bundle_data.get("original_price"):
         orig_pln = bundle_data["original_price"] / 100
         lines.append(f"- Cena oryginalna: {orig_pln:.2f} PLN")
-    if bundle_data.get("difficulty"):
-        lines.append(f"- Poziom trudności: {bundle_data['difficulty']}")
     if bundle_data.get("category"):
         lines.append(f"- Kategoria: {bundle_data['category']}")
 

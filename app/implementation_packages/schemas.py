@@ -28,7 +28,6 @@ class ImplPackageListResponse(BaseModel):
     price: int
     original_price: int | None = None
     currency: str = "PLN"
-    difficulty: str
     estimated_hours: int = 0
     total_time_saved: str | None = None
     tools: list[str] = []
@@ -72,7 +71,6 @@ class ImplPackageCreateRequest(BaseModel):
     price: int = Field(default=0, ge=0)
     original_price: int | None = Field(default=None, ge=0)
     currency: str = Field(default="PLN", max_length=10)
-    difficulty: str = Field(default="beginner")
     estimated_hours: int = Field(default=0, ge=0)
     total_time_saved: str | None = Field(default=None, max_length=100)
     tools: list[str] = Field(default_factory=list)
@@ -95,7 +93,6 @@ class ImplPackageUpdateRequest(BaseModel):
     price: int | None = Field(default=None, ge=0)
     original_price: int | None = Field(default=None, ge=0)
     currency: str | None = Field(default=None, max_length=10)
-    difficulty: str | None = None
     estimated_hours: int | None = Field(default=None, ge=0)
     total_time_saved: str | None = None
     tools: list[str] | None = None

@@ -68,7 +68,6 @@ class PublicProfileService:
                 title=enrollment.course.title,
                 slug=enrollment.course.slug,
                 thumbnail_url=enrollment.course.thumbnail_url,
-                difficulty=enrollment.course.difficulty,
                 is_completed=enrollment.completed_at is not None,
             )
             for enrollment in enrollments
