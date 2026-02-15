@@ -29,7 +29,6 @@ class Course(Base):
     is_featured: Mapped[bool] = mapped_column(default=False)
     category: Mapped[str | None] = mapped_column(default=None, index=True)
     sort_order: Mapped[int] = mapped_column(default=0)
-    content_type: Mapped[str] = mapped_column(default="course", index=True)
     learning_title: Mapped[str | None] = mapped_column(default=None)
     learning_description: Mapped[str | None] = mapped_column(default=None)
     learning_thumbnail_url: Mapped[str | None] = mapped_column(default=None)

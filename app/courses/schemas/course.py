@@ -17,7 +17,6 @@ class CourseBase(BaseModel):
     is_published: bool = False
     category: str | None = None
     sort_order: int = 0
-    content_type: Literal["course", "implementation_package"] = "course"
 
 
 class CourseCreate(CourseBase):
@@ -34,7 +33,6 @@ class CourseUpdate(BaseModel):
     is_published: bool | None = None
     category: str | None = None
     sort_order: int | None = None
-    content_type: Literal["course", "implementation_package"] | None = None
     learning_title: str | None = None
     learning_description: str | None = None
     learning_thumbnail_url: str | None = None
