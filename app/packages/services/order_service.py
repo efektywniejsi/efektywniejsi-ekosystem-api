@@ -10,6 +10,9 @@ from sqlalchemy.orm import Session
 
 from app.auth.models.user import User
 from app.core.security import generate_reset_token
+from app.implementation_packages.models.implementation_package import (
+    ImplementationPackageEnrollment,
+)
 from app.packages.models.enrollment import PackageEnrollment
 from app.packages.models.order import Order, OrderStatus
 from app.packages.models.package import Package
@@ -118,7 +121,9 @@ class OrderService:
 
         return user
 
-    async def _create_enrollments(self, order: Order, user: User) -> list[PackageEnrollment]:
+    async def _create_enrollments(
+        self, order: Order, user: User
+    ) -> list[PackageEnrollment | ImplementationPackageEnrollment]:
         """
         Create package enrollments from order items.
 
@@ -132,6 +137,15 @@ class OrderService:
         enrollments = []
 
         for order_item in order.items:
+            # Handle ImplementationPackage items
+            if order_item.implementation_package_id:
+                impl_enrollment = self._create_impl_package_enrollment(
+                    user.id, order_item.implementation_package_id, order.id
+                )
+                if impl_enrollment:
+                    enrollments.append(impl_enrollment)
+                continue
+
             package = self.db.query(Package).filter(Package.id == order_item.package_id).first()
 
             if not package:
@@ -210,6 +224,36 @@ class OrderService:
             id=uuid.uuid4(),
             user_id=user_id,
             package_id=package_id,
+            order_id=order_id,
+            enrolled_at=datetime.now(UTC),
+        )
+
+        self.db.add(enrollment)
+        return enrollment
+
+    def _create_impl_package_enrollment(
+        self,
+        user_id: uuid.UUID,
+        implementation_package_id: uuid.UUID,
+        order_id: uuid.UUID,
+    ) -> ImplementationPackageEnrollment | None:
+        """Create an ImplementationPackage enrollment, checking for duplicates."""
+        existing = (
+            self.db.query(ImplementationPackageEnrollment)
+            .filter(
+                ImplementationPackageEnrollment.user_id == user_id,
+                ImplementationPackageEnrollment.package_id == implementation_package_id,
+            )
+            .first()
+        )
+
+        if existing:
+            return None
+
+        enrollment = ImplementationPackageEnrollment(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            package_id=implementation_package_id,
             order_id=order_id,
             enrolled_at=datetime.now(UTC),
         )

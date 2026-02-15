@@ -130,8 +130,8 @@ def _build_bundle_detail_response(db: Session, bundle: Package) -> BundleDetailR
         name=bundle.title,
         shortDescription=bundle.description,
         pricing={
-            "regular": bundle.price / 100,
-            "original": bundle.original_price / 100 if bundle.original_price else None,
+            "regular": bundle.price,  # grosz — frontend converts for display
+            "original": bundle.original_price if bundle.original_price else None,
             "currency": bundle.currency,
         },
         popular=bundle.is_featured,

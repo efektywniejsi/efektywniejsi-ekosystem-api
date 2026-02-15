@@ -58,11 +58,12 @@ async def create_lesson(
 
     from app.notifications.tasks import send_course_update_notification
 
-    send_course_update_notification.delay(
-        course_id=str(module.course_id),
-        update_type="new_lesson",
-        item_title=lesson.title,
-    )
+    if module.course_id:
+        send_course_update_notification.delay(
+            course_id=str(module.course_id),
+            update_type="new_lesson",
+            item_title=lesson.title,
+        )
 
     return LessonResponse(
         id=str(lesson.id),

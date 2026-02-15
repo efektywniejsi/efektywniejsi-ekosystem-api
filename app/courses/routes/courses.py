@@ -213,7 +213,7 @@ async def get_course(
         modules_data.append(
             ModuleWithLessonsResponse(
                 id=str(m.id),
-                course_id=str(m.course_id),
+                course_id=str(m.course_id) if m.course_id else None,
                 title=m.title,
                 description=m.description,
                 sort_order=m.sort_order,

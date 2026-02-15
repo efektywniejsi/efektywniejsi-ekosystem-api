@@ -59,8 +59,8 @@ class BundleListResponse(BaseModel):
             name=package.title,  # title -> name
             shortDescription=package.description,  # description -> shortDescription
             pricing={
-                "regular": package.price / 100,  # Convert grosz to PLN
-                "original": package.original_price / 100 if package.original_price else None,
+                "regular": package.price,  # grosz — frontend converts for display
+                "original": package.original_price if package.original_price else None,
                 "currency": package.currency,
             },
             features=features,

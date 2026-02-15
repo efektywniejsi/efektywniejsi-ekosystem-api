@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Enum, ForeignKey
+from sqlalchemy import CheckConstraint, Enum, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -52,10 +52,22 @@ class Course(Base):
 
 class Module(Base):
     __tablename__ = "modules"
+    __table_args__ = (
+        CheckConstraint(
+            "(course_id IS NOT NULL AND implementation_package_id IS NULL) "
+            "OR (course_id IS NULL AND implementation_package_id IS NOT NULL)",
+            name="chk_module_parent",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4, index=True)
-    course_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("courses.id", ondelete="CASCADE"), index=True
+    course_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("courses.id", ondelete="CASCADE"), index=True, nullable=True
+    )
+    implementation_package_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("implementation_packages.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,
     )
     title: Mapped[str] = mapped_column()
     description: Mapped[str | None] = mapped_column(default=None)
@@ -67,6 +79,7 @@ class Module(Base):
     )
 
     course = relationship("Course", back_populates="modules")
+    implementation_package = relationship("ImplementationPackage", back_populates="modules")
     lessons = relationship("Lesson", back_populates="module", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
@@ -104,6 +117,7 @@ class Lesson(Base):
     integrations = relationship(
         "LessonIntegration", back_populates="lesson", cascade="all, delete-orphan"
     )
+    processes = relationship("LessonProcess", back_populates="lesson", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Lesson(id={self.id}, title={self.title}, module_id={self.module_id})>"

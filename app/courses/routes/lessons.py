@@ -40,7 +40,7 @@ async def get_lesson(
     )
 
     module = db.query(Module).filter(Module.id == lesson.module_id).first()
-    if module:
+    if module and module.course_id:
         EnrollmentService.update_last_accessed(current_user.id, module.course_id, db)
 
     return LessonWithProgressResponse(
@@ -51,6 +51,7 @@ async def get_lesson(
         mux_playback_id=lesson.mux_playback_id,
         mux_asset_id=lesson.mux_asset_id,
         duration_seconds=lesson.duration_seconds,
+        status=lesson.status.value,
         sort_order=lesson.sort_order,
         created_at=lesson.created_at,
         updated_at=lesson.updated_at,

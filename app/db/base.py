@@ -31,6 +31,8 @@ from app.packages.models.enrollment import PackageEnrollment
 from app.packages.models.order import Order, OrderItem
 from app.packages.models.package import Package, PackageBundleItem, PackageProcess
 from app.packages.models.sales_window import SalesWindow
+from app.processes.models.lesson_process import LessonProcess
+from app.processes.models.process import Process
 
 # Export all models for Alembic
 __all__ = [
@@ -64,4 +66,6 @@ __all__ = [
     "IntegrationType",
     "LessonIntegration",
     "ProcessIntegration",
+    "Process",
+    "LessonProcess",
 ]
