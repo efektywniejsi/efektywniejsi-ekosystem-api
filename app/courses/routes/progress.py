@@ -121,6 +121,18 @@ async def get_course_progress(
     return CourseProgressSummary(**summary)
 
 
+@router.get("/progress/packages/{package_id}", response_model=CourseProgressSummary)
+async def get_package_progress(
+    package_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CourseProgressSummary:
+    """Get progress summary for an implementation package."""
+    summary = ProgressService.get_package_progress_summary(current_user.id, package_id, db)
+
+    return CourseProgressSummary(**summary)
+
+
 @router.post(
     "/progress/lessons/{lesson_id}/complete",
     response_model=LessonProgressResponse,

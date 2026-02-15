@@ -26,7 +26,7 @@ from app.messaging.models.conversation_participant import ConversationParticipan
 from app.messaging.models.message import Message
 from app.notifications.models.announcement_log import AnnouncementLog
 from app.notifications.models.notification import Notification
-from app.packages.models.bundle import BundleCourseItem
+from app.packages.models.bundle import BundleCourseItem, BundleImplementationPackageItem
 from app.packages.models.enrollment import PackageEnrollment
 from app.packages.models.order import Order, OrderItem
 from app.packages.models.package import Package, PackageBundleItem, PackageProcess
@@ -53,6 +53,7 @@ __all__ = [
     "PackageBundleItem",
     "PackageProcess",
     "BundleCourseItem",
+    "BundleImplementationPackageItem",
     "SalesWindow",
     "Notification",
     "AnnouncementLog",

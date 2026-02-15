@@ -76,8 +76,25 @@ class BundleCourseInput(BaseModel):
     access_duration_days: int | None = None
 
 
+class BundleImplPackageInput(BaseModel):
+    """Input schema for an implementation package item within a bundle."""
+
+    implementation_package_id: str
+    access_duration_days: int | None = None
+
+
 class BundleCourseDetailItem(BaseModel):
     """Course item in bundle detail response, including access duration."""
+
+    id: str
+    slug: str
+    title: str
+    category: str | None = None
+    access_duration_days: int | None = None
+
+
+class BundleImplPackageDetailItem(BaseModel):
+    """Implementation package item in bundle detail response."""
 
     id: str
     slug: str
@@ -100,6 +117,7 @@ class BundleDetailResponse(BaseModel):
     # Content
     packages: list[Any] = Field(default_factory=list)  # Will be PackageListResponse
     courses: list[BundleCourseDetailItem] = Field(default_factory=list)
+    implementation_packages: list[BundleImplPackageDetailItem] = Field(default_factory=list)
 
     # Sales page builder
     sales_page_sections: dict[str, Any] | None = None
@@ -130,13 +148,17 @@ class BundleCreateRequest(BaseModel):
     package_ids: list[str] = Field(default_factory=list)
     course_ids: list[str] = Field(default_factory=list)
     course_items: list[BundleCourseInput] = Field(default_factory=list)
+    implementation_package_items: list[BundleImplPackageInput] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_not_empty(self) -> "BundleCreateRequest":
-        """Validate that bundle contains at least one package or course."""
+        """Validate that bundle contains at least one package, course, or implementation package."""
         has_courses = bool(self.course_items) or bool(self.course_ids)
-        if not self.package_ids and not has_courses:
-            raise ValueError("Bundle must contain at least one package or course")
+        has_impl_packages = bool(self.implementation_package_items)
+        if not self.package_ids and not has_courses and not has_impl_packages:
+            raise ValueError(
+                "Bundle must contain at least one package, course, or implementation package"
+            )
         return self
 
 
@@ -151,3 +173,4 @@ class BundleUpdateRequest(BaseModel):
     package_ids: list[str] | None = None
     course_ids: list[str] | None = None
     course_items: list[BundleCourseInput] | None = None
+    implementation_package_items: list[BundleImplPackageInput] | None = None
