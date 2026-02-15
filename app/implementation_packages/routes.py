@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Upl
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 
-from app.auth.dependencies import require_admin
+from app.auth.dependencies import get_current_user, require_admin
 from app.auth.models.user import User
 from app.auth.services.email_service import build_welcome_email, get_email_service
 from app.core import security
@@ -91,6 +91,33 @@ async def list_all_packages(
     db: Session = Depends(get_db),
 ) -> list[ImplPackageListResponse]:
     packages = db.query(ImplementationPackage).order_by(ImplementationPackage.sort_order).all()
+    return [ImplPackageListResponse.model_validate(pkg) for pkg in packages]
+
+
+@router.get("/store", response_model=list[ImplPackageListResponse])
+@limiter.limit("60/minute")
+async def get_store_packages(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[ImplPackageListResponse]:
+    """Get published implementation packages the current user does NOT already own."""
+    owned_package_ids = (
+        db.query(ImplementationPackageEnrollment.package_id)
+        .filter(ImplementationPackageEnrollment.user_id == current_user.id)
+        .subquery()
+    )
+
+    packages = (
+        db.query(ImplementationPackage)
+        .filter(
+            ImplementationPackage.is_published == True,  # noqa: E712
+            ImplementationPackage.id.notin_(owned_package_ids),
+        )
+        .order_by(ImplementationPackage.is_featured.desc(), ImplementationPackage.sort_order)
+        .all()
+    )
+
     return [ImplPackageListResponse.model_validate(pkg) for pkg in packages]
 
 
