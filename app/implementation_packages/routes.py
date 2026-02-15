@@ -20,6 +20,7 @@ from app.core.constants import THUMBNAIL_ALLOWED_MIME_TYPES, THUMBNAIL_MAX_SIZE_
 from app.core.rate_limit import limiter
 from app.courses.models import LessonStatus, Module
 from app.courses.schemas.course import (
+    CourseDetailResponse,
     LessonResponse,
     ModuleCreate,
     ModuleReorderRequest,
@@ -125,6 +126,88 @@ async def get_package_by_slug(
     if not pkg:
         raise HTTPException(status_code=404, detail="Pakiet nie został znaleziony")
     return ImplPackageDetailResponse.model_validate(pkg)
+
+
+@router.get("/{slug}/learning", response_model=CourseDetailResponse)
+@limiter.limit("60/minute")
+async def get_package_learning(
+    request: Request,
+    slug: str,
+    db: Session = Depends(get_db),
+) -> CourseDetailResponse:
+    """Get implementation package in CourseDetail format for the learning view."""
+    pkg = (
+        db.query(ImplementationPackage)
+        .options(joinedload(ImplementationPackage.modules).joinedload(Module.lessons))
+        .filter(
+            ImplementationPackage.slug == slug,
+            ImplementationPackage.is_published == True,  # noqa: E712
+        )
+        .first()
+    )
+    if not pkg:
+        raise HTTPException(status_code=404, detail="Pakiet nie został znaleziony")
+
+    modules_data = []
+    for m in sorted(pkg.modules, key=lambda x: x.sort_order):
+        filtered_lessons = [
+            lesson
+            for lesson in sorted(m.lessons, key=lambda x: x.sort_order)
+            if lesson.status != LessonStatus.UNAVAILABLE
+        ]
+        modules_data.append(
+            ModuleWithLessonsResponse(
+                id=str(m.id),
+                course_id=None,
+                implementation_package_id=str(m.implementation_package_id),
+                title=m.title,
+                description=m.description,
+                sort_order=m.sort_order,
+                created_at=m.created_at,
+                updated_at=m.updated_at,
+                lessons=[
+                    LessonResponse(
+                        id=str(lesson.id),
+                        module_id=str(lesson.module_id),
+                        title=lesson.title,
+                        description=lesson.description,
+                        mux_playback_id=lesson.mux_playback_id,
+                        mux_asset_id=lesson.mux_asset_id,
+                        duration_seconds=lesson.duration_seconds,
+                        status=lesson.status.value,
+                        sort_order=lesson.sort_order,
+                        created_at=lesson.created_at,
+                        updated_at=lesson.updated_at,
+                    )
+                    for lesson in filtered_lessons
+                ],
+            )
+        )
+
+    total_lessons = sum(len(m.lessons) for m in modules_data)
+    total_duration = sum(lesson.duration_seconds for m in modules_data for lesson in m.lessons)
+
+    return CourseDetailResponse(
+        id=str(pkg.id),
+        title=pkg.title,
+        slug=pkg.slug,
+        description=pkg.description,
+        thumbnail_url=pkg.thumbnail_url,
+        difficulty=pkg.difficulty,
+        estimated_hours=pkg.estimated_hours,
+        is_published=pkg.is_published,
+        category=pkg.category,
+        sort_order=pkg.sort_order,
+        learning_title=pkg.learning_title,
+        learning_description=pkg.learning_description,
+        learning_thumbnail_url=pkg.learning_thumbnail_url,
+        sales_page_sections=pkg.sales_page_sections,
+        created_at=pkg.created_at,
+        updated_at=pkg.updated_at,
+        modules=modules_data,
+        total_lessons=total_lessons,
+        total_duration_seconds=total_duration,
+    )
 
 
 @router.get("/{slug}/curriculum", response_model=PackageCurriculumResponse)
