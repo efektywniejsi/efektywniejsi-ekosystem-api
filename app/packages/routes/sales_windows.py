@@ -304,7 +304,19 @@ async def update_sales_window(
         updated_fields.append("endsAt")
 
     # Validate dates after all updates
-    if sales_window.ends_at <= sales_window.starts_at:
+    # DB columns are TIMESTAMP WITHOUT TIME ZONE so values may be naive;
+    # normalise both sides to UTC before comparing.
+    ends = (
+        sales_window.ends_at.replace(tzinfo=UTC)
+        if sales_window.ends_at.tzinfo is None
+        else sales_window.ends_at
+    )
+    starts = (
+        sales_window.starts_at.replace(tzinfo=UTC)
+        if sales_window.starts_at.tzinfo is None
+        else sales_window.starts_at
+    )
+    if ends <= starts:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="endsAt must be after startsAt",
