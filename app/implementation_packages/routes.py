@@ -101,7 +101,17 @@ async def get_my_packages(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[ImplPackageListResponse]:
-    """Get published implementation packages the current user IS enrolled in."""
+    """Get published implementation packages the current user IS enrolled in.
+    Admins own all published packages."""
+    if current_user.role == "admin":
+        packages = (
+            db.query(ImplementationPackage)
+            .filter(ImplementationPackage.is_published == True)  # noqa: E712
+            .order_by(ImplementationPackage.sort_order)
+            .all()
+        )
+        return [ImplPackageListResponse.model_validate(pkg) for pkg in packages]
+
     enrolled_package_ids = (
         db.query(ImplementationPackageEnrollment.package_id)
         .filter(ImplementationPackageEnrollment.user_id == current_user.id)
@@ -128,7 +138,11 @@ async def get_store_packages(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[ImplPackageListResponse]:
-    """Get published implementation packages the current user does NOT already own."""
+    """Get published implementation packages the current user does NOT already own.
+    Admins own everything, so this returns an empty list for them."""
+    if current_user.role == "admin":
+        return []
+
     owned_package_ids = (
         db.query(ImplementationPackageEnrollment.package_id)
         .filter(ImplementationPackageEnrollment.user_id == current_user.id)
