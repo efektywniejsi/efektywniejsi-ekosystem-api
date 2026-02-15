@@ -59,6 +59,12 @@ class Package(Base):
         back_populates="bundle",
         cascade="all, delete-orphan",
     )
+    implementation_package_items = relationship(
+        "BundleImplementationPackageItem",
+        foreign_keys="BundleImplementationPackageItem.bundle_id",
+        back_populates="bundle",
+        cascade="all, delete-orphan",
+    )
     enrollments = relationship(
         "PackageEnrollment", back_populates="package", cascade="all, delete-orphan"
     )

@@ -33,3 +33,46 @@ class BundleCourseItem(Base):
 
     def __repr__(self) -> str:
         return f"<BundleCourseItem(bundle_id={self.bundle_id}, course_id={self.course_id})>"
+
+
+class BundleImplementationPackageItem(Base):
+    """Link table: Bundle → ImplementationPackage."""
+
+    __tablename__ = "bundle_implementation_package_items"
+    __table_args__ = (
+        UniqueConstraint(
+            "bundle_id",
+            "implementation_package_id",
+            name="uq_bundle_impl_package",
+        ),
+        Index(
+            "ix_bundle_impl_pkg_items_bundle_impl",
+            "bundle_id",
+            "implementation_package_id",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4, index=True)
+    bundle_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("packages.id", ondelete="CASCADE"), index=True
+    )
+    implementation_package_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("implementation_packages.id", ondelete="CASCADE"), index=True
+    )
+    sort_order: Mapped[int] = mapped_column(default=0)
+    access_duration_days: Mapped[int | None] = mapped_column(default=None)
+
+    # Relationships
+    bundle = relationship(
+        "Package", foreign_keys=[bundle_id], back_populates="implementation_package_items"
+    )
+    implementation_package = relationship(
+        "ImplementationPackage", foreign_keys=[implementation_package_id]
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<BundleImplementationPackageItem("
+            f"bundle_id={self.bundle_id}, "
+            f"implementation_package_id={self.implementation_package_id})>"
+        )

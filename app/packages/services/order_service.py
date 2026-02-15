@@ -132,7 +132,7 @@ class OrderService:
         - Courses (via BundleCourseItem)
         """
         from app.courses.models.enrollment import Enrollment
-        from app.packages.models.bundle import BundleCourseItem
+        from app.packages.models.bundle import BundleCourseItem, BundleImplementationPackageItem
 
         enrollments = []
 
@@ -191,6 +191,23 @@ class OrderService:
                             expires_at=expires_at,
                         )
                         self.db.add(course_enrollment)
+
+                # 3. Enroll in all implementation packages
+                impl_pkg_items = (
+                    self.db.query(BundleImplementationPackageItem)
+                    .filter(BundleImplementationPackageItem.bundle_id == package.id)
+                    .all()
+                )
+
+                for impl_item in impl_pkg_items:
+                    impl_enrollment = self._create_impl_package_enrollment(
+                        user.id,
+                        impl_item.implementation_package_id,
+                        order.id,
+                        access_duration_days=impl_item.access_duration_days,
+                    )
+                    if impl_enrollment:
+                        enrollments.append(impl_enrollment)
             else:
                 # Regular package: enroll directly
                 enrollment = self._create_single_enrollment(user.id, package.id, order.id)
@@ -236,6 +253,7 @@ class OrderService:
         user_id: uuid.UUID,
         implementation_package_id: uuid.UUID,
         order_id: uuid.UUID,
+        access_duration_days: int | None = None,
     ) -> ImplementationPackageEnrollment | None:
         """Create an ImplementationPackage enrollment, checking for duplicates."""
         existing = (
@@ -250,12 +268,17 @@ class OrderService:
         if existing:
             return None
 
+        expires_at = None
+        if access_duration_days is not None:
+            expires_at = datetime.now(UTC) + timedelta(days=access_duration_days)
+
         enrollment = ImplementationPackageEnrollment(
             id=uuid.uuid4(),
             user_id=user_id,
             package_id=implementation_package_id,
             order_id=order_id,
             enrolled_at=datetime.now(UTC),
+            expires_at=expires_at,
         )
 
         self.db.add(enrollment)

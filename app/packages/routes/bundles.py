@@ -5,16 +5,17 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import require_admin
+from app.auth.dependencies import get_current_user, require_admin
 from app.auth.models.user import User
 from app.db.session import get_db
-from app.packages.models.bundle import BundleCourseItem
+from app.packages.models.bundle import BundleCourseItem, BundleImplementationPackageItem
 from app.packages.models.order import Order, OrderItem, OrderStatus
 from app.packages.models.package import Package, PackageBundleItem
 from app.packages.schemas.bundle import (
     BundleCourseDetailItem,
     BundleCreateRequest,
     BundleDetailResponse,
+    BundleImplPackageDetailItem,
     BundleListResponse,
     BundleUpdateRequest,
 )
@@ -37,6 +38,34 @@ def list_bundles(
         .filter(
             Package.is_published == True,  # noqa: E712
             Package.is_bundle == True,  # noqa: E712
+        )
+        .order_by(Package.is_featured.desc(), Package.created_at.desc())
+        .all()
+    )
+
+    return [BundleListResponse.from_orm(bundle) for bundle in bundles]
+
+
+# NOTE: /store must be defined BEFORE /{bundle_id} to avoid FastAPI matching "store" as a UUID
+@router.get("/store", response_model=list[BundleListResponse])
+def list_store_bundles(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[BundleListResponse]:
+    """
+    Get published bundles that contain implementation packages.
+
+    These are displayed in the store's Packages tab alongside individual impl packages.
+    Requires authentication (store is only for logged-in users).
+    """
+    bundle_ids_with_impl = db.query(BundleImplementationPackageItem.bundle_id).distinct().subquery()
+
+    bundles = (
+        db.query(Package)
+        .filter(
+            Package.is_published == True,  # noqa: E712
+            Package.is_bundle == True,  # noqa: E712
+            Package.id.in_(bundle_ids_with_impl),
         )
         .order_by(Package.is_featured.desc(), Package.created_at.desc())
         .all()
@@ -79,8 +108,11 @@ def get_bundle_by_slug(
 
 
 def _build_bundle_detail_response(db: Session, bundle: Package) -> BundleDetailResponse:
-    """Build BundleDetailResponse with packages and courses."""
+    """Build BundleDetailResponse with packages, courses, and implementation packages."""
     from app.courses.models.course import Course
+    from app.implementation_packages.models.implementation_package import (
+        ImplementationPackage,
+    )
     from app.packages.schemas.package import PackageListResponse
 
     package_items = (
@@ -117,6 +149,31 @@ def _build_bundle_detail_response(db: Session, bundle: Package) -> BundleDetailR
                 )
             )
 
+    impl_pkg_items = (
+        db.query(BundleImplementationPackageItem)
+        .filter(BundleImplementationPackageItem.bundle_id == bundle.id)
+        .order_by(BundleImplementationPackageItem.sort_order)
+        .all()
+    )
+
+    implementation_packages: list[BundleImplPackageDetailItem] = []
+    for item in impl_pkg_items:
+        impl_pkg = (
+            db.query(ImplementationPackage)
+            .filter(ImplementationPackage.id == item.implementation_package_id)
+            .first()
+        )
+        if impl_pkg:
+            implementation_packages.append(
+                BundleImplPackageDetailItem(
+                    id=str(impl_pkg.id),
+                    slug=impl_pkg.slug,
+                    title=impl_pkg.title,
+                    category=impl_pkg.category,
+                    access_duration_days=item.access_duration_days,
+                )
+            )
+
     badge = None
     if bundle.original_price and bundle.original_price > bundle.price:
         discount = int((1 - bundle.price / bundle.original_price) * 100)
@@ -138,6 +195,7 @@ def _build_bundle_detail_response(db: Session, bundle: Package) -> BundleDetailR
         badge=badge,
         packages=packages,
         courses=courses,
+        implementation_packages=implementation_packages,
         sales_page_sections=bundle.sales_page_sections,
     )
 
@@ -232,6 +290,9 @@ def create_bundle(
         db.add(bundle_item)
 
     from app.courses.models.course import Course
+    from app.implementation_packages.models.implementation_package import (
+        ImplementationPackage,
+    )
 
     if bundle_data.course_items:
         for idx, ci in enumerate(bundle_data.course_items):
@@ -268,6 +329,30 @@ def create_bundle(
                 sort_order=idx,
             )
             db.add(course_item)
+
+    for idx, ipi in enumerate(bundle_data.implementation_package_items):
+        try:
+            impl_uuid = uuid.UUID(ipi.implementation_package_id)
+        except ValueError:
+            raise HTTPException(
+                400, f"Nieprawidłowy ID pakietu wdrożeniowego: {ipi.implementation_package_id}"
+            ) from None
+
+        impl_pkg = (
+            db.query(ImplementationPackage).filter(ImplementationPackage.id == impl_uuid).first()
+        )
+        if not impl_pkg:
+            raise HTTPException(
+                404, f"Pakiet wdrożeniowy {ipi.implementation_package_id} nie znaleziony"
+            )
+
+        impl_item = BundleImplementationPackageItem(
+            bundle_id=new_bundle.id,
+            implementation_package_id=impl_uuid,
+            sort_order=idx,
+            access_duration_days=ipi.access_duration_days,
+        )
+        db.add(impl_item)
 
     db.commit()
     db.refresh(new_bundle)
@@ -344,6 +429,21 @@ def update_bundle(
                 sort_order=idx,
             )
             db.add(course_item)
+
+    if bundle_data.implementation_package_items is not None:
+        db.query(BundleImplementationPackageItem).filter(
+            BundleImplementationPackageItem.bundle_id == bundle_uuid
+        ).delete()
+
+        for idx, ipi in enumerate(bundle_data.implementation_package_items):
+            impl_uuid = uuid.UUID(ipi.implementation_package_id)
+            impl_item = BundleImplementationPackageItem(
+                bundle_id=bundle_uuid,
+                implementation_package_id=impl_uuid,
+                sort_order=idx,
+                access_duration_days=ipi.access_duration_days,
+            )
+            db.add(impl_item)
 
     db.commit()
     db.refresh(bundle)
