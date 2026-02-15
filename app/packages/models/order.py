@@ -88,8 +88,13 @@ class OrderItem(Base):
     order_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("orders.id", ondelete="CASCADE"), index=True
     )
-    package_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("packages.id", ondelete="CASCADE"), index=True
+    package_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("packages.id", ondelete="CASCADE"), index=True, default=None
+    )
+    implementation_package_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("implementation_packages.id", ondelete="CASCADE"),
+        index=True,
+        default=None,
     )
 
     # Snapshot at purchase time
@@ -102,6 +107,7 @@ class OrderItem(Base):
     # Relationships
     order = relationship("Order", back_populates="items")
     package = relationship("Package")
+    implementation_package = relationship("ImplementationPackage")
 
     def __repr__(self) -> str:
         return (

@@ -8,6 +8,9 @@ from app.auth.models.user import User
 from app.courses.models import Course, Lesson, LessonStatus, Module
 from app.courses.services.enrollment_service import EnrollmentService
 from app.db.session import get_db
+from app.implementation_packages.models.implementation_package import (
+    ImplementationPackageEnrollment,
+)
 
 
 def _is_admin(user: User) -> bool:
@@ -93,24 +96,48 @@ class RequireLessonEnrollment:
                 detail="Module not found",
             )
 
-        course = db.query(Course).filter(Course.id == module.course_id).first()
-        if not course:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Course not found",
-            )
-
         if self.skip_for_admin and _is_admin(current_user):
             return
 
-        enrollment = EnrollmentService.get_user_enrollment(current_user.id, course.id, db)
-        if not enrollment:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You must be enrolled in this course to access this lesson",
+        if module.course_id:
+            course = db.query(Course).filter(Course.id == module.course_id).first()
+            if not course:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Course not found",
+                )
+            enrollment = EnrollmentService.get_user_enrollment(current_user.id, course.id, db)
+            if not enrollment:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You must be enrolled in this course to access this lesson",
+                )
+            if enrollment.is_expired:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Your access to this course has expired",
+                )
+        elif module.implementation_package_id:
+            enrollment = (
+                db.query(ImplementationPackageEnrollment)
+                .filter(
+                    ImplementationPackageEnrollment.user_id == current_user.id,
+                    ImplementationPackageEnrollment.package_id == module.implementation_package_id,
+                )
+                .first()
             )
-        if enrollment.is_expired:
+            if not enrollment:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You must be enrolled in this package to access this lesson",
+                )
+            if enrollment.is_expired:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Your access to this package has expired",
+                )
+        else:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Your access to this course has expired",
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Lesson has no associated course or package",
             )

@@ -72,7 +72,8 @@ class ModuleUpdate(BaseModel):
 
 class ModuleResponse(ModuleBase):
     id: str
-    course_id: str
+    course_id: str | None = None
+    implementation_package_id: str | None = None
     created_at: UTCDatetime
     updated_at: UTCDatetime
 

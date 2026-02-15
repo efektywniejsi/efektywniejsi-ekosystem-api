@@ -15,6 +15,7 @@ from app.packages.schemas.checkout import (
     CheckoutInitiateResponse,
     OrderStatusResponse,
 )
+from app.packages.schemas.order import OrderResponse
 from app.packages.services.checkout_service import CheckoutService
 
 logger = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ async def initiate_checkout(
             buyer_street=checkout_request.buyer_street,
             buyer_post_code=checkout_request.buyer_post_code,
             buyer_city=checkout_request.buyer_city,
+            implementation_package_ids=checkout_request.implementation_package_ids,
         )
 
         return CheckoutInitiateResponse(
@@ -94,6 +96,7 @@ async def authenticated_checkout(
             buyer_street=checkout_request.buyer_street,
             buyer_post_code=checkout_request.buyer_post_code,
             buyer_city=checkout_request.buyer_city,
+            implementation_package_ids=checkout_request.implementation_package_ids,
         )
 
         return CheckoutInitiateResponse(
@@ -124,11 +127,7 @@ async def get_authenticated_order_status(
         raise HTTPException(status_code=404, detail="Zamówienie nie znalezione")
 
     return OrderStatusResponse(
-        order_id=order.id,
-        order_number=order.order_number,
-        status=order.status.value,
-        total=order.total,
-        currency=order.currency,
+        order=OrderResponse.model_validate(order),
         webhook_processed=order.webhook_processed,
     )
 
@@ -153,10 +152,6 @@ async def get_order_status(
         raise HTTPException(status_code=404, detail="Zamówienie nie znalezione")
 
     return OrderStatusResponse(
-        order_id=order.id,
-        order_number=order.order_number,
-        status=order.status.value,
-        total=order.total,
-        currency=order.currency,
+        order=OrderResponse.model_validate(order),
         webhook_processed=order.webhook_processed,
     )

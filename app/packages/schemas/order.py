@@ -17,7 +17,8 @@ class OrderItemResponse(BaseModel):
     """Order item response schema."""
 
     id: uuid.UUID
-    package_id: uuid.UUID
+    package_id: uuid.UUID | None = None
+    implementation_package_id: uuid.UUID | None = None
     package_title: str
     package_slug: str
     price: int  # In grosz

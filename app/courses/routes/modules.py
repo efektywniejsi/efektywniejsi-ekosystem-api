@@ -49,7 +49,7 @@ async def get_course_modules(
     return [
         ModuleResponse(
             id=str(m.id),
-            course_id=str(m.course_id),
+            course_id=str(m.course_id) if m.course_id else None,
             title=m.title,
             description=m.description,
             sort_order=m.sort_order,
@@ -88,7 +88,7 @@ async def get_course_modules_with_lessons(
     return [
         ModuleWithLessonsResponse(
             id=str(m.id),
-            course_id=str(m.course_id),
+            course_id=str(m.course_id) if m.course_id else None,
             title=m.title,
             description=m.description,
             sort_order=m.sort_order,
@@ -144,17 +144,18 @@ async def create_module(
     db.commit()
     db.refresh(module)
 
-    from app.notifications.tasks import send_course_update_notification
+    if module.course_id:
+        from app.notifications.tasks import send_course_update_notification
 
-    send_course_update_notification.delay(
-        course_id=str(course_id),
-        update_type="new_module",
-        item_title=module.title,
-    )
+        send_course_update_notification.delay(
+            course_id=str(course_id),
+            update_type="new_module",
+            item_title=module.title,
+        )
 
     return ModuleResponse(
         id=str(module.id),
-        course_id=str(module.course_id),
+        course_id=str(module.course_id) if module.course_id else None,
         title=module.title,
         description=module.description,
         sort_order=module.sort_order,
@@ -191,7 +192,7 @@ async def update_module(
 
     return ModuleResponse(
         id=str(module.id),
-        course_id=str(module.course_id),
+        course_id=str(module.course_id) if module.course_id else None,
         title=module.title,
         description=module.description,
         sort_order=module.sort_order,
@@ -302,13 +303,14 @@ async def create_lesson(
     db.commit()
     db.refresh(lesson)
 
-    from app.notifications.tasks import send_course_update_notification
+    if module.course_id:
+        from app.notifications.tasks import send_course_update_notification
 
-    send_course_update_notification.delay(
-        course_id=str(module.course_id),
-        update_type="new_lesson",
-        item_title=lesson.title,
-    )
+        send_course_update_notification.delay(
+            course_id=str(module.course_id),
+            update_type="new_lesson",
+            item_title=lesson.title,
+        )
 
     return LessonResponse(
         id=str(lesson.id),

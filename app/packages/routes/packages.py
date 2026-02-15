@@ -102,6 +102,7 @@ def get_store_packages(
         db.query(Package)
         .filter(
             Package.is_published == True,  # noqa: E712
+            Package.is_bundle == False,  # noqa: E712
             Package.id.notin_(owned_package_ids),
         )
         .order_by(Package.is_featured.desc(), Package.created_at.desc())
