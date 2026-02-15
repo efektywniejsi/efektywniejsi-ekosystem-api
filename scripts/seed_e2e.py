@@ -129,7 +129,6 @@ def create_course(
     description,
     is_published=True,
     difficulty="beginner",
-    content_type="course",
 ):
     """Create a course if it doesn't exist by slug."""
     existing = get_courses(cookies)
@@ -150,7 +149,6 @@ def create_course(
             "is_published": is_published,
             "category": "e2e-test",
             "sort_order": 0,
-            "content_type": content_type,
         },
         cookies=cookies,
     )
