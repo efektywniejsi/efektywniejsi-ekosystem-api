@@ -34,7 +34,7 @@ class Enrollment(Base):
     def is_expired(self) -> bool:
         if self.expires_at is None:
             return False
-        return bool(datetime.now(UTC) > self.expires_at)
+        return bool(datetime.now(UTC) > self.expires_at.replace(tzinfo=UTC))
 
     def __repr__(self) -> str:
         return f"<Enrollment(id={self.id}, user_id={self.user_id}, course_id={self.course_id})>"

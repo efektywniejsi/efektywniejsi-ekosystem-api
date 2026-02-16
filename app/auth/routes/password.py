@@ -73,9 +73,9 @@ async def reset_password(
             detail="Nieprawidłowy lub wygasły token resetowania hasła",
         )
 
-    if not user.password_reset_token_expires or user.password_reset_token_expires < datetime.now(
-        UTC
-    ):
+    if not user.password_reset_token_expires or user.password_reset_token_expires.replace(
+        tzinfo=UTC
+    ) < datetime.now(UTC):
         user.password_reset_token = None
         user.password_reset_token_expires = None
         db.commit()
