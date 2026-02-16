@@ -161,6 +161,7 @@ class IntegrationService:
             slug=data.slug,
             name=data.name,
             icon=data.icon,
+            image_url=data.image_url,
             category=data.category,
             description=data.description,
             auth_guide=data.auth_guide,
@@ -214,6 +215,8 @@ class IntegrationService:
             integration.slug = data.slug
         if data.icon is not None:
             integration.icon = data.icon
+        if data.image_url is not None:
+            integration.image_url = data.image_url if data.image_url else None
         if data.category is not None:
             integration.category = data.category
         if data.description is not None:
@@ -601,6 +604,7 @@ class IntegrationService:
             slug=integration.slug,
             name=integration.name,
             icon=integration.icon,
+            image_url=integration.image_url,
             category=integration.category,
             description=integration.description,
             official_docs_url=integration.official_docs_url,
@@ -636,6 +640,7 @@ class IntegrationService:
             slug=integration.slug,
             name=integration.name,
             icon=integration.icon,
+            image_url=integration.image_url,
             category=integration.category,
             description=integration.description,
             auth_guide=integration.auth_guide,
