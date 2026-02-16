@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 IntegrationTypeValue = Literal["API", "OAuth 2.0", "MCP"]
 IntegrationCategoryValue = Literal[
@@ -37,6 +37,13 @@ class IntegrationBase(BaseModel):
     sort_order: int = 0
     integration_types: list[IntegrationTypeValue] = []
 
+    @field_validator("official_docs_url", "video_tutorial_url", mode="before")
+    @classmethod
+    def empty_str_to_none(cls, v: object) -> object:
+        if v == "":
+            return None
+        return v
+
 
 class IntegrationCreate(IntegrationBase):
     pass
@@ -55,6 +62,13 @@ class IntegrationUpdate(BaseModel):
     is_published: bool | None = None
     sort_order: int | None = None
     integration_types: list[IntegrationTypeValue] | None = None
+
+    @field_validator("official_docs_url", "video_tutorial_url", mode="before")
+    @classmethod
+    def empty_str_to_none(cls, v: object) -> object:
+        if v == "":
+            return None
+        return v
 
 
 class IntegrationResponse(BaseModel):
