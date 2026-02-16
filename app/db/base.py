@@ -16,6 +16,11 @@ from app.courses.models.attachment import Attachment
 from app.courses.models.certificate import Certificate
 from app.courses.models.course import Course, Lesson, Module
 from app.courses.models.enrollment import Enrollment
+from app.implementation_packages.models.implementation_package import (
+    ImplementationPackage,
+    ImplementationPackageEnrollment,
+    ImplementationPackageProcess,
+)
 from app.integrations.models.integration import Integration
 from app.integrations.models.integration_proposal import IntegrationProposal
 from app.integrations.models.integration_type import IntegrationType
@@ -46,6 +51,9 @@ __all__ = [
     "Lesson",
     "Module",
     "Enrollment",
+    "ImplementationPackage",
+    "ImplementationPackageEnrollment",
+    "ImplementationPackageProcess",
     "PackageEnrollment",
     "Order",
     "OrderItem",
