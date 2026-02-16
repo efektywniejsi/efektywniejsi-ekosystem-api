@@ -13,7 +13,7 @@ class AiChatSession(Base):
     __table_args__ = (UniqueConstraint("entity_type", "entity_id", name="uq_ai_chat_entity"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4, index=True)
-    entity_type: Mapped[EntityType] = mapped_column(String(10), nullable=False)
+    entity_type: Mapped[EntityType] = mapped_column(String(30), nullable=False)
     entity_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
     messages: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     pending_task_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
