@@ -64,8 +64,8 @@ def _build_welcome_package_email(
     reset_token: str,
 ) -> EmailMessage:
     """Build welcome email with package list and password setup."""
-    reset_url = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
-    dashboard_url = f"{settings.FRONTEND_URL}/dashboard/packages"
+    reset_url = f"{settings.DASHBOARD_URL}/reset-password?token={reset_token}"
+    dashboard_url = f"{settings.DASHBOARD_URL}/nauka"
 
     package_list_html = "".join(
         [
@@ -163,7 +163,7 @@ def _build_purchase_confirmation_email(
     enrollments: list[PackageEnrollment],
 ) -> EmailMessage:
     """Build purchase confirmation email for existing users."""
-    dashboard_url = f"{settings.FRONTEND_URL}/dashboard/packages"
+    dashboard_url = f"{settings.DASHBOARD_URL}/nauka"
 
     package_list_html = "".join(
         [
