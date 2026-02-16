@@ -161,8 +161,6 @@ class FakturowniaService:
                 # Additional fields
                 "description": f"Zamówienie nr {order.order_number}",
                 "oid": str(order.id),  # External order ID for reference
-                # Always send invoice via Fakturownia email
-                "send_email": True,
             },
         }
 
@@ -182,19 +180,36 @@ class FakturowniaService:
             response.raise_for_status()
 
             data = response.json()
+            invoice_id = data.get("id")
 
             logger.info(
                 "Invoice created successfully: %s (ID: %s)",
                 data.get("number"),
-                data.get("id"),
+                invoice_id,
             )
+
+            # Send invoice email to buyer via separate API call
+            if invoice_id:
+                await self._send_invoice_email(client, invoice_id)
 
             return InvoiceResult(
                 success=True,
-                invoice_id=data.get("id"),
+                invoice_id=invoice_id,
                 invoice_number=data.get("number"),
                 invoice_token=data.get("token"),
             )
+
+    async def _send_invoice_email(self, client: httpx.AsyncClient, invoice_id: int) -> None:
+        """Send invoice email to buyer via Fakturownia API."""
+        try:
+            response = await client.post(
+                f"{self.base_url}/invoices/{invoice_id}/send_by_email.json",
+                json={"api_token": self.api_token, "email_pdf": True},
+            )
+            response.raise_for_status()
+            logger.info("Invoice email sent for invoice ID: %s", invoice_id)
+        except Exception as e:
+            logger.warning("Failed to send invoice email for ID %s: %s", invoice_id, e)
 
 
 # Singleton instance
