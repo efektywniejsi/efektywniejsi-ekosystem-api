@@ -46,7 +46,7 @@ def _fetch_course_data(db: Session, course_id: uuid.UUID) -> dict[str, Any]:
                     "title": lesson.title,
                     "description": lesson.description,
                     "duration_seconds": lesson.duration_seconds,
-                    "is_preview": lesson.is_preview,
+                    "status": lesson.status.value if lesson.status else None,
                 }
             )
         modules_data.append(
