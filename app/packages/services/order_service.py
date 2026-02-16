@@ -94,6 +94,7 @@ class OrderService:
                 existing_user.password_reset_token_expires = expiry
                 # Store raw token for email - transient, not persisted
                 existing_user._raw_reset_token = raw_token  # type: ignore[attr-defined]
+            self._sync_invoice_data(existing_user, order)
             return existing_user
 
         # Create new user with unusable password
@@ -112,6 +113,7 @@ class OrderService:
             updated_at=datetime.now(UTC),
         )
 
+        self._sync_invoice_data(user, order)
         self.db.add(user)
         self.db.flush()  # Get user.id
 
@@ -120,6 +122,17 @@ class OrderService:
         user._raw_reset_token = raw_token  # type: ignore[attr-defined]
 
         return user
+
+    @staticmethod
+    def _sync_invoice_data(user: User, order: Order) -> None:
+        """Copy invoice data from order to user profile if provided."""
+        if not order.buyer_tax_no:
+            return
+        user.buyer_tax_no = order.buyer_tax_no
+        user.buyer_company_name = order.buyer_company_name
+        user.buyer_street = order.buyer_street
+        user.buyer_post_code = order.buyer_post_code
+        user.buyer_city = order.buyer_city
 
     async def _create_enrollments(
         self, order: Order, user: User
