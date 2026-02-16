@@ -48,7 +48,6 @@ def main():
             print()
             print(f"📖 {course.title}")
             print(f"   Slug: {course.slug}")
-            print(f"   Difficulty: {course.difficulty}")
             print(f"   Published: {course.is_published}")
             print(f"   Featured: {course.is_featured}")
             print(f"   Category: {course.category}")

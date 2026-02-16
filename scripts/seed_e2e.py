@@ -128,7 +128,6 @@ def create_course(
     title,
     description,
     is_published=True,
-    difficulty="beginner",
 ):
     """Create a course if it doesn't exist by slug."""
     existing = get_courses(cookies)
@@ -144,7 +143,6 @@ def create_course(
             "slug": slug,
             "title": title,
             "description": description,
-            "difficulty": difficulty,
             "estimated_hours": 2,
             "is_published": is_published,
             "category": "e2e-test",
@@ -332,7 +330,6 @@ def create_bundle(cookies, slug, name, package_ids):
             "description": f"Bundle testowy E2E: {name}",
             "category": "e2e-test",
             "price": 19900,
-            "difficulty": "beginner",
             "package_ids": package_ids,
         },
         cookies=cookies,
@@ -369,7 +366,6 @@ def create_package(cookies, slug, title, description):
             "description": description,
             "price": 99900,
             "category": "e2e-test",
-            "difficulty": "beginner",
         },
         cookies=cookies,
     )

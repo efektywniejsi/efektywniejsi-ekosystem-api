@@ -94,6 +94,43 @@ async def list_all_packages(
     return [ImplPackageListResponse.model_validate(pkg) for pkg in packages]
 
 
+@router.get("/my", response_model=list[ImplPackageListResponse])
+@limiter.limit("60/minute")
+async def get_my_packages(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[ImplPackageListResponse]:
+    """Get published implementation packages the current user IS enrolled in.
+    Admins own all published packages."""
+    if current_user.role == "admin":
+        packages = (
+            db.query(ImplementationPackage)
+            .filter(ImplementationPackage.is_published == True)  # noqa: E712
+            .order_by(ImplementationPackage.sort_order)
+            .all()
+        )
+        return [ImplPackageListResponse.model_validate(pkg) for pkg in packages]
+
+    enrolled_package_ids = (
+        db.query(ImplementationPackageEnrollment.package_id)
+        .filter(ImplementationPackageEnrollment.user_id == current_user.id)
+        .subquery()
+    )
+
+    packages = (
+        db.query(ImplementationPackage)
+        .filter(
+            ImplementationPackage.is_published == True,  # noqa: E712
+            ImplementationPackage.id.in_(enrolled_package_ids),
+        )
+        .order_by(ImplementationPackage.sort_order)
+        .all()
+    )
+
+    return [ImplPackageListResponse.model_validate(pkg) for pkg in packages]
+
+
 @router.get("/store", response_model=list[ImplPackageListResponse])
 @limiter.limit("60/minute")
 async def get_store_packages(
@@ -101,7 +138,11 @@ async def get_store_packages(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[ImplPackageListResponse]:
-    """Get published implementation packages the current user does NOT already own."""
+    """Get published implementation packages the current user does NOT already own.
+    Admins own everything, so this returns an empty list for them."""
+    if current_user.role == "admin":
+        return []
+
     owned_package_ids = (
         db.query(ImplementationPackageEnrollment.package_id)
         .filter(ImplementationPackageEnrollment.user_id == current_user.id)
@@ -220,7 +261,6 @@ async def get_package_learning(
         slug=pkg.slug,
         description=pkg.description,
         thumbnail_url=pkg.thumbnail_url,
-        difficulty=pkg.difficulty,
         estimated_hours=pkg.estimated_hours,
         is_published=pkg.is_published,
         category=pkg.category,
@@ -326,7 +366,6 @@ async def create_package(
         price=data.price,
         original_price=data.original_price,
         currency=data.currency,
-        difficulty=data.difficulty,
         total_time_saved=data.total_time_saved,
         tools=json.dumps(data.tools),
         video_url=data.video_url,

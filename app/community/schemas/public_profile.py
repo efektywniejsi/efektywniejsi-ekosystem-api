@@ -10,7 +10,6 @@ class PublicCourseInfo(BaseModel):
     title: str
     slug: str
     thumbnail_url: str | None = None
-    difficulty: str
     is_completed: bool
 
     class Config:

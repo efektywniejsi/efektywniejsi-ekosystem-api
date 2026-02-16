@@ -140,7 +140,6 @@ class BundleCreateRequest(BaseModel):
     price: int  # w groszach
     original_price: int | None = None
     currency: str = "PLN"
-    difficulty: str
     total_time_saved: str | None = None
     is_featured: bool = False
 

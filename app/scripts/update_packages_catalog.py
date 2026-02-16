@@ -44,7 +44,6 @@ PACKAGE_DATA = [
             },
         ],
         "tools": ["Gmail", "Google Calendar", "Slack", "n8n"],
-        "difficulty": "intermediate",
         "totalTimeSaved": "10h/tydzień",
         "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",  # Example YouTube embed URL
         "isPublished": True,
@@ -77,7 +76,6 @@ PACKAGE_DATA = [
             },
         ],
         "tools": ["WhatsApp", "Messenger", "Website Widget", "Qdrant", "OpenAI"],
-        "difficulty": "advanced",
         "totalTimeSaved": "24/7 dostępność",
         "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",  # Example YouTube embed URL
         "isPublished": True,
@@ -115,7 +113,6 @@ def create_packages(db: Session) -> None:
             price=price_grosz,
             original_price=original_price_grosz,
             currency="PLN",
-            difficulty=pkg_data["difficulty"],
             total_time_saved=pkg_data["totalTimeSaved"],
             tools=json.dumps(pkg_data["tools"]),  # Store as JSON string
             video_url=pkg_data.get("videoUrl"),

@@ -32,7 +32,6 @@ class PackageEnrollmentPackage(BaseModel):
     title: str
     description: str
     category: str
-    difficulty: str
     total_time_saved: str | None
 
     class Config:

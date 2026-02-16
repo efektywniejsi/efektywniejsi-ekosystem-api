@@ -23,7 +23,6 @@ class Package(Base):
     currency: Mapped[str] = mapped_column(default="PLN")
 
     # Metadata
-    difficulty: Mapped[str] = mapped_column()
     total_time_saved: Mapped[str | None] = mapped_column(default=None)
     tools: Mapped[str] = mapped_column()  # JSON array as string
     video_url: Mapped[str | None] = mapped_column(default=None)  # YouTube/Vimeo embed URL

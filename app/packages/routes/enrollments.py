@@ -47,7 +47,6 @@ def get_my_enrollments(
                 "title": enrollment.package.title,
                 "description": enrollment.package.description,
                 "category": enrollment.package.category,
-                "difficulty": enrollment.package.difficulty,
                 "total_time_saved": enrollment.package.total_time_saved,
             },
         )

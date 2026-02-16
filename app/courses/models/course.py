@@ -23,7 +23,6 @@ class Course(Base):
     title: Mapped[str] = mapped_column()
     description: Mapped[str] = mapped_column()
     thumbnail_url: Mapped[str | None] = mapped_column(default=None)
-    difficulty: Mapped[str] = mapped_column(default="beginner")
     estimated_hours: Mapped[int] = mapped_column(default=0)
     is_published: Mapped[bool] = mapped_column(default=False)
     is_featured: Mapped[bool] = mapped_column(default=False)

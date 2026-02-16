@@ -19,7 +19,6 @@ def test_course_with_video_lessons(db_session: Session):
         slug="deletable-course",
         title="Deletable Course",
         description="A course to be deleted",
-        difficulty="beginner",
         estimated_hours=5,
         is_published=True,
         category="test",

@@ -35,7 +35,6 @@ def seed_demo_course(db: Session) -> None:
         slug="demo-getting-started",
         title="Demo Course - Getting Started",
         description="Poznaj podstawy platformy Efektywniejsi. Ten kurs wprowadzi Cię w korzystanie z systemu nauki, postępów i gamifikacji.",
-        difficulty="beginner",
         estimated_hours=2,
         is_published=True,
         is_featured=True,

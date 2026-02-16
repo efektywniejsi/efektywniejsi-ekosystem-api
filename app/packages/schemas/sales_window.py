@@ -1,6 +1,6 @@
 """Pydantic schemas for Sales Window endpoints."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
@@ -64,13 +64,23 @@ class SalesWindowUpdate(BaseModel):
     startsAt: datetime | None = None
     endsAt: datetime | None = None
 
+    @field_validator("startsAt", "endsAt")
+    @classmethod
+    def ensure_timezone_aware(cls, v: datetime | None) -> datetime | None:
+        """Ensure datetime values are timezone-aware (UTC if naive)."""
+        if v is not None and v.tzinfo is None:
+            return v.replace(tzinfo=UTC)
+        return v
+
     @field_validator("endsAt")
     @classmethod
     def validate_ends_at(cls, v: datetime | None, info: ValidationInfo) -> datetime | None:
         """Validate that endsAt is after startsAt."""
         if v is not None and info.data.get("startsAt") is not None:
-            starts_at = info.data["startsAt"]
-            if v <= starts_at:
+            ends = v if v.tzinfo else v.replace(tzinfo=UTC)
+            starts = info.data["startsAt"]
+            starts = starts if starts.tzinfo else starts.replace(tzinfo=UTC)
+            if ends <= starts:
                 raise ValueError("endsAt must be after startsAt")
         return v
 
@@ -87,13 +97,24 @@ class SalesWindowCreate(BaseModel):
     earlyBird: dict[str, Any] | None = None
     bundleIds: list[str]
 
+    @field_validator("startsAt", "endsAt")
+    @classmethod
+    def ensure_timezone_aware(cls, v: datetime | None) -> datetime | None:
+        """Ensure datetime values are timezone-aware (UTC if naive)."""
+        if v is not None and v.tzinfo is None:
+            return v.replace(tzinfo=UTC)
+        return v
+
     @field_validator("endsAt")
     @classmethod
     def validate_ends_after_starts(cls, v: datetime, info: ValidationInfo) -> datetime:
         """Validate that endsAt is after startsAt."""
         starts_at = info.data.get("startsAt")
-        if starts_at and v <= starts_at:
-            raise ValueError("endsAt must be after startsAt")
+        if starts_at:
+            ends = v if v.tzinfo else v.replace(tzinfo=UTC)
+            starts = starts_at if starts_at.tzinfo else starts_at.replace(tzinfo=UTC)
+            if ends <= starts:
+                raise ValueError("endsAt must be after startsAt")
         return v
 
     @field_validator("bundleIds")

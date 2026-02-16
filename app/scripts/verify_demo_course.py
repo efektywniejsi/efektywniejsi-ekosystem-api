@@ -25,7 +25,6 @@ def main():
             print(f"   Slug: {course.slug}")
             print(f"   Published: {course.is_published}")
             print(f"   Featured: {course.is_featured}")
-            print(f"   Difficulty: {course.difficulty}")
             print(f"   Modules: {len(modules)}")
             print(f"   Lessons: {len(lessons)} ({len(preview_lessons)} preview)")
             print()
