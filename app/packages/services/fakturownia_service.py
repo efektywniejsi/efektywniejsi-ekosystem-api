@@ -161,8 +161,6 @@ class FakturowniaService:
                 # Additional fields
                 "description": f"Zamówienie nr {order.order_number}",
                 "oid": str(order.id),  # External order ID for reference
-                # Always send invoice via Fakturownia email
-                "send_email": True,
             },
         }
 
