@@ -3,6 +3,11 @@ from pydantic import BaseModel, Field
 
 class ProfileUpdateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=100)
+    buyer_tax_no: str | None = Field(default=None, max_length=20)
+    buyer_company_name: str | None = Field(default=None, max_length=200)
+    buyer_street: str | None = Field(default=None, max_length=200)
+    buyer_post_code: str | None = Field(default=None, max_length=20)
+    buyer_city: str | None = Field(default=None, max_length=100)
 
 
 class ChangePasswordRequest(BaseModel):

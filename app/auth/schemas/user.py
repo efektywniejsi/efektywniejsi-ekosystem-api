@@ -11,6 +11,11 @@ class UserResponse(BaseModel):
     totp_enabled: bool = False
     password_changed_at: str | None = None
     notification_preferences: dict | None = None
+    buyer_tax_no: str | None = None
+    buyer_company_name: str | None = None
+    buyer_street: str | None = None
+    buyer_post_code: str | None = None
+    buyer_city: str | None = None
     created_at: str | None = None
 
     class Config:
