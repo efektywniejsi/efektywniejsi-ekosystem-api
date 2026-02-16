@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 class EntityType(StrEnum):
     COURSE = "course"
     BUNDLE = "bundle"
+    IMPLEMENTATION_PACKAGE = "implementation_package"
 
 
 class AiChatMessage(BaseModel):

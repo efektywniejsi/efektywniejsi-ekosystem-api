@@ -20,6 +20,7 @@ from app.ai.services.prompt_builder import (
 from app.core.config import settings
 from app.courses.models.course import Course, Module
 from app.courses.schemas.sales_page import SECTION_CONFIG_MAP, SalesPageData
+from app.implementation_packages.models.implementation_package import ImplementationPackage
 from app.packages.models.package import Package
 
 logger = logging.getLogger(__name__)
@@ -116,6 +117,62 @@ def _fetch_bundle_data(db: Session, bundle_id: uuid.UUID) -> dict[str, Any]:
     }
 
 
+def _fetch_implementation_package_data(db: Session, package_id: uuid.UUID) -> dict[str, Any]:
+    """Fetch implementation package with modules, lessons, and processes for AI context."""
+    package = (
+        db.query(ImplementationPackage)
+        .options(
+            joinedload(ImplementationPackage.modules).joinedload(Module.lessons),
+            joinedload(ImplementationPackage.processes),
+        )
+        .filter(ImplementationPackage.id == package_id)
+        .first()
+    )
+    if not package:
+        raise ValueError(f"Implementation package {package_id} not found")
+
+    modules_data = []
+    for module in sorted(package.modules, key=lambda m: m.sort_order):
+        lessons_data = []
+        for lesson in sorted(module.lessons, key=lambda ls: ls.sort_order):
+            lessons_data.append(
+                {
+                    "title": lesson.title,
+                    "description": lesson.description,
+                    "duration_seconds": lesson.duration_seconds,
+                    "is_preview": lesson.is_preview,
+                }
+            )
+        modules_data.append(
+            {
+                "title": module.title,
+                "description": module.description,
+                "lessons": lessons_data,
+            }
+        )
+
+    processes_data = []
+    for process in sorted(package.processes, key=lambda p: p.sort_order):
+        processes_data.append(
+            {
+                "name": process.name,
+                "description": process.description,
+            }
+        )
+
+    return {
+        "title": package.title,
+        "description": package.description,
+        "price": package.price,
+        "original_price": package.original_price,
+        "category": package.category,
+        "estimated_hours": package.estimated_hours,
+        "total_time_saved": package.total_time_saved,
+        "modules": modules_data,
+        "processes": processes_data,
+    }
+
+
 def _fetch_few_shot_examples(
     db: Session,
     entity_type: EntityType,
@@ -125,56 +182,27 @@ def _fetch_few_shot_examples(
     """Fetch existing sales pages as few-shot examples."""
     examples: list[dict[str, Any]] = []
 
-    if entity_type == EntityType.COURSE:
-        courses = (
-            db.query(Course)
-            .filter(
-                Course.id != exclude_id,
-                Course.sales_page_sections.isnot(None),
-            )
-            .limit(limit)
-            .all()
-        )
-        for course in courses:
-            if course.sales_page_sections:
-                examples.append(course.sales_page_sections)
-    else:
-        packages = (
-            db.query(Package)
-            .filter(
-                Package.id != exclude_id,
-                Package.sales_page_sections.isnot(None),
-            )
-            .limit(limit)
-            .all()
-        )
-        for pkg in packages:
-            if pkg.sales_page_sections:
-                examples.append(pkg.sales_page_sections)
+    # Define model-to-query mapping for fetching examples
+    model_queries: list[tuple[Any, uuid.UUID | None]] = []
 
-    # Also check the other entity type if we don't have enough
-    if len(examples) < limit:
+    if entity_type == EntityType.COURSE:
+        model_queries = [(Course, exclude_id), (Package, None), (ImplementationPackage, None)]
+    elif entity_type == EntityType.BUNDLE:
+        model_queries = [(Package, exclude_id), (Course, None), (ImplementationPackage, None)]
+    else:
+        model_queries = [(ImplementationPackage, exclude_id), (Course, None), (Package, None)]
+
+    for model, excl_id in model_queries:
+        if len(examples) >= limit:
+            break
         remaining = limit - len(examples)
-        if entity_type == EntityType.COURSE:
-            packages = (
-                db.query(Package)
-                .filter(Package.sales_page_sections.isnot(None))
-                .limit(remaining)
-                .all()
-            )
-            for pkg in packages:
-                if pkg.sales_page_sections:
-                    examples.append(pkg.sales_page_sections)
-        else:
-            courses = (
-                db.query(Course)
-                .filter(Course.sales_page_sections.isnot(None))
-                .limit(remaining)
-                .all()
-            )
-            for course in courses:
-                if course.sales_page_sections:
-                    examples.append(course.sales_page_sections)
+        query = db.query(model).filter(model.sales_page_sections.isnot(None))
+        if excl_id is not None:
+            query = query.filter(model.id != excl_id)
+        rows = query.limit(remaining).all()
+        for row in rows:
+            if row.sales_page_sections:
+                examples.append(row.sales_page_sections)
 
     return examples[:limit]
 
@@ -289,6 +317,8 @@ def generate_sales_page(
     # 1. Fetch product data
     if entity_type == EntityType.COURSE:
         product_data = _fetch_course_data(db, entity_id)
+    elif entity_type == EntityType.IMPLEMENTATION_PACKAGE:
+        product_data = _fetch_implementation_package_data(db, entity_id)
     else:
         product_data = _fetch_bundle_data(db, entity_id)
 
