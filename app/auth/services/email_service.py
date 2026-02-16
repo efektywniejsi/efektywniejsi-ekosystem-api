@@ -141,7 +141,7 @@ def _wrap_html(inner: str) -> str:
 
 
 def build_password_reset_email(name: str, email: str, token: str) -> EmailMessage:
-    reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+    reset_url = f"{settings.DASHBOARD_URL}/reset-password?token={token}"
 
     inner = f"""\
 <h2 style="margin: 0 0 24px 0; font-size: 22px; font-weight: 700; color: {_TEXT_LIGHT};">
@@ -198,7 +198,7 @@ Jeśli nie prosiłeś o reset hasła, zignoruj tę wiadomość.
 
 
 def build_welcome_email(name: str, email: str, temp_password: str) -> EmailMessage:
-    login_url = f"{settings.FRONTEND_URL}/login"
+    login_url = f"{settings.DASHBOARD_URL}/login"
 
     inner = f"""\
 <h2 style="margin: 0 0 24px 0; font-size: 22px; font-weight: 700; color: {_TEXT_LIGHT};">
