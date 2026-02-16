@@ -51,6 +51,15 @@ class CheckoutInitiateRequest(BaseModel):
             raise ValueError("Musisz wybrać co najmniej jeden produkt do zakupu")
         return self
 
+    @model_validator(mode="after")
+    def validate_invoice_fields(self) -> "CheckoutInitiateRequest":
+        if self.wants_invoice:
+            if not self.buyer_tax_no or not self.buyer_tax_no.strip():
+                raise ValueError("NIP jest wymagany dla faktury VAT")
+            if not self.buyer_company_name or not self.buyer_company_name.strip():
+                raise ValueError("Nazwa firmy jest wymagana dla faktury VAT")
+        return self
+
 
 class AuthenticatedCheckoutRequest(BaseModel):
     """Request to initiate checkout for authenticated dashboard users."""
@@ -89,6 +98,15 @@ class AuthenticatedCheckoutRequest(BaseModel):
         )
         if not has_packages and not has_impl_packages:
             raise ValueError("Musisz wybrać co najmniej jeden produkt do zakupu")
+        return self
+
+    @model_validator(mode="after")
+    def validate_invoice_fields(self) -> "AuthenticatedCheckoutRequest":
+        if self.wants_invoice:
+            if not self.buyer_tax_no or not self.buyer_tax_no.strip():
+                raise ValueError("NIP jest wymagany dla faktury VAT")
+            if not self.buyer_company_name or not self.buyer_company_name.strip():
+                raise ValueError("Nazwa firmy jest wymagana dla faktury VAT")
         return self
 
 
