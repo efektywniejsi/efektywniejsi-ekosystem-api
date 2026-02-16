@@ -16,7 +16,7 @@ class MuxAssetStatus:
 
     def __init__(
         self,
-        status: Literal["preparing", "ready", "errored"],
+        status: Literal["waiting_for_upload", "preparing", "ready", "errored"],
         playback_id: str | None = None,
         duration: float | None = None,
         error_message: str | None = None,
@@ -59,7 +59,7 @@ class MuxService:
 
             try:
                 create_upload_request = mux_python.CreateUploadRequest(
-                    cors_origin=settings.FRONTEND_URL,
+                    cors_origin=settings.DASHBOARD_URL,
                     new_asset_settings=mux_python.CreateAssetRequest(
                         playback_policy=[mux_python.PlaybackPolicy.PUBLIC],
                     ),
@@ -99,6 +99,21 @@ class MuxService:
 
             try:
                 upload = direct_uploads_api.get_direct_upload(upload_or_asset_id)
+
+                if upload.data.status == "waiting":
+                    return MuxAssetStatus(status="waiting_for_upload")
+
+                if upload.data.status == "timed_out":
+                    return MuxAssetStatus(
+                        status="errored",
+                        error_message="Upload wygasł - plik nie dotarł do serwera",
+                    )
+
+                if upload.data.status == "cancelled":
+                    return MuxAssetStatus(
+                        status="errored",
+                        error_message="Upload został anulowany",
+                    )
 
                 if upload.data.status != "asset_created":
                     return MuxAssetStatus(status="preparing")
