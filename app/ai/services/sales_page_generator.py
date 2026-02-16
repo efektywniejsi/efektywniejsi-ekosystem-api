@@ -140,7 +140,7 @@ def _fetch_implementation_package_data(db: Session, package_id: uuid.UUID) -> di
                     "title": lesson.title,
                     "description": lesson.description,
                     "duration_seconds": lesson.duration_seconds,
-                    "is_preview": lesson.is_preview,
+                    "status": lesson.status.value if lesson.status else None,
                 }
             )
         modules_data.append(
