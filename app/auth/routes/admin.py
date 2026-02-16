@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import require_admin
 from app.auth.models.user import User
+from app.auth.models.user_daily_activity import UserDailyActivity
 from app.auth.schemas.user import (
     EnrollmentDetail,
     ThreadSummary,
@@ -157,6 +158,13 @@ async def list_users(
         .scalar_subquery()
         .label("conversations_count")
     )
+    last_seen_date = (
+        select(func.max(UserDailyActivity.date))
+        .where(UserDailyActivity.user_id == User.id)
+        .correlate(User)
+        .scalar_subquery()
+        .label("last_seen_date")
+    )
 
     query = (
         db.query(
@@ -171,7 +179,7 @@ async def list_users(
             UserPoints.total_points,
             UserPoints.level,
             UserStreak.current_streak,
-            UserStreak.last_activity_date,
+            last_seen_date,
         )
         .outerjoin(UserPoints, UserPoints.user_id == User.id)
         .outerjoin(UserStreak, UserStreak.user_id == User.id)
