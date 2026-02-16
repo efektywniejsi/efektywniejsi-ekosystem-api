@@ -28,6 +28,13 @@ class User(Base):
     stripe_customer_id: Mapped[str | None] = mapped_column(default=None, index=True)
     notification_preferences: Mapped[dict | None] = mapped_column(type_=JSON, default=None)
 
+    # Company / invoice data
+    buyer_tax_no: Mapped[str | None] = mapped_column(default=None)
+    buyer_company_name: Mapped[str | None] = mapped_column(default=None)
+    buyer_street: Mapped[str | None] = mapped_column(default=None)
+    buyer_post_code: Mapped[str | None] = mapped_column(default=None)
+    buyer_city: Mapped[str | None] = mapped_column(default=None)
+
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         default=lambda: datetime.now(UTC),

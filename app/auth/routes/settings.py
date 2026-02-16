@@ -38,6 +38,11 @@ async def update_profile(
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     current_user.name = data.name
+    current_user.buyer_tax_no = data.buyer_tax_no
+    current_user.buyer_company_name = data.buyer_company_name
+    current_user.buyer_street = data.buyer_street
+    current_user.buyer_post_code = data.buyer_post_code
+    current_user.buyer_city = data.buyer_city
     db.commit()
     return {"message": "Profil zaktualizowany"}
 

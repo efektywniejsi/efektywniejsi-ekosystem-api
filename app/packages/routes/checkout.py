@@ -81,6 +81,14 @@ async def authenticated_checkout(
     try:
         client_ip = request.client.host if request.client else "127.0.0.1"
 
+        if checkout_request.wants_invoice:
+            current_user.buyer_tax_no = checkout_request.buyer_tax_no
+            current_user.buyer_company_name = checkout_request.buyer_company_name
+            current_user.buyer_street = checkout_request.buyer_street
+            current_user.buyer_post_code = checkout_request.buyer_post_code
+            current_user.buyer_city = checkout_request.buyer_city
+            db.commit()
+
         result = await checkout_service.initiate_checkout(
             package_ids=checkout_request.package_ids,
             email=current_user.email,

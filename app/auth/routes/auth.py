@@ -86,6 +86,11 @@ async def login(
         if user.password_changed_at
         else None,
         notification_preferences=user.notification_preferences,
+        buyer_tax_no=user.buyer_tax_no,
+        buyer_company_name=user.buyer_company_name,
+        buyer_street=user.buyer_street,
+        buyer_post_code=user.buyer_post_code,
+        buyer_city=user.buyer_city,
     )
 
     return LoginResponse(user=user_response)
@@ -164,4 +169,9 @@ async def get_current_user_info(
         if current_user.password_changed_at
         else None,
         notification_preferences=current_user.notification_preferences,
+        buyer_tax_no=current_user.buyer_tax_no,
+        buyer_company_name=current_user.buyer_company_name,
+        buyer_street=current_user.buyer_street,
+        buyer_post_code=current_user.buyer_post_code,
+        buyer_city=current_user.buyer_city,
     )
