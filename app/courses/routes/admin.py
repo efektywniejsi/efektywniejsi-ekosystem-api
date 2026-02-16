@@ -27,7 +27,7 @@ class UploadURLResponse(BaseModel):
 class UploadStatusResponse(BaseModel):
     """Response with video upload/processing status."""
 
-    status: Literal["preparing", "ready", "errored"]
+    status: Literal["waiting_for_upload", "preparing", "ready", "errored"]
     playback_id: str | None = None
     duration: float | None = None
     error_message: str | None = None
