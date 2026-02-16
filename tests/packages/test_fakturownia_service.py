@@ -297,8 +297,8 @@ class TestFakturowniaServiceBuildInvoiceData:
             assert order.order_number in data["invoice"]["description"]
             assert data["invoice"]["oid"] == str(order.id)
 
-    def test_always_sends_email(self):
-        """send_email should always be True - invoice is sent via Fakturownia email."""
+    def test_does_not_include_send_email_field(self):
+        """send_email should NOT be in payload - email is sent via separate API call."""
         with patch(
             "app.packages.services.fakturownia_service.settings",
             create_mock_settings(),
@@ -308,7 +308,7 @@ class TestFakturowniaServiceBuildInvoiceData:
 
             data = service._build_invoice_data(order)
 
-            assert data["invoice"]["send_email"] is True
+            assert "send_email" not in data["invoice"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -462,19 +462,23 @@ class TestFakturowniaServiceCreateInvoice:
 
                 await service.create_invoice(order)
 
-                # Verify API call
-                mock_instance.post.assert_called_once()
-                call_args = mock_instance.post.call_args
+                # Verify invoice creation call (first) + email sending call (second)
+                assert mock_instance.post.call_count == 2
+                create_call = mock_instance.post.call_args_list[0]
 
-                assert call_args[0][0] == "https://testfirma.fakturownia.pl/invoices.json"
-                assert call_args[1]["headers"]["Content-Type"] == "application/json"
-                assert call_args[1]["headers"]["Accept"] == "application/json"
+                assert create_call[0][0] == "https://testfirma.fakturownia.pl/invoices.json"
+                assert create_call[1]["headers"]["Content-Type"] == "application/json"
+                assert create_call[1]["headers"]["Accept"] == "application/json"
 
                 # Verify request body structure
-                json_data = call_args[1]["json"]
+                json_data = create_call[1]["json"]
                 assert "api_token" in json_data
                 assert "invoice" in json_data
                 assert json_data["invoice"]["kind"] == "vat"
+
+                # Verify email sending call
+                email_call = mock_instance.post.call_args_list[1]
+                assert "/send_by_email.json" in email_call[0][0]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
