@@ -32,6 +32,7 @@ class Course(Base):
     learning_description: Mapped[str | None] = mapped_column(default=None)
     learning_thumbnail_url: Mapped[str | None] = mapped_column(default=None)
     sales_page_sections: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    sales_content: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         default=lambda: datetime.now(UTC),
