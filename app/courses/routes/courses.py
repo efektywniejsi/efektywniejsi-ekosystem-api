@@ -82,6 +82,7 @@ async def create_course(
         learning_description=course.learning_description,
         learning_thumbnail_url=course.learning_thumbnail_url,
         sales_page_sections=course.sales_page_sections,
+        sales_content=course.sales_content,
         created_at=course.created_at,
         updated_at=course.updated_at,
     )
@@ -115,6 +116,7 @@ async def list_courses(
             learning_description=c.learning_description,
             learning_thumbnail_url=c.learning_thumbnail_url,
             sales_page_sections=c.sales_page_sections,
+            sales_content=c.sales_content,
             created_at=c.created_at,
             updated_at=c.updated_at,
         )
@@ -155,6 +157,7 @@ async def list_all_courses(
             learning_description=c.learning_description,
             learning_thumbnail_url=c.learning_thumbnail_url,
             sales_page_sections=c.sales_page_sections,
+            sales_content=c.sales_content,
             created_at=c.created_at,
             updated_at=c.updated_at,
         )
@@ -239,6 +242,7 @@ async def get_course(
         learning_description=course.learning_description,
         learning_thumbnail_url=course.learning_thumbnail_url,
         sales_page_sections=course.sales_page_sections,
+        sales_content=course.sales_content,
         created_at=course.created_at,
         updated_at=course.updated_at,
         modules=modules_data,
@@ -311,6 +315,7 @@ async def update_course(
         learning_description=course.learning_description,
         learning_thumbnail_url=course.learning_thumbnail_url,
         sales_page_sections=course.sales_page_sections,
+        sales_content=course.sales_content,
         created_at=course.created_at,
         updated_at=course.updated_at,
     )
