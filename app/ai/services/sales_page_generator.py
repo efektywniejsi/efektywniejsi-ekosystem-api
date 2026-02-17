@@ -325,17 +325,11 @@ def generate_sales_page(
     # 2. Fetch brand guidelines (optional)
     guidelines: BrandGuidelines | None = get_brand_guidelines(db)
 
-    # 3. Fetch few-shot examples (optional)
-    examples: list[dict[str, Any]] = []
-    if request.include_few_shot_examples:
-        examples = _fetch_few_shot_examples(db, entity_type, entity_id)
-
-    # 4. Build system prompt
+    # 3. Build system prompt (few-shot examples disabled — see prompt_builder.py)
     system_prompt = build_system_prompt(
         entity_type=entity_type,
         product_data=product_data,
         guidelines=guidelines,
-        examples=examples,
         theme=request.theme,
     )
 
