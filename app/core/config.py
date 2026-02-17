@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = "noreply@efektywniejsi.pl"
     SMTP_FROM_NAME: str = "Efektywniejsi"
+    PURCHASE_NOTIFICATION_EMAIL: str = "marketing@efektywniejsi.pl"
 
     FRONTEND_URL: str = "http://localhost:5173"
     DASHBOARD_URL: str = "http://localhost:3001"
@@ -47,10 +48,10 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: str = ""
 
     ANTHROPIC_API_KEY: str = ""
-    ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
+    ANTHROPIC_MODEL: str = "claude-sonnet-4-5-20250929"
     ANTHROPIC_MAX_TOKENS: int = 8192
-    ANTHROPIC_TEMPERATURE: float = 0.7
-    ANTHROPIC_MAX_TOKENS_SALES_PAGE: int = 16384
+    ANTHROPIC_TEMPERATURE: float = 0.85
+    ANTHROPIC_MAX_TOKENS_SALES_PAGE: int = 32768
 
     PAYU_MERCHANT_ID: str = ""
     PAYU_SECRET_KEY: str = ""
