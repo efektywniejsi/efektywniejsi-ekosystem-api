@@ -329,8 +329,8 @@ _CONTENT_QUALITY = """\
 ### Nagłówki
 
 - Zacznij od **pożądanego rezultatu klienta**, nie od nazwy produktu
-  - ❌ "Kurs programowania w Python"
-  - ✅ "Za 90 dni będziesz pisać kod, za który firmy płacą 15 000 zł miesięcznie"
+  - ZLE: "Kurs programowania w Python"
+  - DOBRZE: "Za 90 dni będziesz pisać kod, za który firmy płacą 15 000 zł miesięcznie"
 - Bądź **konkretny** — liczby, ramy czasowe, mierzalne efekty
 - Każdy nagłówek powinien być INNY stylistycznie — różna długość, różna konstrukcja
 
@@ -370,18 +370,31 @@ _ANTI_AI_PATTERNS = """\
 - "W dzisiejszym dynamicznym świecie...", "W erze cyfrowej transformacji..."
 - "Sprawdzony system", "Gwarantowane rezultaty", "Przełomowa metoda"
 
+### Zakazane elementy wizualne:
+- NIGDY nie używaj emoji (ani Unicode emoji, ani HTML emoji entities) — to wygląda amatorsko i nieprofesjonalnie
+- Zamiast emoji twórz elementy graficzne w czystym CSS (gradient circles, numbered badges, checkmark shapes z pseudo-elementów)
+- Nie używaj Unicode symbols jak arrows (wyjątek: "→" w przyciskach CTA jest OK)
+- Nie nadużywaj ikon — lepiej dobry typograficzny layout niż ikona przy każdym punkcie
+
 ### Zakazane wzorce layoutowe — twórz UNIKALNE układy:
-- ❌ Nie rób 3 identycznych kart z emoji + nagłówek + opis (to screams "AI")
-- ❌ Nie rób 3 kroków z numeracją 01/02/03 w identycznych boksach
-- ❌ Nie powtarzaj tego samego layoutu dla różnych sekcji
-- ✅ Mieszaj layouty: grid 2-kolumnowy, potem full-width, potem asymetryczny
-- ✅ Różna liczba elementów w każdej sekcji (2, 4, 5, 7 — nie zawsze 3!)
-- ✅ Zaskakujące rozwiązania: timeline zamiast kart, porównanie tabelaryczne zamiast list
+- Nie rób 3 identycznych kart z ikoną + nagłówek + opis (to typowy wzorzec AI)
+- Nie rób 3 kroków z numeracją 01/02/03 w identycznych boksach
+- Nie powtarzaj tego samego layoutu dla różnych sekcji
+- Zamiast tego mieszaj layouty: grid 2-kolumnowy, potem full-width, potem asymetryczny
+- Używaj różnej liczby elementów w każdej sekcji (2, 4, 5, 7 — nie zawsze 3!)
+- Zaskakujące rozwiązania: timeline zamiast kart, porównanie tabelaryczne zamiast list
 
 ### Zamiast ogólników — konkrety z danych produktu:
-- ❌ "Naucz się efektywnych metod pracy" → ✅ "Wdrożysz proces [nazwa z danych] w swoim zespole w pierwszym tygodniu"
-- ❌ "Dostaniesz wartościowe materiały" → ✅ "Moduł [nazwa] zawiera [X] lekcji + gotowe szablony do skopiowania"
-- Zawsze odwołuj się do PRAWDZIWYCH nazw modułów, lekcji i procesów z danych produktu"""
+- ZLE: "Naucz się efektywnych metod pracy" -> DOBRZE: "Wdrożysz proces [nazwa z danych] w swoim zespole w pierwszym tygodniu"
+- ZLE: "Dostaniesz wartościowe materiały" -> DOBRZE: "Moduł [nazwa] zawiera [X] lekcji + gotowe szablony do skopiowania"
+- Zawsze odwołuj się do PRAWDZIWYCH nazw modułów, lekcji i procesów z danych produktu
+
+### Ton i styl — profesjonalny, nie "marketingowy":
+- Pisz jak doświadczony konsultant, nie jak sprzedawca na targach
+- Unikaj wykrzykników (!) — maksymalnie 1-2 na całej stronie, tylko w CTA
+- Unikaj CAPS LOCK w treści (wyjątek: nazwy technologii jak "AI", "CRM")
+- Nie przesadzaj z obietnicami — lepiej podać konkretne dane niż mówić "niesamowite rezultaty"
+- Preferuj krótkie, rzeczowe zdania nad długie, emocjonalne wywody"""
 
 _REFERENCE_EXAMPLE = """\
 ## Wzorzec jakości (naśladuj JAKOŚĆ i POZIOM SZCZEGÓŁU, nie kopiuj struktury!)
