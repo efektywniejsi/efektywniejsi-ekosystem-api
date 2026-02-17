@@ -21,6 +21,7 @@ from app.core.celery_app import celery_app
 from app.core.config import settings
 from app.courses.models.course import Course
 from app.db.session import get_db
+from app.implementation_packages.models.implementation_package import ImplementationPackage
 from app.packages.models.package import Package
 
 router = APIRouter()
@@ -129,6 +130,27 @@ async def ai_generate_bundle_sales_page(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Bundle nie znaleziony")
 
     return _dispatch_task(db, EntityType.BUNDLE, bundle_id, request)
+
+
+@router.post(
+    "/implementation-packages/{package_id}/sales-page/ai-generate",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=AiTaskCreatedResponse,
+)
+async def ai_generate_impl_package_sales_page(
+    package_id: UUID,
+    request: AiGenerateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> AiTaskCreatedResponse:
+    """Dispatch AI sales page generation task for an implementation package (admin only)."""
+    _check_api_key()
+
+    package = db.query(ImplementationPackage).filter(ImplementationPackage.id == package_id).first()
+    if not package:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Pakiet wdrożeniowy nie znaleziony")
+
+    return _dispatch_task(db, EntityType.IMPLEMENTATION_PACKAGE, package_id, request)
 
 
 # --- Task polling ---
@@ -241,6 +263,45 @@ async def dismiss_bundle_ai_response(
 ) -> None:
     """Dismiss (apply/reject) the pending AI response for a bundle."""
     _dismiss_pending(db, EntityType.BUNDLE, bundle_id)
+
+
+@router.get(
+    "/implementation-packages/{package_id}/sales-page/ai-chat",
+    response_model=AiChatSessionResponse,
+)
+async def get_impl_package_ai_chat(
+    package_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> AiChatSessionResponse:
+    """Get AI chat session for an implementation package."""
+    return _get_chat_response(db, EntityType.IMPLEMENTATION_PACKAGE, package_id)
+
+
+@router.delete(
+    "/implementation-packages/{package_id}/sales-page/ai-chat",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def clear_impl_package_ai_chat(
+    package_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> None:
+    """Clear AI chat session for an implementation package."""
+    _clear_chat(db, EntityType.IMPLEMENTATION_PACKAGE, package_id)
+
+
+@router.post(
+    "/implementation-packages/{package_id}/sales-page/ai-chat/dismiss",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def dismiss_impl_package_ai_response(
+    package_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> None:
+    """Dismiss (apply/reject) the pending AI response for an implementation package."""
+    _dismiss_pending(db, EntityType.IMPLEMENTATION_PACKAGE, package_id)
 
 
 # --- Helpers ---

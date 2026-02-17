@@ -2,10 +2,14 @@
 Email service for package-related emails.
 """
 
+import logging
+
 from app.auth.services.email_service import EmailMessage, get_email_service
 from app.core.config import settings
 from app.packages.models.enrollment import PackageEnrollment
 from app.packages.models.order import Order
+
+logger = logging.getLogger(__name__)
 
 
 async def send_welcome_with_package_email(
@@ -54,6 +58,89 @@ async def send_purchase_confirmation_email(
     email_service = get_email_service()
     message = _build_purchase_confirmation_email(name, email, order, enrollments)
     return await email_service.send_email(message)
+
+
+async def send_owner_purchase_notification_email(
+    order: Order,
+    enrollments: list[PackageEnrollment],
+    is_new_user: bool,
+) -> bool:
+    """
+    Send purchase notification email to the platform owner.
+
+    Args:
+        order: Completed order
+        enrollments: List of package enrollments
+        is_new_user: Whether the buyer is a newly created user
+
+    Returns:
+        True if email sent successfully
+    """
+    email_service = get_email_service()
+    message = _build_owner_purchase_notification_email(order, enrollments, is_new_user)
+    return await email_service.send_email(message)
+
+
+def _build_owner_purchase_notification_email(
+    order: Order,
+    enrollments: list[PackageEnrollment],
+    is_new_user: bool,
+) -> EmailMessage:
+    """Build internal notification email about a new purchase."""
+    total_pln = order.total / 100
+    provider_label = order.payment_provider.value.capitalize()
+    user_type = "Nowy klient" if is_new_user else "Powracający klient"
+    purchase_date = order.created_at.strftime("%d.%m.%Y %H:%M")
+
+    package_list_html = "".join(
+        f"<li>{enrollment.package.title}</li>" for enrollment in enrollments
+    )
+    package_list_text = "\n".join(f"  - {enrollment.package.title}" for enrollment in enrollments)
+
+    td = "padding:8px;border-bottom:1px solid #eee"
+    html_body = f"""
+<html>
+<body style="font-family:Arial,sans-serif;line-height:1.6;color:#333">
+<h2>Nowy zakup na platformie</h2>
+<table style="border-collapse:collapse;width:100%;max-width:500px">
+<tr><td style="{td}"><b>Klient</b></td>
+<td style="{td}">{order.name} ({order.email})</td></tr>
+<tr><td style="{td}"><b>Typ klienta</b></td>
+<td style="{td}">{user_type}</td></tr>
+<tr><td style="{td}"><b>Zamówienie</b></td>
+<td style="{td}">{order.order_number}</td></tr>
+<tr><td style="{td}"><b>Kwota</b></td>
+<td style="{td}">{total_pln:.2f} PLN</td></tr>
+<tr><td style="{td}"><b>Płatność</b></td>
+<td style="{td}">{provider_label}</td></tr>
+<tr><td style="{td}"><b>Data</b></td>
+<td style="{td}">{purchase_date}</td></tr>
+</table>
+<h3>Zakupione pakiety:</h3>
+<ul>{package_list_html}</ul>
+</body>
+</html>
+    """
+
+    text_body = f"""Nowy zakup na platformie
+
+Klient: {order.name} ({order.email})
+Typ klienta: {user_type}
+Zamówienie: {order.order_number}
+Kwota: {total_pln:.2f} PLN
+Płatność: {provider_label}
+Data: {purchase_date}
+
+Zakupione pakiety:
+{package_list_text}
+    """
+
+    return EmailMessage(
+        to=settings.PURCHASE_NOTIFICATION_EMAIL,
+        subject=f"Nowy zakup: {order.name} - {total_pln:.2f} PLN ({order.order_number})",
+        body_html=html_body,
+        body_text=text_body,
+    )
 
 
 def _build_welcome_package_email(

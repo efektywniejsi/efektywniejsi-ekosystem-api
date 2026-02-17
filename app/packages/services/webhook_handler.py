@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.packages.models.order import Order
 from app.packages.services.email_service import (
+    send_owner_purchase_notification_email,
     send_purchase_confirmation_email,
     send_welcome_with_package_email,
 )
@@ -174,6 +175,17 @@ class WebhookHandler(ABC):
         except Exception as e:
             # Log but don't fail -- the payment was already processed successfully
             logger.error(f"Failed to send email: {e}")
+
+        # Notify platform owner about the purchase (non-blocking)
+        try:
+            await send_owner_purchase_notification_email(
+                order=order,
+                enrollments=enrollments,
+                is_new_user=is_new_user,
+            )
+            logger.info(f"Sent owner notification for order {order.order_number}")
+        except Exception as e:
+            logger.error(f"Failed to send owner notification: {e}")
 
         # Generate invoice via Fakturownia (non-blocking)
         await self._generate_invoice(order)

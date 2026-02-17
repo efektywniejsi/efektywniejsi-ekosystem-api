@@ -95,6 +95,85 @@ def _product_context_bundle(bundle_data: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _product_context_impl_package(pkg_data: dict[str, Any]) -> str:
+    """Format implementation package data for the system prompt."""
+    lines = [
+        "## Dane produktu (pakiet wdrożeniowy)",
+        f"- Tytuł: {pkg_data.get('title', '')}",
+        f"- Opis: {pkg_data.get('description', '')}",
+    ]
+    if pkg_data.get("price"):
+        price_pln = pkg_data["price"] / 100
+        lines.append(f"- Cena: {price_pln:.2f} PLN")
+    if pkg_data.get("original_price"):
+        orig_pln = pkg_data["original_price"] / 100
+        lines.append(f"- Cena oryginalna: {orig_pln:.2f} PLN")
+    if pkg_data.get("category"):
+        lines.append(f"- Kategoria: {pkg_data['category']}")
+    if pkg_data.get("estimated_hours"):
+        lines.append(f"- Szacowany czas nauki: {pkg_data['estimated_hours']}h")
+    if pkg_data.get("total_time_saved"):
+        lines.append(f"- Oszczędność czasu po wdrożeniu: {pkg_data['total_time_saved']}")
+
+    processes = pkg_data.get("processes", [])
+    if processes:
+        lines.append("\n### Procesy do wdrożenia:")
+        for proc in processes:
+            lines.append(f"  - **{proc.get('name', '')}**")
+            if proc.get("description"):
+                lines.append(f"    {proc['description']}")
+
+    modules = pkg_data.get("modules", [])
+    if modules:
+        lines.append("\n### Moduły szkoleniowe:")
+        for mod in modules:
+            lines.append(f"  Moduł: {mod.get('title', '')}")
+            if mod.get("description"):
+                lines.append(f"    Opis: {mod['description']}")
+            lessons = mod.get("lessons", [])
+            for lesson in lessons:
+                duration = lesson.get("duration_seconds", 0)
+                mins = duration // 60 if duration else 0
+                lines.append(f"    - {lesson.get('title', '')} ({mins} min)")
+
+    lines.append("\n### Czym jest pakiet wdrożeniowy (kontekst dla copywritingu):")
+    lines.append("Pakiet wdrożeniowy to gotowy system do wdrożenia w firmie klienta.")
+    lines.append("Zawiera szkolenie video + gotowe procesy/szablony/automatyzacje.")
+    lines.append("Klient nie tylko uczy się teorii — dostaje kompletne narzędzia do wdrożenia.")
+    lines.append("Główna obietnica: oszczędność czasu i natychmiastowe rezultaty.")
+
+    lines.append("\n### WAŻNE — kontekst layoutu strony:")
+    lines.append("Twoje sekcje wyświetlają się w LEWEJ kolumnie (2/3 szerokości).")
+    lines.append(
+        "Po prawej stronie jest STAŁY panel z ceną, przyciskiem 'Dodaj do koszyka' i szczegółami."
+    )
+    lines.append("Dlatego:")
+    lines.append("- NIE twórz sekcji Pricing/Oferta/Cena — cena jest już w prawym panelu")
+    lines.append(
+        "- NIE twórz sekcji z przyciskiem 'Kup teraz' / 'Dodaj do koszyka' — jest już w prawym panelu"
+    )
+    lines.append("- MOŻESZ dodać CTA typu 'Zobacz ofertę →' linkujące do #pricing, ale bez ceny")
+    lines.append("- Skup się na: Hero, Problem, Rozwiązanie, Social proof, Program, Gwarancja, FAQ")
+
+    lines.append("\n### WAŻNE — spójność kolorystyczna z prawym panelem:")
+    lines.append(
+        "Prawy panel używa palety amber/orange/emerald. Twoje sekcje MUSZĄ pasować kolorystycznie:"
+    )
+    lines.append(
+        "- Kolor akcentowy: amber/orange (#f59e0b, #ea580c, gradient from-amber-500 to-orange-600)"
+    )
+    lines.append("- Kolor sukcesu/pozytywny: emerald (#10b981, #059669)")
+    lines.append("- Tła: ciemne z subtelnymi amber/orange overlayami (rgba(245,158,11,0.05))")
+    lines.append("- Bordery: rgba(245,158,11,0.1) lub rgba(255,255,255,0.1)")
+    lines.append("- Tekst główny: #ffffff, tekst pomocniczy: odpowiednik text-muted-foreground")
+    lines.append(
+        "- Ikony/akcenty: amber-400 (#fbbf24), emerald-400 (#34d399), violet-400 (#a78bfa)"
+    )
+    lines.append("- Zachowaj ten sam styl zaokrągleń (rounded-xl/2xl) i glassmorphism (bg-white/5)")
+
+    return "\n".join(lines)
+
+
 def _few_shot_examples(examples: list[dict[str, Any]]) -> str:
     """Format existing sales pages as few-shot examples.
 
@@ -174,27 +253,20 @@ _SECTION_GUIDE = """\
 Każda sekcja to osobny blok `custom_html` z polami `html` i `css`.
 Traktujesz stronę jak projektant — każda sekcja to samodzielny komponent z własnym designem.
 
-### Typowe sekcje strony sprzedażowej (wszystkie jako custom_html):
+### Inspiracje sekcji (NIE kopiuj — traktuj jako pomysły do adaptacji):
 
-1. **Hero** — duży nagłówek z obietnicą rezultatu, podtytuł, przycisk CTA, opcjonalnie tło gradientowe
-2. **Problem / Ból klienta** — opisz frustrację klienta, niech poczuje "to o mnie"
-3. **Rozwiązanie / Cechy produktu** — przedstaw produkt jako odpowiedź na problem, karty z ikonami/emoji
-4. **Transformacja przed/po** — wizualne porównanie stanu PRZED i PO (dwie kolumny/karty)
-5. **Proces / Kroki** — jak wygląda droga klienta do rezultatu (3-5 kroków z numeracją)
-6. **Program / Curriculum** — co dokładnie zawiera kurs/pakiet, moduły z rozwijalnymi lekcjami
-7. **Testimoniale** — cytaty klientów z imieniem, zdjęciem placeholder i opisem
-8. **Statystyki** — liczby w dużym formacie (np. "500+ kursantów", "98% zadowolenia")
-9. **Instruktor / O nas** — kto stoi za produktem, budowanie autorytetu
-10. **Bonus stack** — dodatkowe materiały z przekreślonymi cenami i łączną wartością
-11. **Gwarancja** — odwrócenie ryzyka, badge/ikona gwarancji
-12. **FAQ** — accordion lub lista pytań i odpowiedzi
-13. **Pricing / Oferta** — karty cenowe z wyróżnionym planem, przekreślona cena
-14. **CTA końcowe** — ostateczne wezwanie do działania z urgency
-15. **Countdown / Urgency** — timer lub informacja o ograniczonej dostępności
-16. **Porównanie opcji** — tabela: sam vs z kursem
-17. **Wyróżnik / Dlaczego my** — co odróżnia ten produkt od konkurencji
+- **Hero** — duży nagłówek z obietnicą rezultatu, CTA
+- **Problem / Ból** — frustracja klienta, empatyczne "to o mnie"
+- **Rozwiązanie** — produkt jako odpowiedź, prezentacja wartości
+- **Transformacja** — przed/po, kontrast stanów
+- **Social proof** — testimoniale, statystyki, loga
+- **Program / Zawartość** — co klient dostaje
+- **Pricing / Oferta** — cena z uzasadnieniem wartości
+- **Gwarancja** — odwrócenie ryzyka
+- **FAQ** — usuwanie ostatnich obiekcji
+- **CTA końcowe** — ostateczne wezwanie
 
-Nie musisz użyć wszystkich — dobieraj do kontekstu. Celuj w 10-18 sekcji."""
+Sam zdecyduj ile sekcji potrzebuje ta konkretna strona. Nie ma sztywnej liczby — liczy się przepływ narracji i perswazji."""
 
 _CSS_HTML_GUIDELINES = """\
 ## Wytyczne techniczne HTML i CSS
@@ -218,79 +290,38 @@ Każda sekcja ma osobny scope — klasy CSS nie kolidują między sekcjami.
 ### Zasady CSS
 
 1. **Styluj przez pole `css`** z surowym CSS — klasy Tailwind NIE działają w `dangerouslySetInnerHTML`
-2. **NIE używaj `@media` ani `@keyframes`** — regex scopingu je zepsuje. Responsywność zapewnia wrapper `max-w-6xl`. Używaj `flex-wrap: wrap` i `min-width` do responsywnego layoutu
-3. **Kolory i styl** — spójny design system:
-   - Fioletowe gradienty: `#8b5cf6`, `#7c3aed`, `#6d28d9`
-   - Ciemne tła: `#1a1a2e`, `#0f0f23`, `rgba(139,92,246,0.1)`
-   - Jaśniejsze akcenty: `rgba(139,92,246,0.08)` do `rgba(139,92,246,0.15)` dla kart
-   - Zaokrąglone rogi: `border-radius: 12px` lub `16px`
-   - Subtelne bordery: `border: 1px solid rgba(255,255,255,0.1)`
-   - Tekst główny: `#ffffff`, tekst pomocniczy: `#a0a0b8`, akcenty: `#8b5cf6`
-4. **Używaj prostych selektorów**: `.my-class { ... }` — unikaj zagnieżdżonych reguł `@`
-5. **Unikalne prefixy klas** — każda sekcja powinna mieć unikalne nazwy klas (np. `.hero-title`, `.faq-item`, `.pricing-card`), żeby nie kolidowały gdyby scoping zawiódł
-6. **Emoji jako ikony** — zamiast ikon SVG używaj emoji (✅, 🚀, 💡, ⭐, 🎯, 🔥, 💰, ⏰, 🎁, 🛡️) — renderują się wszędzie
+2. **Responsywność** — UŻYWAJ `@media` queries! System poprawnie obsługuje at-rules. Projektuj mobile-first:
+   - Bazowy CSS dla mobile (< 768px)
+   - `@media (min-width: 768px)` dla tabletów
+   - `@media (min-width: 1024px)` dla desktopów
+   - Używaj `flex-wrap: wrap`, `grid`, `min-width`, `clamp()` dla fluid layouts
+3. **Animacje** — UŻYWAJ `@keyframes` i `transition`! System poprawnie obsługuje @keyframes:
+   - Animacje wejścia: fadeIn, slideUp, scaleIn
+   - Hover effects: transform, box-shadow transitions
+   - Subtely — nie przesadzaj, animacje mają wspierać UX, nie przeszkadzać
+4. **Kolory** — dobieraj paletę kolorów do brand guidelines i tematu produktu. NIE kopiuj żadnej konkretnej palety — stwórz własną, spójną:
+   - Wybierz 1 kolor akcentowy + odcienie
+   - Dark theme: ciemne tła z subtelnymi gradientami
+   - Light theme: jasne, czyste tła z kontrastowymi akcentami
+   - Używaj `rgba()` dla subtelnych warstw i overlayów
+5. **Unikalne prefixy klas** — każda sekcja powinna mieć unikalne nazwy klas (np. `.hero-title`, `.faq-item`, `.pricing-card`)
+6. **NIE używaj emoji** — emoji wyglądają nieprofesjonalnie. Zamiast nich twórz ikony w CSS:
+   - Numerowane kółka: `<span class="step-num">1</span>` z `width/height, border-radius: 50%, background: gradient`
+   - Checkmarki: pseudo-element `::before` z `content: ""` + border-trick (L-shape rotated)
+   - Dekoracyjne kształty: `border`, `box-shadow`, `gradient backgrounds` na divach
+   - Strzałki: CSS triangle (`border` trick) lub `→` / `—` jako tekst
+   - Ikony abstrakcyjne: kolorowe kółka, paski, kropki jako elementy graficzne
 
-### Przykłady dobrych sekcji
+### Zaawansowane techniki layoutu (używaj różnorodnie!)
 
-**Hero section — html:**
-```html
-<div class="hero-wrapper">
-  <div class="hero-badge">🚀 Dołącz do 500+ kursantów</div>
-  <h1 class="hero-title">Opanuj Python i zacznij <span class="hero-highlight">zarabiać jako programista</span> w 90 dni</h1>
-  <p class="hero-subtitle">Sprawdzony system nauki, który przeprowadzi Cię od zera do pierwszego zlecenia. Bez zbędnej teorii — same praktyczne projekty.</p>
-  <div class="hero-cta-group">
-    <a href="#pricing" class="hero-cta-primary">Rozpocznij naukę →</a>
-    <p class="hero-guarantee-note">🛡️ 30-dniowa gwarancja zwrotu</p>
-  </div>
-</div>
-```
-
-**Hero section — css:**
-```css
-.hero-wrapper { text-align: center; padding: 2rem 0; }
-.hero-badge { display: inline-block; background: rgba(139,92,246,0.15); color: #8b5cf6; padding: 0.5rem 1.25rem; border-radius: 999px; font-size: 0.9rem; font-weight: 600; margin-bottom: 1.5rem; border: 1px solid rgba(139,92,246,0.3); }
-.hero-title { font-size: 2.75rem; font-weight: 800; color: #ffffff; line-height: 1.2; margin-bottom: 1.5rem; }
-.hero-highlight { background: linear-gradient(135deg, #8b5cf6, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.hero-subtitle { font-size: 1.2rem; color: #a0a0b8; max-width: 640px; margin: 0 auto 2.5rem; line-height: 1.7; }
-.hero-cta-group { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
-.hero-cta-primary { display: inline-block; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #ffffff; padding: 1rem 2.5rem; border-radius: 12px; font-size: 1.1rem; font-weight: 700; text-decoration: none; }
-.hero-guarantee-note { font-size: 0.85rem; color: #a0a0b8; }
-```
-
-**Proces 3 kroków — html:**
-```html
-<div class="steps-section">
-  <h2 class="steps-title">Twoja droga do rezultatu w 3 krokach</h2>
-  <div class="steps-grid">
-    <div class="step-card">
-      <div class="step-number">01</div>
-      <h3 class="step-heading">Zbuduj fundament</h3>
-      <p class="step-desc">Poznaj kluczowe zasady i narzędzia, które zmienią Twoje podejście</p>
-    </div>
-    <div class="step-card">
-      <div class="step-number">02</div>
-      <h3 class="step-heading">Wdrażaj w praktyce</h3>
-      <p class="step-desc">Wykonuj ćwiczenia i zadania, które utrwalą nowe umiejętności</p>
-    </div>
-    <div class="step-card">
-      <div class="step-number">03</div>
-      <h3 class="step-heading">Zbieraj rezultaty</h3>
-      <p class="step-desc">Obserwuj realne efekty i mierz swoje postępy</p>
-    </div>
-  </div>
-</div>
-```
-
-**Proces 3 kroków — css:**
-```css
-.steps-section { text-align: center; }
-.steps-title { font-size: 2rem; font-weight: 700; color: #ffffff; margin-bottom: 3rem; }
-.steps-grid { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; }
-.step-card { background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.2); border-radius: 16px; padding: 2.5rem 2rem; flex: 1; min-width: 240px; max-width: 340px; }
-.step-number { font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, #8b5cf6, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; }
-.step-heading { font-size: 1.25rem; font-weight: 600; color: #ffffff; margin-bottom: 0.75rem; }
-.step-desc { font-size: 1rem; color: #a0a0b8; line-height: 1.6; }
-```"""
+- **Asymetryczne gridy** — nie wszystko musi być 3-kolumnowe. Użyj 2+1, 1+2, pełna szerokość + sidebar
+- **Z-pattern / F-pattern** — kieruj wzrok czytelnika przez układ elementów
+- **Full-bleed sekcje** — niektóre sekcje mogą mieć tło na pełną szerokość (negative margin + padding)
+- **Overlapping elements** — elementy nachodzące na siebie (negative margin, absolute positioning)
+- **CSS Grid z named areas** — dla złożonych layoutów
+- **Gradient borders** — `border-image` lub pseudo-elementy dla efektownych ramek
+- **Backdrop-filter** — glassmorphism efekty dla kart
+- **Mix-blend-mode** — kreatywne efekty z tekstem na tle"""
 
 _CONTENT_QUALITY = """\
 ## Jakość treści — to jest kluczowe
@@ -298,18 +329,18 @@ _CONTENT_QUALITY = """\
 ### Nagłówki
 
 - Zacznij od **pożądanego rezultatu klienta**, nie od nazwy produktu
-  - ❌ "Kurs programowania w Python"
-  - ✅ "Zacznij zarabiać jako programista Python w 90 dni"
-- Używaj **power words**: odkryj, opanuj, uwolnij, przełomowy, sprawdzony, gwarantowany
+  - ZLE: "Kurs programowania w Python"
+  - DOBRZE: "Za 90 dni będziesz pisać kod, za który firmy płacą 15 000 zł miesięcznie"
 - Bądź **konkretny** — liczby, ramy czasowe, mierzalne efekty
+- Każdy nagłówek powinien być INNY stylistycznie — różna długość, różna konstrukcja
 
 ### Body copy
 
 - Pisz w **2. osobie** ("Ty", "Twój", "Ciebie") — mów do klienta, nie o kliencie
 - **Krótkie akapity** — 2-3 zdania maksymalnie, dużo białej przestrzeni
-- **Język emocjonalny i sensoryczny** — "wyobraź sobie", "poczuj różnicę", "zobacz jak"
+- **Storytelling** — zamiast listy korzyści opowiedz mikrohistorię: konkretna sytuacja → frustracja → rozwiązanie → efekt
+- **Konkrety z danych produktu** — używaj PRAWDZIWYCH nazw modułów, lekcji, procesów. Nie wymyślaj ogólników
 - **Obraz przed/po** — pokaż kontrast między obecną frustracją a przyszłym sukcesem
-- **Konkrety** — liczby, ramy czasowe, nazwy narzędzi, realne scenariusze
 
 ### Łuk perswazji strony (sugerowana kolejność)
 
@@ -318,11 +349,9 @@ _CONTENT_QUALITY = """\
 3. **Rozwiązanie** — przedstaw produkt jako odpowiedź
 4. **Dowody** — społeczny dowód słuszności (testimoniale, statystyki)
 5. **Szczegóły** — pokaż co dokładnie dostaje klient (program, moduły)
-6. **Instruktor** — autorytet, kompetencje
-7. **Bonusy** — dodatkowa wartość, bonus stack z przekreślonymi cenami
-8. **Gwarancja** — odwrócenie ryzyka
-9. **Cena i CTA** — oferta nie do odrzucenia
-10. **Urgency** — powód do działania TERAZ
+6. **Bonusy** — dodatkowa wartość
+7. **Gwarancja** — odwrócenie ryzyka
+8. **Cena i CTA** — oferta nie do odrzucenia
 
 ### Jakość polskiego
 
@@ -330,6 +359,87 @@ _CONTENT_QUALITY = """\
 - Unikaj anglicyzmów — "szkolenie" nie "trening", "użytkownik" nie "user", "korzyści" nie "benefity"
 - Testimoniale: **zróżnicowany styl mówienia** — każda osoba mówi inaczej, polskie imiona i nazwiska
 - Unikaj korporacyjnego pustosłowia: "innowacyjny", "kompleksowy", "holistyczny", "synergiczny" """
+
+_ANTI_AI_PATTERNS = """\
+## ZAKAZANE wzorce (nie używaj!)
+
+### Zakazane frazy — brzmią sztucznie i "jak AI":
+- "Odkryj moc...", "Uwolnij potencjał...", "Rewolucyjne rozwiązanie..."
+- "Kompleksowe podejście", "Holistyczne spojrzenie", "Innowacyjna platforma"
+- "Nie czekaj!", "Dołącz już dziś!", "To zmieni Twoje życie!"
+- "W dzisiejszym dynamicznym świecie...", "W erze cyfrowej transformacji..."
+- "Sprawdzony system", "Gwarantowane rezultaty", "Przełomowa metoda"
+
+### Zakazane elementy wizualne:
+- NIGDY nie używaj emoji (ani Unicode emoji, ani HTML emoji entities) — to wygląda amatorsko i nieprofesjonalnie
+- Zamiast emoji twórz elementy graficzne w czystym CSS (gradient circles, numbered badges, checkmark shapes z pseudo-elementów)
+- Nie używaj Unicode symbols jak arrows (wyjątek: "→" w przyciskach CTA jest OK)
+- Nie nadużywaj ikon — lepiej dobry typograficzny layout niż ikona przy każdym punkcie
+
+### Zakazane wzorce layoutowe — twórz UNIKALNE układy:
+- Nie rób 3 identycznych kart z ikoną + nagłówek + opis (to typowy wzorzec AI)
+- Nie rób 3 kroków z numeracją 01/02/03 w identycznych boksach
+- Nie powtarzaj tego samego layoutu dla różnych sekcji
+- Zamiast tego mieszaj layouty: grid 2-kolumnowy, potem full-width, potem asymetryczny
+- Używaj różnej liczby elementów w każdej sekcji (2, 4, 5, 7 — nie zawsze 3!)
+- Zaskakujące rozwiązania: timeline zamiast kart, porównanie tabelaryczne zamiast list
+
+### Zamiast ogólników — konkrety z danych produktu:
+- ZLE: "Naucz się efektywnych metod pracy" -> DOBRZE: "Wdrożysz proces [nazwa z danych] w swoim zespole w pierwszym tygodniu"
+- ZLE: "Dostaniesz wartościowe materiały" -> DOBRZE: "Moduł [nazwa] zawiera [X] lekcji + gotowe szablony do skopiowania"
+- Zawsze odwołuj się do PRAWDZIWYCH nazw modułów, lekcji i procesów z danych produktu
+
+### Ton i styl — profesjonalny, nie "marketingowy":
+- Pisz jak doświadczony konsultant, nie jak sprzedawca na targach
+- Unikaj wykrzykników (!) — maksymalnie 1-2 na całej stronie, tylko w CTA
+- Unikaj CAPS LOCK w treści (wyjątek: nazwy technologii jak "AI", "CRM")
+- Nie przesadzaj z obietnicami — lepiej podać konkretne dane niż mówić "niesamowite rezultaty"
+- Preferuj krótkie, rzeczowe zdania nad długie, emocjonalne wywody"""
+
+_REFERENCE_EXAMPLE = """\
+## Wzorzec jakości (naśladuj JAKOŚĆ i POZIOM SZCZEGÓŁU, nie kopiuj struktury!)
+
+Poniżej fragment strony o bardzo wysokiej jakości. Zwróć uwagę na:
+- Naturalne, energiczne copy bez AI-frazesów
+- Responsywny CSS z @media queries
+- Animacje wejścia (@keyframes)
+- Asymetryczne layouty (nie wszystko jest 3-kolumnowe)
+- Konkretne liczby i fakty zamiast ogólników
+
+```html
+<div class="ap-hero">
+  <div class="ap-hero-badge">Już 127 firm wdrożyło ten system</div>
+  <h1 class="ap-hero-h1">Twój zespół traci <span class="ap-hero-accent">23 godziny tygodniowo</span> na zadania, które powinny robić się same</h1>
+  <p class="ap-hero-sub">Wdrożysz gotowe automatyzacje w 3 dni — bez programisty, bez integratorów, bez miesiąca nauki. Procesy, które Twoi ludzie robią ręcznie, zaczną działać na autopilocie.</p>
+  <div class="ap-hero-cta-row">
+    <a href="#oferta" class="ap-hero-btn">Wdrażam automatyzacje →</a>
+    <span class="ap-hero-note">Dołącz do firm, które oszczędzają średnio 18h/tydzień</span>
+  </div>
+</div>
+```
+```css
+@keyframes ap-fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ap-hero { text-align: center; padding: 3rem 0 2rem; animation: ap-fadeUp 0.8s ease-out; }
+.ap-hero-badge { display: inline-block; background: rgba(16,185,129,0.12); color: #10b981; padding: 0.5rem 1.25rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; margin-bottom: 2rem; border: 1px solid rgba(16,185,129,0.25); letter-spacing: 0.02em; }
+.ap-hero-h1 { font-size: 2.25rem; font-weight: 800; color: #f1f5f9; line-height: 1.25; margin-bottom: 1.5rem; max-width: 800px; margin-left: auto; margin-right: auto; }
+.ap-hero-accent { background: linear-gradient(135deg, #f59e0b, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.ap-hero-sub { font-size: 1.15rem; color: #94a3b8; max-width: 640px; margin: 0 auto 2.5rem; line-height: 1.75; }
+.ap-hero-cta-row { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.ap-hero-btn { display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: #fff; padding: 1rem 2.5rem; border-radius: 12px; font-size: 1.1rem; font-weight: 700; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s; }
+.ap-hero-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(16,185,129,0.3); }
+.ap-hero-note { font-size: 0.85rem; color: #64748b; }
+
+@media (min-width: 768px) {
+  .ap-hero-h1 { font-size: 3.25rem; }
+  .ap-hero-sub { font-size: 1.25rem; }
+  .ap-hero-cta-row { flex-direction: row; justify-content: center; }
+}
+```
+
+Ten przykład ma: animację wejścia, responsywne @media, naturalne copy z konkretnymi liczbami, hover effect na CTA, i paletę kolorów dopasowaną do produktu (zielony = automatyzacja/oszczędność). Twoje sekcje powinny być NA TYM POZIOMIE — ale z INNĄ strukturą, INNYMI kolorami i INNYM copy dopasowanym do produktu."""
 
 _RULES_TEMPLATE = """\
 ## Zasady
@@ -342,15 +452,16 @@ _RULES_TEMPLATE = """\
 6. Ustaw theme na "{theme}"
 7. Surowy CSS w polu `css`, NIE używaj klas Tailwind
 8. Klasy CSS unikalne per sekcja (np. `.hero-title`, `.faq-item`) — unikaj generycznych nazw jak `.title`, `.card`
-9. Celuj w 10-18 sekcji dla kompletnej, przekonującej strony. Maksymalnie 25
-10. Odpowiedz NAJPIERW blokiem JSON, potem krótkim wyjaśnieniem"""
+9. Odpowiedz NAJPIERW blokiem JSON, potem krótkim wyjaśnieniem
+10. KAŻDA sekcja MUSI mieć @media query dla responsywności (mobile-first)
+11. Przynajmniej 3 sekcje powinny mieć animacje (@keyframes lub transition)
+12. NIE kopiuj kolorów ani layoutów z przykładu referencyjnego — stwórz własny, oryginalny design"""
 
 
 def build_system_prompt(
     entity_type: EntityType,
     product_data: dict[str, Any],
     guidelines: BrandGuidelines | None = None,
-    examples: list[dict[str, Any]] | None = None,
     theme: str = "dark",
 ) -> str:
     """Assemble the full system prompt for sales page generation."""
@@ -360,25 +471,24 @@ def build_system_prompt(
         _SECTION_GUIDE,
         _CSS_HTML_GUIDELINES,
         _CONTENT_QUALITY,
+        _ANTI_AI_PATTERNS,
+        _REFERENCE_EXAMPLE,
     ]
 
-    # Brand guidelines
     if guidelines:
         brand_ctx = _brand_guidelines_context(guidelines)
         if brand_ctx:
             parts.append(brand_ctx)
 
-    # Product context
     if entity_type == EntityType.COURSE:
         parts.append(_product_context_course(product_data))
-    else:
+    elif entity_type == EntityType.IMPLEMENTATION_PACKAGE:
+        parts.append(_product_context_impl_package(product_data))
+    elif entity_type == EntityType.BUNDLE:
         parts.append(_product_context_bundle(product_data))
+    else:
+        raise ValueError(f"Unsupported entity type: {entity_type}")
 
-    # Few-shot examples
-    if examples:
-        parts.append(_few_shot_examples(examples))
-
-    # Rules
     parts.append(_RULES_TEMPLATE.format(theme=theme))
 
     return "\n\n".join(parts)
