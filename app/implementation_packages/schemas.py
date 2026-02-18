@@ -122,9 +122,6 @@ class ProcessUpdateRequest(BaseModel):
     sort_order: int | None = None
 
 
-# --- Enrollment schemas ---
-
-
 class ImplPackageEnrollmentResponse(BaseModel):
     id: str
     user_id: str
@@ -152,9 +149,6 @@ class ImplPackageEnrollmentCreateRequest(BaseModel):
 
 class ImplPackageEnrollmentUpdateRequest(BaseModel):
     expires_at: datetime | None = None
-
-
-# --- Public curriculum schemas (safe for unauthenticated users) ---
 
 
 class CurriculumLessonSummary(BaseModel):
