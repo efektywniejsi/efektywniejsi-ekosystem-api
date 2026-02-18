@@ -20,6 +20,8 @@ class Integration(Base):
     auth_guide: Mapped[str | None] = mapped_column(Text, default=None)
     official_docs_url: Mapped[str | None] = mapped_column(default=None)
     video_tutorial_url: Mapped[str | None] = mapped_column(default=None)
+    mux_asset_id: Mapped[str | None] = mapped_column(default=None)
+    mux_playback_id: Mapped[str | None] = mapped_column(default=None)
     is_published: Mapped[bool] = mapped_column(default=False, index=True)
     sort_order: Mapped[int] = mapped_column(default=0)
     created_by_id: Mapped[uuid.UUID | None] = mapped_column(
