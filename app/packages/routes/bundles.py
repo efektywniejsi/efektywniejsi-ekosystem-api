@@ -7,7 +7,11 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user, require_admin
 from app.auth.models.user import User
+from app.courses.models.course import Course
 from app.db.session import get_db
+from app.implementation_packages.models.implementation_package import (
+    ImplementationPackage,
+)
 from app.packages.models.bundle import BundleCourseItem, BundleImplementationPackageItem
 from app.packages.models.order import Order, OrderItem, OrderStatus
 from app.packages.models.package import Package, PackageBundleItem
@@ -19,6 +23,7 @@ from app.packages.schemas.bundle import (
     BundleListResponse,
     BundleUpdateRequest,
 )
+from app.packages.schemas.package import PackageListResponse
 
 router = APIRouter(prefix="/bundles", tags=["bundles"])
 
@@ -109,12 +114,6 @@ def get_bundle_by_slug(
 
 def _build_bundle_detail_response(db: Session, bundle: Package) -> BundleDetailResponse:
     """Build BundleDetailResponse with packages, courses, and implementation packages."""
-    from app.courses.models.course import Course
-    from app.implementation_packages.models.implementation_package import (
-        ImplementationPackage,
-    )
-    from app.packages.schemas.package import PackageListResponse
-
     package_items = (
         db.query(PackageBundleItem)
         .filter(PackageBundleItem.bundle_id == bundle.id)
@@ -287,11 +286,6 @@ def create_bundle(
             sort_order=idx,
         )
         db.add(bundle_item)
-
-    from app.courses.models.course import Course
-    from app.implementation_packages.models.implementation_package import (
-        ImplementationPackage,
-    )
 
     if bundle_data.course_items:
         for idx, ci in enumerate(bundle_data.course_items):

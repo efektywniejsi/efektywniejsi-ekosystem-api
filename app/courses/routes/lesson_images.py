@@ -1,7 +1,9 @@
 """Lesson images API endpoints for inline markdown images."""
 
 import imghdr
+import os
 import uuid as uuid_lib
+from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -89,9 +91,6 @@ async def serve_lesson_image(
     filename: str,
 ) -> Response:
     """Serve a lesson image. Uses redirect for R2, direct serve for local storage."""
-    import os
-    from pathlib import Path
-
     # Security: validate filename (no path traversal)
     if "/" in filename or "\\" in filename or ".." in filename:
         raise HTTPException(

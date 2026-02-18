@@ -161,8 +161,6 @@ def get_package_bundle_contents(
     Raises:
         404: Package not found or not a bundle
     """
-    import uuid
-
     try:
         package_uuid = uuid.UUID(package_id)
     except ValueError:

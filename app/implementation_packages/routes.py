@@ -28,6 +28,7 @@ from app.courses.schemas.course import (
     ModuleWithLessonsResponse,
 )
 from app.courses.schemas.sales_page import (
+    SECTION_CONFIG_MAP,
     SalesPageData,
     SalesPageResponse,
     SalesPageUpdateRequest,
@@ -57,9 +58,6 @@ from app.implementation_packages.schemas import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/implementation-packages", tags=["implementation-packages"])
-
-
-# --- Public endpoints ---
 
 
 @router.get("", response_model=list[ImplPackageListResponse])
@@ -436,9 +434,6 @@ async def delete_package(
     db.commit()
 
 
-# --- Process management ---
-
-
 @router.post("/{package_id}/processes", response_model=dict, status_code=201)
 @limiter.limit("30/minute")
 async def create_process(
@@ -518,9 +513,6 @@ async def delete_process(
         raise HTTPException(status_code=404, detail="Proces nie został znaleziony")
     db.delete(process)
     db.commit()
-
-
-# --- Module management ---
 
 
 @router.get(
@@ -657,9 +649,6 @@ async def reorder_package_modules(
     db.commit()
 
     return {"message": "Kolejność modułów zmieniona"}
-
-
-# --- Enrollment management ---
 
 
 def _enrollment_to_response(
@@ -844,9 +833,6 @@ async def delete_package_enrollment(
     db.commit()
 
 
-# --- Thumbnail management ---
-
-
 @router.post("/{package_id}/learning-thumbnail")
 @limiter.limit("30/minute")
 async def upload_package_learning_thumbnail(
@@ -941,9 +927,6 @@ async def serve_package_learning_thumbnail(
     return FileResponse(path=str(file_path), media_type=media_type)
 
 
-# --- Sales page management ---
-
-
 SALES_PAGE_ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"]
 
 
@@ -986,8 +969,6 @@ async def update_impl_package_sales_page(
     current_user: User = Depends(require_admin),
 ) -> SalesPageResponse:
     """Update sales page configuration for an implementation package (admin only)."""
-    from app.courses.schemas.sales_page import SECTION_CONFIG_MAP
-
     pkg = db.query(ImplementationPackage).filter(ImplementationPackage.id == package_id).first()
     if not pkg:
         raise HTTPException(

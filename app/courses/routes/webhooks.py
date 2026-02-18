@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.courses.models import Lesson
+from app.db.session import SessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -86,8 +87,6 @@ async def handle_mux_webhook(request: Request) -> dict[str, str]:
             duration = data.get("duration")
 
             if asset_id:
-                from app.db.session import SessionLocal
-
                 db: Session = SessionLocal()
                 try:
                     lesson = db.query(Lesson).filter(Lesson.mux_asset_id == asset_id).first()
