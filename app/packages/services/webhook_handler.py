@@ -7,6 +7,7 @@ payment webhooks from different providers (Stripe, PayU).
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -213,9 +214,6 @@ class WebhookHandler(ABC):
             result = await fakturownia.create_invoice(order)
 
             if result.success:
-                # Update order with invoice data
-                from datetime import UTC, datetime
-
                 order.fakturownia_invoice_id = result.invoice_id
                 order.invoice_number = result.invoice_number
                 order.invoice_token = result.invoice_token

@@ -81,6 +81,7 @@ class IntegrationResponse(BaseModel):
     description: str
     official_docs_url: str | None = None
     video_tutorial_url: str | None = None
+    mux_playback_id: str | None = None
     is_published: bool
     sort_order: int
     integration_types: list[str] = []

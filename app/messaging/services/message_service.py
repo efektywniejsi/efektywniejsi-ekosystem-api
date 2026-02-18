@@ -23,6 +23,7 @@ from app.messaging.schemas.message import (
     MessageResponse,
     UserSearchResult,
 )
+from app.notifications.tasks import send_direct_message_notification
 
 logger = logging.getLogger(__name__)
 
@@ -533,16 +534,12 @@ class MessageService:
         conversation_id: UUID,
     ) -> None:
         try:
-            from app.notifications.tasks import send_direct_message_notification
-
             send_direct_message_notification.delay(
                 recipient_user_id=str(recipient_user_id),
                 sender_user_id=str(sender.id),
                 message_preview=message_content[:200],
                 conversation_id=str(conversation_id),
             )
-        except (ImportError, AttributeError) as exc:
-            logger.error("Celery task import failed: %s", exc, exc_info=True)
         except Exception as exc:
             logger.warning(
                 "Failed to enqueue DM notification for user %s: %s", recipient_user_id, exc

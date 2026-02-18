@@ -1,6 +1,7 @@
 """Conversation listing and details service."""
 
 import logging
+from datetime import UTC, datetime
 from typing import cast
 from uuid import UUID
 
@@ -82,8 +83,6 @@ class ConversationService:
         limit: int = 50,
     ) -> ConversationDetail:
         """Get conversation detail with messages."""
-        from datetime import UTC, datetime
-
         participant = self._get_participant_or_403(conversation_id, user_id)
 
         conversation = (

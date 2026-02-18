@@ -10,9 +10,11 @@ from sqlalchemy.orm import Session
 
 from app.auth.models.user import User
 from app.core.security import generate_reset_token
+from app.courses.models.enrollment import Enrollment
 from app.implementation_packages.models.implementation_package import (
     ImplementationPackageEnrollment,
 )
+from app.packages.models.bundle import BundleCourseItem, BundleImplementationPackageItem
 from app.packages.models.enrollment import PackageEnrollment
 from app.packages.models.order import Order, OrderStatus
 from app.packages.models.package import Package
@@ -144,9 +146,6 @@ class OrderService:
         - Child packages (via PackageBundleItem)
         - Courses (via BundleCourseItem)
         """
-        from app.courses.models.enrollment import Enrollment
-        from app.packages.models.bundle import BundleCourseItem, BundleImplementationPackageItem
-
         enrollments = []
 
         for order_item in order.items:

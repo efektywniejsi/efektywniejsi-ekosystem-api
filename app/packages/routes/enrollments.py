@@ -2,6 +2,8 @@
 Package enrollment API endpoints.
 """
 
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -72,8 +74,6 @@ def check_enrollment(
     Requires:
         Authentication
     """
-    import uuid
-
     try:
         package_uuid = uuid.UUID(package_id)
     except ValueError:

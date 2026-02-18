@@ -22,6 +22,7 @@ from app.courses.schemas.course import (
 )
 from app.courses.services.mux_service import MuxService, get_mux_service
 from app.db.session import get_db
+from app.notifications.tasks import send_course_update_notification
 
 logger = logging.getLogger(__name__)
 
@@ -145,8 +146,6 @@ async def create_module(
     db.refresh(module)
 
     if module.course_id:
-        from app.notifications.tasks import send_course_update_notification
-
         send_course_update_notification.delay(
             course_id=str(course_id),
             update_type="new_module",
@@ -304,8 +303,6 @@ async def create_lesson(
     db.refresh(lesson)
 
     if module.course_id:
-        from app.notifications.tasks import send_course_update_notification
-
         send_course_update_notification.delay(
             course_id=str(module.course_id),
             update_type="new_lesson",

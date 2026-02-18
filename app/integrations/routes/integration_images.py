@@ -1,7 +1,9 @@
 """Integration images API endpoints for custom integration logos/images."""
 
 import imghdr
+import os
 import uuid as uuid_lib
+from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -97,9 +99,6 @@ async def serve_integration_image(
     filename: str,
 ) -> Response:
     """Serve an integration image. Uses redirect for R2, direct serve for local storage."""
-    import os
-    from pathlib import Path
-
     # Security: validate filename (no path traversal)
     if "/" in filename or "\\" in filename or ".." in filename:
         raise HTTPException(
@@ -249,9 +248,6 @@ async def serve_auth_guide_image(
     filename: str,
 ) -> Response:
     """Serve an auth guide image. Uses redirect for R2, direct serve for local."""
-    import os
-    from pathlib import Path
-
     # Security: validate filename (no path traversal)
     if "/" in filename or "\\" in filename or ".." in filename:
         raise HTTPException(

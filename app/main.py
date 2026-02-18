@@ -55,6 +55,9 @@ from app.integrations.routes import (
 from app.integrations.routes import (
     public_router as integrations_public_router,
 )
+from app.integrations.routes import (
+    videos_router as integrations_videos_router,
+)
 from app.messaging.routes import admin_messages as admin_messages_routes
 from app.messaging.routes import messages as messages_routes
 from app.notifications.routes import notifications as notifications_routes
@@ -242,6 +245,11 @@ app.include_router(
     integrations_proposals_router,
     prefix=settings.API_V1_PREFIX,
     tags=["integration-proposals"],
+)
+app.include_router(
+    integrations_videos_router,
+    prefix=f"{settings.API_V1_PREFIX}/admin",
+    tags=["integration-videos"],
 )
 
 # Process routes

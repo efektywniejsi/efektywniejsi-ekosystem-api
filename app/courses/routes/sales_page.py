@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import require_admin
 from app.auth.models.user import User
 from app.core.config import settings
+from app.courses.models.course import Course
 from app.courses.schemas.sales_page import (
     SalesPageData,
     SalesPageResponse,
@@ -64,8 +65,6 @@ async def upload_sales_page_image(
     current_user: User = Depends(require_admin),
 ) -> dict:
     """Upload an image for a sales page section (admin only)."""
-    from app.courses.models.course import Course
-
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
         raise HTTPException(

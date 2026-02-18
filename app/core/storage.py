@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
+from urllib.parse import urlparse
 
 import boto3
 from botocore.config import Config as BotoConfig
@@ -180,8 +181,6 @@ def url_to_storage_path(url: str) -> str:
     Handles both local URLs (http://host/uploads/avatars/file.jpg -> avatars/file.jpg)
     and R2 public URLs (https://cdn.example.com/avatars/file.jpg -> avatars/file.jpg).
     """
-    from urllib.parse import urlparse
-
     parsed = urlparse(url)
     path = parsed.path.lstrip("/")
 

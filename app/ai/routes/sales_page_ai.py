@@ -87,9 +87,6 @@ def _dispatch_task(
     return AiTaskCreatedResponse(task_id=task.id)
 
 
-# --- Generation endpoints ---
-
-
 @router.post(
     "/courses/{course_id}/sales-page/ai-generate",
     status_code=status.HTTP_202_ACCEPTED,
@@ -153,9 +150,6 @@ async def ai_generate_impl_package_sales_page(
     return _dispatch_task(db, EntityType.IMPLEMENTATION_PACKAGE, package_id, request)
 
 
-# --- Task polling ---
-
-
 @router.get(
     "/ai-tasks/{task_id}",
     response_model=AiTaskStatusResponse,
@@ -182,9 +176,6 @@ async def get_ai_task_status(
         result=result.result if result.successful() else None,
         error=str(result.result) if result.failed() else None,
     )
-
-
-# --- Chat session endpoints ---
 
 
 @router.get(
@@ -302,9 +293,6 @@ async def dismiss_impl_package_ai_response(
 ) -> None:
     """Dismiss (apply/reject) the pending AI response for an implementation package."""
     _dismiss_pending(db, EntityType.IMPLEMENTATION_PACKAGE, package_id)
-
-
-# --- Helpers ---
 
 
 def _get_chat_response(

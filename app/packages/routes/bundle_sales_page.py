@@ -17,6 +17,7 @@ from app.courses.schemas.sales_page import (
     SalesPageUpdateRequest,
 )
 from app.db.session import get_db
+from app.packages.models.package import Package
 from app.packages.services.bundle_sales_page_service import (
     get_bundle_sales_page,
     update_bundle_sales_page,
@@ -67,8 +68,6 @@ async def upload_bundle_sales_page_image(
     current_user: User = Depends(require_admin),
 ) -> dict:
     """Upload an image for a bundle sales page section (admin only)."""
-    from app.packages.models.package import Package
-
     bundle = (
         db.query(Package)
         .filter(Package.id == bundle_id, Package.is_bundle == True)  # noqa: E712
