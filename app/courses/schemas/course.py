@@ -35,6 +35,7 @@ class CourseUpdate(BaseModel):
     learning_description: str | None = None
     learning_thumbnail_url: str | None = None
     sales_page_sections: dict[str, Any] | None = None
+    sales_content: dict[str, Any] | None = None
 
 
 class CourseResponse(CourseBase):
@@ -43,6 +44,7 @@ class CourseResponse(CourseBase):
     learning_description: str | None = None
     learning_thumbnail_url: str | None = None
     sales_page_sections: dict[str, Any] | None = None
+    sales_content: dict[str, Any] | None = None
     created_at: UTCDatetime
     updated_at: UTCDatetime
 

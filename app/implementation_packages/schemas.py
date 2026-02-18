@@ -61,6 +61,7 @@ class ImplPackageListResponse(BaseModel):
 class ImplPackageDetailResponse(ImplPackageListResponse):
     processes: list[ImplPackageProcessResponse] = []
     sales_page_sections: dict | None = None
+    sales_content: dict | None = None
 
 
 class ImplPackageCreateRequest(BaseModel):
@@ -83,6 +84,7 @@ class ImplPackageCreateRequest(BaseModel):
     learning_description: str | None = None
     learning_thumbnail_url: str | None = None
     sales_page_sections: dict | None = None
+    sales_content: dict | None = None
 
 
 class ImplPackageUpdateRequest(BaseModel):
@@ -105,6 +107,7 @@ class ImplPackageUpdateRequest(BaseModel):
     learning_description: str | None = None
     learning_thumbnail_url: str | None = None
     sales_page_sections: dict | None = None
+    sales_content: dict | None = None
 
 
 class ProcessCreateRequest(BaseModel):

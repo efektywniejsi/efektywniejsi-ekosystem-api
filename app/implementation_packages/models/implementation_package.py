@@ -42,6 +42,9 @@ class ImplementationPackage(Base):
     # Sales page builder
     sales_page_sections: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
 
+    # Sales content for detail sheet (outcomes, FAQ, etc.)
+    sales_content: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
