@@ -1,4 +1,5 @@
 import io
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -158,11 +159,12 @@ def download_thread_attachment(
         )
 
     content = storage.download(attachment.file_path)
+    encoded_filename = quote(attachment.file_name)
     return StreamingResponse(
         io.BytesIO(content),
         media_type=attachment.mime_type or "application/octet-stream",
         headers={
-            "Content-Disposition": f'attachment; filename="{attachment.file_name}"',
+            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
             "Content-Length": str(len(content)),
         },
     )
