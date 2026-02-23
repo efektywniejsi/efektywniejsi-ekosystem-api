@@ -125,7 +125,7 @@ async def test_download_certificate(
     test_course,
     db_session,
 ):
-    """Test downloading certificate PDF redirects to storage URL."""
+    """Test downloading certificate PDF streams file content."""
     from datetime import datetime
     from pathlib import Path
 
@@ -152,12 +152,13 @@ async def test_download_certificate(
     response = await test_client.get(
         "/api/v1/certificates/TEST-CERT-2026-002/download",
         cookies={"access_token": test_user_token},
-        follow_redirects=False,
     )
 
-    # Should return 302 redirect to storage URL
-    assert response.status_code == 302
-    assert "location" in response.headers
+    # Should return streamed PDF content
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert "attachment" in response.headers["content-disposition"]
+    assert response.content == b"%PDF-1.4\nDummy PDF"
 
 
 @pytest.mark.asyncio

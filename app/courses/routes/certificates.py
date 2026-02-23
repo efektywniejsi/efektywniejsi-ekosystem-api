@@ -1,7 +1,8 @@
+import io
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
 from app.auth.dependencies import get_current_user
@@ -91,7 +92,7 @@ async def download_certificate(
     certificate_code: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> RedirectResponse:
+) -> StreamingResponse:
     certificate = (
         db.query(Certificate)
         .options(joinedload(Certificate.course))
@@ -118,8 +119,16 @@ async def download_certificate(
             detail="Plik certyfikatu nie znaleziony na serwerze",
         )
 
-    url = storage.download_url(certificate.file_path)
-    return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
+    content = storage.download(certificate.file_path)
+    filename = f"certificate_{certificate.certificate_code[:8]}.pdf"
+    return StreamingResponse(
+        io.BytesIO(content),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Length": str(len(content)),
+        },
+    )
 
 
 @router.get(

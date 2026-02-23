@@ -1,7 +1,8 @@
+import io
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user, require_admin
@@ -139,8 +140,8 @@ async def download_attachment(
     attachment_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> RedirectResponse:
-    """Download an attachment (requires enrollment in the course)."""
+) -> StreamingResponse:
+    """Download an attachment (requires enrollment in the course or admin role)."""
     attachment = db.query(Attachment).filter(Attachment.id == attachment_id).first()
     if not attachment:
         raise HTTPException(
@@ -169,13 +170,13 @@ async def download_attachment(
             detail="Course not found",
         )
 
-    is_enrolled = EnrollmentService.check_enrollment(current_user.id, course.id, db)
-
-    if not is_enrolled:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You must be enrolled in this course to download this attachment",
-        )
+    if current_user.role != "admin":
+        is_enrolled = EnrollmentService.check_enrollment(current_user.id, course.id, db)
+        if not is_enrolled:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You must be enrolled in this course to download this attachment",
+            )
 
     storage = get_storage()
     if not storage.exists(attachment.file_path):
@@ -184,8 +185,15 @@ async def download_attachment(
             detail="Plik nie znaleziony na serwerze",
         )
 
-    url = storage.download_url(attachment.file_path)
-    return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
+    content = storage.download(attachment.file_path)
+    return StreamingResponse(
+        io.BytesIO(content),
+        media_type=attachment.mime_type or "application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="{attachment.file_name}"',
+            "Content-Length": str(len(content)),
+        },
+    )
 
 
 @router.delete("/attachments/{attachment_id}", status_code=status.HTTP_204_NO_CONTENT)

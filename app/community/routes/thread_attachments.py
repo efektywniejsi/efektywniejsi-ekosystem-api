@@ -1,7 +1,8 @@
+import io
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -141,7 +142,7 @@ def download_thread_attachment(
     attachment_id: UUID,
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
-) -> RedirectResponse:
+) -> StreamingResponse:
     attachment = db.query(ThreadAttachment).filter(ThreadAttachment.id == attachment_id).first()
     if not attachment:
         raise HTTPException(
@@ -156,8 +157,15 @@ def download_thread_attachment(
             detail="Plik nie znaleziony na serwerze",
         )
 
-    url = storage.download_url(attachment.file_path)
-    return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
+    content = storage.download(attachment.file_path)
+    return StreamingResponse(
+        io.BytesIO(content),
+        media_type=attachment.mime_type or "application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="{attachment.file_name}"',
+            "Content-Length": str(len(content)),
+        },
+    )
 
 
 @router.delete(
