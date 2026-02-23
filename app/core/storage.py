@@ -26,6 +26,10 @@ class StorageBackend(Protocol):
         """Upload file and return the stored path/key."""
         ...
 
+    def download(self, path: str) -> bytes:
+        """Download file content by its path/key."""
+        ...
+
     def download_url(self, path: str) -> str:
         """Return a URL to download the file."""
         ...
@@ -56,6 +60,10 @@ class LocalStorage:
         with open(file_path, "wb") as f:
             f.write(file_content)
         return f"{folder}/{filename}"
+
+    def download(self, path: str) -> bytes:
+        full_path = self._resolve_safe_path(path)
+        return full_path.read_bytes()
 
     def download_url(self, path: str) -> str:
         return f"{settings.BACKEND_URL}/uploads/{path}"
@@ -126,6 +134,11 @@ class R2Storage:
             Body=file_content,
         )
         return key
+
+    def download(self, path: str) -> bytes:
+        response = self._client.get_object(Bucket=self._bucket, Key=path)
+        content: bytes = response["Body"].read()
+        return content
 
     def download_url(self, path: str) -> str:
         if settings.R2_PUBLIC_URL:
