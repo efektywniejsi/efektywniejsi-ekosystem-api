@@ -21,6 +21,11 @@ celery_app.conf.update(
     timezone="Europe/Warsaw",
     task_track_started=True,
     result_expires=3600,
+    broker_transport_options={
+        "visibility_timeout": 3600,
+        "socket_timeout": 45,  # BRPOP timeout: 45s instead of default ~1s
+    },
+    worker_cancel_long_running_tasks_on_connection_loss=True,
     beat_schedule={
         "cleanup-orphaned-files-daily": {
             "task": "app.storage.tasks.cleanup_orphaned_files_task",
