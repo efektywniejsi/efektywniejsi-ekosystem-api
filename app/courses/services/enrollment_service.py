@@ -17,13 +17,13 @@ class EnrollmentService:
         if not course:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Course not found",
+                detail="Kurs nie znaleziony",
             )
 
         if not course.is_published:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Course is not published",
+                detail="Kurs nie jest opublikowany",
             )
 
         existing_enrollment = (
@@ -35,7 +35,7 @@ class EnrollmentService:
         if existing_enrollment:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="User already enrolled in this course",
+                detail="Użytkownik jest już zapisany do tego kursu",
             )
 
         enrollment = Enrollment(
@@ -61,7 +61,7 @@ class EnrollmentService:
         if not enrollment:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Enrollment not found",
+                detail="Zapis nie znaleziony",
             )
 
         db.delete(enrollment)

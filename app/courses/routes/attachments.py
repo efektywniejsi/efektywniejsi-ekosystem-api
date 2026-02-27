@@ -44,7 +44,7 @@ async def upload_attachment(
     if not lesson:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Lesson not found",
+            detail="Lekcja nie znaleziona",
         )
 
     if file.content_type not in ALLOWED_MIME_TYPES:
@@ -111,7 +111,7 @@ async def list_lesson_attachments(
     if not lesson:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Lesson not found",
+            detail="Lekcja nie znaleziona",
         )
 
     attachments = (
@@ -147,28 +147,28 @@ async def download_attachment(
     if not attachment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Attachment not found",
+            detail="Załącznik nie znaleziony",
         )
 
     lesson = db.query(Lesson).filter(Lesson.id == attachment.lesson_id).first()
     if not lesson:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Lesson not found",
+            detail="Lekcja nie znaleziona",
         )
 
     module = db.query(Module).filter(Module.id == lesson.module_id).first()
     if not module:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Module not found",
+            detail="Moduł nie znaleziony",
         )
 
     course = db.query(Course).filter(Course.id == module.course_id).first()
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found",
+            detail="Kurs nie znaleziony",
         )
 
     if current_user.role != "admin":
@@ -176,7 +176,7 @@ async def download_attachment(
         if not is_enrolled:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You must be enrolled in this course to download this attachment",
+                detail="Musisz być zapisany do tego kursu, aby pobrać ten załącznik",
             )
 
     storage = get_storage()
@@ -210,7 +210,7 @@ async def delete_attachment(
     if not attachment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Attachment not found",
+            detail="Załącznik nie znaleziony",
         )
 
     storage = get_storage()

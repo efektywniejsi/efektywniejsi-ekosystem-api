@@ -7,7 +7,7 @@ Users receive invoices via email directly from Fakturownia, not from our platfor
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -16,7 +16,7 @@ from app.db.session import get_db
 from app.packages.models.order import Order
 from app.packages.schemas.order import OrderListResponse, OrderResponse
 
-router = APIRouter(prefix="/orders", tags=["orders"])
+router = APIRouter(prefix="/orders")
 
 
 @router.get("/me", response_model=list[OrderListResponse])
@@ -79,15 +79,19 @@ def get_order_details(
     try:
         order_uuid = uuid.UUID(order_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Nieprawidłowy format ID zamówienia") from None
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Nieprawidłowy format ID zamówienia"
+        ) from None
 
     order = db.query(Order).filter(Order.id == order_uuid).first()
 
     if not order:
-        raise HTTPException(status_code=404, detail="Zamówienie nie znalezione")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Zamówienie nie znalezione"
+        )
 
     # Check ownership
     if order.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Brak dostępu")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Brak dostępu")
 
     return OrderResponse.model_validate(order)

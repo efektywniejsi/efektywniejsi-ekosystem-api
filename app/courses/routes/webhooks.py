@@ -2,8 +2,8 @@
 
 import hashlib
 import hmac
-import logging
 
+import structlog
 from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
@@ -11,7 +11,7 @@ from app.core.config import settings
 from app.courses.models import Lesson
 from app.db.session import SessionLocal
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 router = APIRouter()
 
@@ -25,7 +25,7 @@ def _verify_mux_signature(payload_bytes: bytes, signature_header: str | None) ->
     if not signature_header:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing Mux-Signature header",
+            detail="Brak nagłówka Mux-Signature",
         )
 
     # Mux signature format: t=<timestamp>,v1=<signature>
@@ -36,7 +36,7 @@ def _verify_mux_signature(payload_bytes: bytes, signature_header: str | None) ->
     if not timestamp or not expected_sig:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid Mux-Signature format",
+            detail="Nieprawidłowy format Mux-Signature",
         )
 
     signed_payload = f"{timestamp}.{payload_bytes.decode()}"
@@ -49,7 +49,7 @@ def _verify_mux_signature(payload_bytes: bytes, signature_header: str | None) ->
     if not hmac.compare_digest(computed_sig, expected_sig):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid webhook signature",
+            detail="Nieprawidłowy podpis webhooka",
         )
 
 

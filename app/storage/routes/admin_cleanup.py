@@ -19,7 +19,7 @@ from app.storage.schemas import (
 from app.storage.services.cleanup_service import CleanupService
 from app.storage.tasks import cleanup_orphaned_files_task
 
-router = APIRouter(prefix="/storage", tags=["admin-storage"])
+router = APIRouter(prefix="/storage")
 
 
 @router.get("/orphaned-files/preview", response_model=CleanupPreviewResponse)

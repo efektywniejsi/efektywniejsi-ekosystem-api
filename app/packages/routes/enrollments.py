@@ -4,7 +4,7 @@ Package enrollment API endpoints.
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -13,7 +13,7 @@ from app.db.session import get_db
 from app.packages.models.enrollment import PackageEnrollment
 from app.packages.schemas.enrollment import PackageEnrollmentResponse
 
-router = APIRouter(prefix="/package-enrollments", tags=["enrollments"])
+router = APIRouter(prefix="/package-enrollments")
 
 
 @router.get("/me", response_model=list[PackageEnrollmentResponse])
@@ -77,7 +77,9 @@ def check_enrollment(
     try:
         package_uuid = uuid.UUID(package_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Nieprawidłowy format ID pakietu") from None
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Nieprawidłowy format ID pakietu"
+        ) from None
 
     enrollment = (
         db.query(PackageEnrollment)

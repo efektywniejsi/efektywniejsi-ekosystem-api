@@ -1,15 +1,16 @@
 """Celery tasks for storage cleanup operations."""
 
-import logging
 import time
 from typing import Any
+
+import structlog
 
 from app.core.celery_app import celery_app
 from app.core.config import settings
 from app.db.session import SessionLocal
 from app.storage.services.cleanup_service import CleanupService
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 @celery_app.task(bind=True, max_retries=0)

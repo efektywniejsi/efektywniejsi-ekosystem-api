@@ -49,14 +49,14 @@ async def upload_integration_image(
     if not integration:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Integration not found",
+            detail="Integracja nie znaleziona",
         )
 
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid file type. Allowed: PNG, JPG, WebP, GIF, SVG. "
-            f"Got: {file.content_type}",
+            detail=f"Nieprawidłowy typ pliku. Dozwolone: PNG, JPG, WebP, GIF, SVG. "
+            f"Otrzymano: {file.content_type}",
         )
 
     file_content = await file.read()
@@ -112,7 +112,7 @@ async def serve_integration_image(
     if not storage.exists(storage_path):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image not found",
+            detail="Obraz nie znaleziony",
         )
 
     # For R2 storage: redirect to public URL (CDN-served)
@@ -158,13 +158,13 @@ async def delete_integration_image(
     if not integration:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Integration not found",
+            detail="Integracja nie znaleziona",
         )
 
     if not integration.image_url:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Integration has no custom image",
+            detail="Integracja nie ma niestandardowego obrazu",
         )
 
     # Extract filename from URL and delete from storage
@@ -179,7 +179,7 @@ async def delete_integration_image(
     integration.image_url = None
     db.commit()
 
-    return {"message": "Image deleted successfully"}
+    return {"message": "Obraz został usunięty"}
 
 
 # ─────────────────────────────────────────────────────────────
@@ -199,7 +199,7 @@ async def upload_auth_guide_image(
     if not integration:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Integration not found",
+            detail="Integracja nie znaleziona",
         )
 
     # Allow standard image types (no SVG for markdown content)
@@ -207,7 +207,10 @@ async def upload_auth_guide_image(
     if file.content_type not in allowed_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid file type. Allowed: PNG, JPG, WebP, GIF. Got: {file.content_type}",
+            detail=(
+                "Nieprawidłowy typ pliku. Dozwolone: PNG, JPG, WebP, GIF. "
+                f"Otrzymano: {file.content_type}"
+            ),
         )
 
     file_content = await file.read()
@@ -261,7 +264,7 @@ async def serve_auth_guide_image(
     if not storage.exists(storage_path):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image not found",
+            detail="Obraz nie znaleziony",
         )
 
     # For R2 storage: redirect to public URL (CDN-served)

@@ -57,15 +57,15 @@ async def upload_thread_attachment(
     if existing_count >= MAX_FILES_PER_THREAD:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Maximum {MAX_FILES_PER_THREAD} attachments per thread",
+            detail=f"Maksymalnie {MAX_FILES_PER_THREAD} załączników na wątek",
         )
 
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
-                "Invalid file type. Allowed: PDF, ZIP, PNG, JPG, GIF, WebP. "
-                f"Received: {file.content_type}"
+                "Nieprawidłowy typ pliku. Dozwolone: PDF, ZIP, PNG, JPG, GIF, WebP. "
+                f"Otrzymano: {file.content_type}"
             ),
         )
 
@@ -148,7 +148,7 @@ def download_thread_attachment(
     if not attachment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Attachment not found",
+            detail="Załącznik nie znaleziony",
         )
 
     storage = get_storage()
@@ -183,7 +183,7 @@ def delete_thread_attachment(
     if not attachment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Attachment not found",
+            detail="Załącznik nie znaleziony",
         )
 
     if attachment.uploader_id != current_user.id and current_user.role != "admin":

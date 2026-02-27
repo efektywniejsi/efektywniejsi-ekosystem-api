@@ -69,13 +69,16 @@ async def upload_sales_page_image(
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found",
+            detail="Kurs nie znaleziony",
         )
 
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid file type. Allowed: PNG, JPG, WebP. Received: {file.content_type}",
+            detail=(
+                "Nieprawidłowy typ pliku. Dozwolone: PNG, JPG, WebP. "
+                f"Otrzymano: {file.content_type}"
+            ),
         )
 
     max_size_bytes = 5 * 1024 * 1024  # 5 MB
@@ -119,7 +122,7 @@ async def serve_sales_page_image(
     if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image not found",
+            detail="Obraz nie znaleziony",
         )
 
     media_type = "image/jpeg"

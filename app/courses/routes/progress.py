@@ -93,7 +93,7 @@ async def get_lesson_progress(
     if not progress:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Progress not found",
+            detail="Postęp nie znaleziony",
         )
 
     return LessonProgressResponse(

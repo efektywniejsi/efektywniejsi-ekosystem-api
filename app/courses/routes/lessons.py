@@ -30,7 +30,7 @@ async def get_lesson(
     if not lesson:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Lesson not found",
+            detail="Lekcja nie znaleziona",
         )
 
     progress = (
@@ -74,7 +74,7 @@ async def get_course_lessons(
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found",
+            detail="Kurs nie znaleziony",
         )
 
     RequireCourseEnrollment()(course_id=course.id, current_user=current_user, db=db)
