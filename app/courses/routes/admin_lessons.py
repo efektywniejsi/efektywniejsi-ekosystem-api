@@ -50,6 +50,9 @@ async def create_lesson(
         mux_playback_id=request.mux_playback_id,
         mux_asset_id=request.mux_asset_id,
         duration_seconds=request.duration_seconds,
+        code_snippets=(
+            [s.model_dump() for s in request.code_snippets] if request.code_snippets else None
+        ),
         status=LessonStatus(request.status),
         sort_order=request.sort_order,
     )
@@ -72,6 +75,7 @@ async def create_lesson(
         mux_playback_id=lesson.mux_playback_id,
         mux_asset_id=lesson.mux_asset_id,
         duration_seconds=lesson.duration_seconds,
+        code_snippets=lesson.code_snippets,
         status=lesson.status.value,
         sort_order=lesson.sort_order,
         created_at=lesson.created_at,
@@ -95,19 +99,25 @@ async def update_lesson(
             detail="Lekcja nie znaleziona",
         )
 
-    if request.title is not None:
+    update_fields = request.model_dump(exclude_unset=True)
+
+    if "title" in update_fields:
         lesson.title = request.title
-    if request.description is not None:
+    if "description" in update_fields:
         lesson.description = request.description
-    if request.mux_playback_id is not None:
+    if "mux_playback_id" in update_fields:
         lesson.mux_playback_id = request.mux_playback_id
-    if request.mux_asset_id is not None:
+    if "mux_asset_id" in update_fields:
         lesson.mux_asset_id = request.mux_asset_id
-    if request.duration_seconds is not None:
+    if "duration_seconds" in update_fields:
         lesson.duration_seconds = request.duration_seconds
-    if request.status is not None:
+    if "code_snippets" in update_fields:
+        lesson.code_snippets = (
+            [s.model_dump() for s in request.code_snippets] if request.code_snippets else None
+        )
+    if "status" in update_fields:
         lesson.status = LessonStatus(request.status)
-    if request.sort_order is not None:
+    if "sort_order" in update_fields:
         lesson.sort_order = request.sort_order
 
     db.commit()
@@ -121,6 +131,7 @@ async def update_lesson(
         mux_playback_id=lesson.mux_playback_id,
         mux_asset_id=lesson.mux_asset_id,
         duration_seconds=lesson.duration_seconds,
+        code_snippets=lesson.code_snippets,
         status=lesson.status.value,
         sort_order=lesson.sort_order,
         created_at=lesson.created_at,

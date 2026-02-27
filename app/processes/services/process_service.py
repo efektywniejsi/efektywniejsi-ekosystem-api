@@ -35,6 +35,20 @@ class ProcessService:
 
         return [self._to_response(p, usage_counts.get(p.id, 0)) for p in processes]
 
+    def get_published_process_by_slug(self, slug: str) -> ProcessResponse:
+        process = (
+            self.db.query(Process)
+            .filter(Process.slug == slug, Process.is_published == True)  # noqa: E712
+            .first()
+        )
+        if not process:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Proces nie znaleziony",
+            )
+        usage_count = self._get_usage_count_for_process(process.id)
+        return self._to_response(process, usage_count)
+
     # ─────────────────────────────────────────────────────────────
     # Admin CRUD Methods
     # ─────────────────────────────────────────────────────────────
@@ -70,6 +84,10 @@ class ProcessService:
             name=data.name,
             description=data.description,
             icon=data.icon,
+            mermaid_diagram=data.mermaid_diagram,
+            code_snippets=(
+                [s.model_dump() for s in data.code_snippets] if data.code_snippets else None
+            ),
             is_published=data.is_published,
             sort_order=data.sort_order,
         )
@@ -95,17 +113,25 @@ class ProcessService:
                     detail="Proces o tym slug już istnieje",
                 )
 
-        if data.name is not None:
+        update_fields = data.model_dump(exclude_unset=True)
+
+        if "name" in update_fields:
             process.name = data.name
-        if data.slug is not None:
+        if "slug" in update_fields:
             process.slug = data.slug
-        if data.description is not None:
+        if "description" in update_fields:
             process.description = data.description
-        if data.icon is not None:
+        if "icon" in update_fields:
             process.icon = data.icon
-        if data.is_published is not None:
+        if "mermaid_diagram" in update_fields:
+            process.mermaid_diagram = data.mermaid_diagram
+        if "code_snippets" in update_fields:
+            process.code_snippets = (
+                [s.model_dump() for s in data.code_snippets] if data.code_snippets else None
+            )
+        if "is_published" in update_fields:
             process.is_published = data.is_published
-        if data.sort_order is not None:
+        if "sort_order" in update_fields:
             process.sort_order = data.sort_order
 
         self.db.commit()
@@ -267,6 +293,8 @@ class ProcessService:
             name=process.name,
             description=process.description,
             icon=process.icon,
+            mermaid_diagram=process.mermaid_diagram,
+            code_snippets=process.code_snippets,
             is_published=process.is_published,
             sort_order=process.sort_order,
             usage_count=usage_count,
