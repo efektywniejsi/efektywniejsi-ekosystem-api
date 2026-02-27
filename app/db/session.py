@@ -16,9 +16,9 @@ if _is_worker:
     # Worker: no persistent connections → allows Neon auto-suspend
     _engine_kwargs["poolclass"] = NullPool
 else:
-    # API: small pool so idle connections close and Neon can auto-suspend
-    _engine_kwargs["pool_size"] = 2
-    _engine_kwargs["max_overflow"] = 3
+    # API: reduced pool (was 10+20) so idle connections close and Neon can auto-suspend
+    _engine_kwargs["pool_size"] = 5
+    _engine_kwargs["max_overflow"] = 10
     _engine_kwargs["pool_recycle"] = 300  # close idle connections after 5 min
 
 engine = create_engine(settings.DATABASE_URL, **_engine_kwargs)
