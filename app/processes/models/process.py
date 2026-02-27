@@ -2,6 +2,7 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -15,6 +16,8 @@ class Process(Base):
     name: Mapped[str] = mapped_column()
     description: Mapped[str] = mapped_column(Text)
     icon: Mapped[str] = mapped_column()
+    mermaid_diagram: Mapped[str | None] = mapped_column(Text, default=None)
+    code_snippets: Mapped[list | None] = mapped_column(JSONB, nullable=True, default=None)
     is_published: Mapped[bool] = mapped_column(default=False, index=True)
     sort_order: Mapped[int] = mapped_column(default=0)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))

@@ -22,6 +22,17 @@ def list_processes(
     return service.get_published_processes()
 
 
+@router.get("/processes/slug/{slug}", response_model=ProcessResponse)
+def get_process_by_slug(
+    slug: str,
+    _current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ProcessResponse:
+    """Get a single published process by slug."""
+    service = ProcessService(db)
+    return service.get_published_process_by_slug(slug)
+
+
 @router.get("/lessons/{lesson_id}/processes", response_model=list[LessonProcessResponse])
 def get_lesson_processes(
     lesson_id: UUID,
