@@ -1,8 +1,8 @@
-import logging
 from datetime import UTC, datetime
 from typing import cast
 from uuid import UUID
 
+import structlog
 from fastapi import HTTPException, status
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
@@ -25,7 +25,7 @@ from app.messaging.schemas.message import (
 )
 from app.notifications.tasks import send_direct_message_notification
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def _escape_like(value: str) -> str:
