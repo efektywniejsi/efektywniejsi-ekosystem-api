@@ -12,6 +12,9 @@ from app.db.session import get_db
 
 logger = logging.getLogger(__name__)
 
+_activity_cache: dict[str, float] = {}  # "user_id:date" -> last write timestamp
+_ACTIVITY_DEBOUNCE_SECONDS = 300  # write to DB at most once per 5 min per user
+
 
 async def get_access_token_from_cookie(
     access_token: Annotated[str | None, Cookie()] = None,
@@ -93,21 +96,28 @@ async def get_current_user(
 
     now = datetime.now(UTC)
     today = now.date()
+    cache_key = f"{user.id}:{today}"
+    last_write = _activity_cache.get(cache_key, 0)
 
-    existing = (
-        db.query(UserDailyActivity)
-        .filter(UserDailyActivity.user_id == user.id, UserDailyActivity.date == today)
-        .first()
-    )
-    try:
-        if existing:
-            existing.last_seen_at = now
-        else:
-            db.add(UserDailyActivity(user_id=user.id, date=today, last_seen_at=now))
-        db.commit()
-    except Exception:
-        logger.exception("Failed to record daily activity")
-        db.rollback()
+    if now.timestamp() - last_write > _ACTIVITY_DEBOUNCE_SECONDS:
+        existing = (
+            db.query(UserDailyActivity)
+            .filter(
+                UserDailyActivity.user_id == user.id,
+                UserDailyActivity.date == today,
+            )
+            .first()
+        )
+        try:
+            if existing:
+                existing.last_seen_at = now
+            else:
+                db.add(UserDailyActivity(user_id=user.id, date=today, last_seen_at=now))
+            db.commit()
+            _activity_cache[cache_key] = now.timestamp()
+        except Exception:
+            logger.exception("Failed to record daily activity")
+            db.rollback()
 
     return cast(User, user)
 
