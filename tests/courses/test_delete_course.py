@@ -124,7 +124,7 @@ async def test_delete_course_with_wrong_password(
     )
 
     assert response.status_code == 403
-    assert "hasło" in response.json()["detail"].lower()
+    assert "hasło" in response.json()["error"]["message"].lower()
 
 
 @pytest.mark.asyncio
@@ -142,7 +142,7 @@ async def test_delete_course_not_found(
     )
 
     assert response.status_code == 404
-    assert "nie znalezion" in response.json()["detail"].lower()
+    assert "nie znalezion" in response.json()["error"]["message"].lower()
 
 
 @pytest.mark.asyncio
