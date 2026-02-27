@@ -80,7 +80,7 @@ async def test_cannot_generate_certificate_without_completion(
     )
 
     assert response.status_code == 400
-    assert "not completed" in response.json()["error"]["message"].lower()
+    assert "nie został jeszcze ukończony" in response.json()["error"]["message"].lower()
 
 
 @pytest.mark.asyncio
