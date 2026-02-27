@@ -1,6 +1,6 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.datetime_utils import UTCDatetime
 from app.shared.schemas.code_snippet import CodeSnippet
@@ -49,8 +49,7 @@ class CourseResponse(CourseBase):
     created_at: UTCDatetime
     updated_at: UTCDatetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ModuleBase(BaseModel):
@@ -76,8 +75,7 @@ class ModuleResponse(ModuleBase):
     created_at: UTCDatetime
     updated_at: UTCDatetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LessonBase(BaseModel):
@@ -112,8 +110,7 @@ class LessonResponse(LessonBase):
     created_at: UTCDatetime
     updated_at: UTCDatetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LessonWithProgressResponse(LessonResponse):
@@ -143,8 +140,7 @@ class EnrollmentResponse(BaseModel):
     last_accessed_at: UTCDatetime | None = None
     expires_at: UTCDatetime | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class EnrollmentWithCourseResponse(EnrollmentResponse):

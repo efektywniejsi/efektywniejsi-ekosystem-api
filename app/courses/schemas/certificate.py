@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.core.datetime_utils import UTCDatetime
 
@@ -12,8 +12,7 @@ class CertificateResponse(BaseModel):
     file_path: str | None = None
     created_at: UTCDatetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CertificateWithCourseResponse(CertificateResponse):

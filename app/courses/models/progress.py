@@ -30,7 +30,7 @@ class LessonProgress(Base):
         default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
-    user = relationship("User", backref="lesson_progress")
+    user = relationship("User", back_populates="lesson_progress")
     lesson = relationship("Lesson", back_populates="progress_records")
 
     def __repr__(self) -> str:

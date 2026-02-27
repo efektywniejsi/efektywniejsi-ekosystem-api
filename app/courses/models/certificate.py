@@ -23,7 +23,7 @@ class Certificate(Base):
     file_path: Mapped[str | None] = mapped_column(default=None)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
-    user = relationship("User", backref="certificates")
+    user = relationship("User", back_populates="certificates")
     course = relationship("Course", back_populates="certificates")
 
     def __repr__(self) -> str:

@@ -1,10 +1,9 @@
-import logging
-
+import structlog
 from cryptography.fernet import Fernet, InvalidToken
 
 from app.core.config import settings
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _fernet_instance: Fernet | None = None
 

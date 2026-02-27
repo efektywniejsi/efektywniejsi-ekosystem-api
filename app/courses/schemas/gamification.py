@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.core.datetime_utils import UTCDatetime
 
@@ -16,8 +16,7 @@ class AchievementResponse(BaseModel):
     is_active: bool
     created_at: UTCDatetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserAchievementResponse(BaseModel):
@@ -28,8 +27,7 @@ class UserAchievementResponse(BaseModel):
     progress_value: int | None = None
     achievement: AchievementResponse
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserStreakResponse(BaseModel):
@@ -42,8 +40,7 @@ class UserStreakResponse(BaseModel):
     grace_period_available: bool = True
     days_until_grace_available: int = 0
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserPointsResponse(BaseModel):
@@ -55,8 +52,7 @@ class UserPointsResponse(BaseModel):
     created_at: UTCDatetime
     updated_at: UTCDatetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class GamificationSummaryResponse(BaseModel):

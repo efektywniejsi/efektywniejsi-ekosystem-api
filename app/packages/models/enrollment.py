@@ -29,9 +29,9 @@ class PackageEnrollment(Base):
     last_accessed_at: Mapped[datetime | None] = mapped_column(default=None)
 
     # Relationships
-    user = relationship("User", backref="package_enrollments")
+    user = relationship("User", back_populates="package_enrollments")
     package = relationship("Package", back_populates="enrollments")
-    order = relationship("Order", backref="package_enrollments")
+    order = relationship("Order", back_populates="package_enrollments")
 
     def __repr__(self) -> str:
         return (

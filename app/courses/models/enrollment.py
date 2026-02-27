@@ -27,7 +27,7 @@ class Enrollment(Base):
     last_accessed_at: Mapped[datetime | None] = mapped_column(default=None)
     expires_at: Mapped[datetime | None] = mapped_column(default=None)
 
-    user = relationship("User", backref="enrollments")
+    user = relationship("User", back_populates="enrollments")
     course = relationship("Course", back_populates="enrollments")
 
     @property

@@ -5,6 +5,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.packages.schemas.package import PackageListResponse
+
 
 class BundleListResponse(BaseModel):
     """Bundle response with marketing-friendly field names."""
@@ -115,7 +117,7 @@ class BundleDetailResponse(BaseModel):
     badge: str | None = None
 
     # Content
-    packages: list[Any] = Field(default_factory=list)  # Will be PackageListResponse
+    packages: list[PackageListResponse] = Field(default_factory=list)
     courses: list[BundleCourseDetailItem] = Field(default_factory=list)
     implementation_packages: list[BundleImplPackageDetailItem] = Field(default_factory=list)
 

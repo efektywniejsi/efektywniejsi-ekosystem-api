@@ -1,7 +1,7 @@
-import logging
 from datetime import UTC, datetime
 from typing import Annotated, cast
 
+import structlog
 from fastapi import Cookie, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -10,7 +10,7 @@ from app.auth.models.user_daily_activity import UserDailyActivity
 from app.core import security
 from app.db.session import get_db
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _activity_cache: dict[str, float] = {}  # "user_id:date" -> last write timestamp
 _ACTIVITY_DEBOUNCE_SECONDS = 300  # write to DB at most once per 5 min per user

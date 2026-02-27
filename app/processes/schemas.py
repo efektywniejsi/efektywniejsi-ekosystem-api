@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.shared.schemas.code_snippet import CodeSnippet
 
@@ -46,7 +46,7 @@ class ProcessResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LessonProcessCreate(BaseModel):
@@ -61,4 +61,4 @@ class LessonProcessResponse(BaseModel):
     context_note: str | None = None
     sort_order: int
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)

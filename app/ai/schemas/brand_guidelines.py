@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class BrandGuidelinesResponse(BaseModel):
@@ -12,7 +12,7 @@ class BrandGuidelinesResponse(BaseModel):
     company_description: str = ""
     additional_instructions: str = ""
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BrandGuidelinesUpdate(BaseModel):

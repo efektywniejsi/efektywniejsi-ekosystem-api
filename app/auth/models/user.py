@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import JSON
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
 
@@ -39,6 +39,20 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
+    )
+
+    # Relationships (explicit back_populates instead of implicit backref)
+    enrollments = relationship("Enrollment", back_populates="user")
+    lesson_progress = relationship("LessonProgress", back_populates="user")
+    achievements = relationship("UserAchievement", back_populates="user")
+    streak = relationship("UserStreak", back_populates="user", uselist=False)
+    points = relationship("UserPoints", back_populates="user", uselist=False)
+    points_history = relationship("PointsHistory", back_populates="user")
+    certificates = relationship("Certificate", back_populates="user")
+    orders = relationship("Order", back_populates="user")
+    package_enrollments = relationship("PackageEnrollment", back_populates="user")
+    implementation_package_enrollments = relationship(
+        "ImplementationPackageEnrollment", back_populates="user"
     )
 
     def __repr__(self) -> str:
