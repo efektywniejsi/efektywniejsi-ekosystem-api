@@ -3,6 +3,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from app.core.datetime_utils import UTCDatetime
+from app.shared.schemas.code_snippet import CodeSnippet
 
 LessonStatusType = Literal["unavailable", "in_preparation", "available"]
 
@@ -85,6 +86,7 @@ class LessonBase(BaseModel):
     mux_playback_id: str | None = Field(None, max_length=255)
     mux_asset_id: str | None = Field(None, max_length=255)
     duration_seconds: int = Field(default=0, ge=0)
+    code_snippets: list[CodeSnippet] | None = None
     status: LessonStatusType = "available"
     sort_order: int = 0
 
@@ -99,6 +101,7 @@ class LessonUpdate(BaseModel):
     mux_playback_id: str | None = Field(None, min_length=1, max_length=255)
     mux_asset_id: str | None = Field(None, max_length=255)
     duration_seconds: int | None = Field(None, ge=0)
+    code_snippets: list[CodeSnippet] | None = None
     status: LessonStatusType | None = None
     sort_order: int | None = None
 
