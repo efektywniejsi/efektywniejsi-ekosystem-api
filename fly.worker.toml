@@ -4,9 +4,6 @@ primary_region = "arn"
 [build]
   dockerfile = "Dockerfile"
 
-[env]
-  WORKER = "true"
-
 [processes]
   worker = "celery -A app.core.celery_app worker -B --loglevel=info --concurrency=2 --without-heartbeat --without-mingle"
 

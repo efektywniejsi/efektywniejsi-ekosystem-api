@@ -44,7 +44,6 @@ class Settings(BaseSettings):
     MUX_WEBHOOK_SECRET: str | None = None
 
     STRIPE_SECRET_KEY: str = ""
-    STRIPE_PUBLISHABLE_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
 
     ANTHROPIC_API_KEY: str = ""
