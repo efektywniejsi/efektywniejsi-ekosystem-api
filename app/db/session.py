@@ -1,4 +1,3 @@
-import os
 from collections.abc import Generator
 
 from sqlalchemy import create_engine
@@ -7,18 +6,11 @@ from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 
-_is_worker = os.environ.get("WORKER") == "true"
-
-_engine_kwargs: dict = {"pool_pre_ping": True}
-
-if _is_worker:
-    # Worker: no persistent connections → allows Neon auto-suspend
-    _engine_kwargs["poolclass"] = NullPool
-else:
-    # API: reduced pool (was 10+20) so idle connections close and Neon can auto-suspend
-    _engine_kwargs["pool_size"] = 5
-    _engine_kwargs["max_overflow"] = 10
-    _engine_kwargs["pool_recycle"] = 300  # close idle connections after 5 min
+# NullPool: every request opens a fresh connection and closes it immediately.
+# With only ~2 active users this adds negligible latency (~100-200 ms on
+# Neon cold-start) while allowing Neon compute to auto-suspend between
+# requests — cutting CU-hours from ~2/day to ~0.3-0.5/day.
+_engine_kwargs: dict = {"poolclass": NullPool}
 
 engine = create_engine(settings.DATABASE_URL, **_engine_kwargs)
 
