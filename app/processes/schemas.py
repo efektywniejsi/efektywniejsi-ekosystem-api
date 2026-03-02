@@ -49,6 +49,17 @@ class ProcessResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ProcessLessonBriefResponse(BaseModel):
+    id: UUID
+    title: str
+    course_slug: str
+    course_title: str
+
+
+class ProcessDetailResponse(ProcessResponse):
+    used_in_lessons: list[ProcessLessonBriefResponse] = []
+
+
 class LessonProcessCreate(BaseModel):
     process_id: UUID
     context_note: str | None = None
