@@ -10,6 +10,8 @@ from app.processes.schemas import (
     LessonProcessCreate,
     LessonProcessResponse,
     ProcessCreate,
+    ProcessDetailResponse,
+    ProcessLessonBriefResponse,
     ProcessResponse,
     ProcessUpdate,
 )
@@ -48,6 +50,39 @@ class ProcessService:
             )
         usage_count = self._get_usage_count_for_process(process.id)
         return self._to_response(process, usage_count)
+
+    def get_published_process_detail_by_slug(self, slug: str) -> ProcessDetailResponse:
+        process = (
+            self.db.query(Process)
+            .filter(Process.slug == slug, Process.is_published == True)  # noqa: E712
+            .first()
+        )
+        if not process:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Proces nie znaleziony",
+            )
+
+        used_in_lessons: list[ProcessLessonBriefResponse] = []
+        for lp in process.lesson_processes:
+            lesson = lp.lesson
+            if lesson and lesson.module and lesson.module.course:
+                used_in_lessons.append(
+                    ProcessLessonBriefResponse(
+                        id=lesson.id,
+                        title=lesson.title,
+                        course_slug=lesson.module.course.slug,
+                        course_title=lesson.module.course.title,
+                    )
+                )
+
+        usage_count = len(process.lesson_processes)
+        base = self._to_response(process, usage_count)
+
+        return ProcessDetailResponse(
+            **base.model_dump(),
+            used_in_lessons=used_in_lessons,
+        )
 
     # ─────────────────────────────────────────────────────────────
     # Admin CRUD Methods
