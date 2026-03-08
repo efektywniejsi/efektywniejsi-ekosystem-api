@@ -11,6 +11,7 @@ from app.auth.models.user import User
 from app.courses.models import Course, Lesson, LessonStatus, Module
 from app.courses.schemas.course import (
     LessonCreate,
+    LessonMoveRequest,
     LessonReorderRequest,
     LessonResponse,
     LessonUpdate,
@@ -437,3 +438,92 @@ async def reorder_lessons(
     db.commit()
 
     return {"message": "Kolejność lekcji zmieniona"}
+
+
+@router.post("/lessons/{lesson_id}/move", status_code=status.HTTP_200_OK)
+async def move_lesson(
+    lesson_id: UUID,
+    request: LessonMoveRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> dict[str, str]:
+    """Move a lesson to a different module at a specific position (admin only)."""
+    lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
+    if not lesson:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lekcja nie znaleziona",
+        )
+
+    try:
+        target_module_id = UUID(request.target_module_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nieprawidłowy identyfikator modułu docelowego",
+        ) from exc
+
+    target_module = db.query(Module).filter(Module.id == target_module_id).first()
+    if not target_module:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Moduł docelowy nie znaleziony",
+        )
+
+    source_module_id = lesson.module_id
+    if source_module_id == target_module_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Lekcja już należy do tego modułu",
+        )
+
+    # Validate both modules belong to the same parent (course or package)
+    source_module = db.query(Module).filter(Module.id == source_module_id).first()
+    if not source_module:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Moduł źródłowy nie znaleziony",
+        )
+
+    if (
+        source_module.course_id != target_module.course_id
+        or source_module.implementation_package_id != target_module.implementation_package_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nie można przenosić lekcji między różnymi kursami lub pakietami",
+        )
+
+    # Lock rows to prevent concurrent sort_order conflicts
+    source_lessons = (
+        db.query(Lesson)
+        .filter(Lesson.module_id == source_module_id, Lesson.id != lesson_id)
+        .order_by(Lesson.sort_order)
+        .with_for_update()
+        .all()
+    )
+    for index, src_lesson in enumerate(source_lessons):
+        src_lesson.sort_order = index
+
+    target_lessons = (
+        db.query(Lesson)
+        .filter(Lesson.module_id == target_module_id)
+        .order_by(Lesson.sort_order)
+        .with_for_update()
+        .all()
+    )
+
+    position = min(request.position, len(target_lessons))
+
+    # Shift existing target lessons to make room
+    for tgt_lesson in target_lessons:
+        if tgt_lesson.sort_order >= position:
+            tgt_lesson.sort_order += 1
+
+    # Move the lesson
+    lesson.module_id = target_module_id
+    lesson.sort_order = position
+
+    db.commit()
+
+    return {"message": "Lekcja została przeniesiona"}
