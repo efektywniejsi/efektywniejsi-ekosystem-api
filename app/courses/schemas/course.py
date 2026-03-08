@@ -159,6 +159,11 @@ class LessonReorderRequest(BaseModel):
     lesson_ids: list[str] = Field(..., min_length=1)
 
 
+class LessonMoveRequest(BaseModel):
+    target_module_id: str
+    position: int = Field(..., ge=0)
+
+
 class DeleteCourseRequest(BaseModel):
     """Request body for deleting a course with password confirmation."""
 

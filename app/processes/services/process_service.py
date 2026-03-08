@@ -2,9 +2,9 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from app.courses.models.course import Lesson
+from app.courses.models.course import Lesson, Module
 from app.processes.models import LessonProcess, Process
 from app.processes.schemas import (
     LessonProcessCreate,
@@ -54,6 +54,12 @@ class ProcessService:
     def get_published_process_detail_by_slug(self, slug: str) -> ProcessDetailResponse:
         process = (
             self.db.query(Process)
+            .options(
+                joinedload(Process.lesson_processes)
+                .joinedload(LessonProcess.lesson)
+                .joinedload(Lesson.module)
+                .joinedload(Module.course)
+            )
             .filter(Process.slug == slug, Process.is_published == True)  # noqa: E712
             .first()
         )
