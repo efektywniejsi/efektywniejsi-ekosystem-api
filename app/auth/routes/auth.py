@@ -58,8 +58,14 @@ async def login(
                 detail="Wymagany kod 2FA",
                 headers={"X-2FA-Required": "true"},
             )
-        totp = pyotp.TOTP(decrypt_totp_secret(user.totp_secret))
-        if not totp.verify(credentials.totp_code):
+        try:
+            totp = pyotp.TOTP(decrypt_totp_secret(user.totp_secret))
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Błąd konfiguracji 2FA. Skontaktuj się z administratorem.",
+            ) from None
+        if not totp.verify(credentials.totp_code, valid_window=1):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Nieprawidłowy kod 2FA",

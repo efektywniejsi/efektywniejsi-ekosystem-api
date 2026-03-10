@@ -180,8 +180,14 @@ async def verify_2fa(
             detail="Konfiguracja 2FA nie została rozpoczęta",
         )
 
-    totp = pyotp.TOTP(decrypt_totp_secret(current_user.totp_secret))
-    if not totp.verify(data.code):
+    try:
+        totp = pyotp.TOTP(decrypt_totp_secret(current_user.totp_secret))
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Błąd konfiguracji 2FA. Skontaktuj się z administratorem.",
+        ) from None
+    if not totp.verify(data.code, valid_window=1):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Nieprawidłowy kod weryfikacyjny",
@@ -205,8 +211,14 @@ async def disable_2fa(
             detail="2FA nie jest włączone",
         )
 
-    totp = pyotp.TOTP(decrypt_totp_secret(current_user.totp_secret))
-    if not totp.verify(data.code):
+    try:
+        totp = pyotp.TOTP(decrypt_totp_secret(current_user.totp_secret))
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Błąd konfiguracji 2FA. Skontaktuj się z administratorem.",
+        ) from None
+    if not totp.verify(data.code, valid_window=1):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Nieprawidłowy kod weryfikacyjny",

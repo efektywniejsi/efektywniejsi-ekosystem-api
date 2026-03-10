@@ -36,4 +36,10 @@ def encrypt_totp_secret(secret: str) -> str:
 
 
 def decrypt_totp_secret(encrypted: str) -> str:
-    return _get_fernet().decrypt(encrypted.encode()).decode()
+    try:
+        return _get_fernet().decrypt(encrypted.encode()).decode()
+    except InvalidToken:
+        logger.error("Nie udało się odszyfrować sekretu TOTP — klucz mógł zostać zmieniony")
+        raise ValueError(
+            "Nie udało się odszyfrować klucza 2FA. Skontaktuj się z administratorem."
+        ) from None
