@@ -51,6 +51,32 @@ class CreateUserRequest(BaseModel):
     course_ids: list[uuid.UUID] = []
 
 
+class BulkUserEntry(BaseModel):
+    email: EmailStr
+    name: str = Field(min_length=1)
+
+
+class BulkCreateUserRequest(BaseModel):
+    users: list[BulkUserEntry] = Field(min_length=1, max_length=50)
+    role: Literal["paid", "admin"] = "paid"
+    send_welcome_email: bool = True
+    package_ids: list[uuid.UUID] = []
+    course_ids: list[uuid.UUID] = []
+
+
+class BulkUserResult(BaseModel):
+    email: str
+    success: bool
+    user: UserResponse | None = None
+    error: str | None = None
+
+
+class BulkCreateUserResponse(BaseModel):
+    results: list[BulkUserResult]
+    created_count: int
+    failed_count: int
+
+
 class UpdateUserRequest(BaseModel):
     name: str | None = None
     role: Literal["paid", "admin"] | None = None
@@ -111,6 +137,112 @@ async def create_user(
         role=new_user.role,
         is_active=new_user.is_active,
         created_at=new_user.created_at.isoformat() if new_user.created_at else None,
+    )
+
+
+@router.post("/users/bulk", response_model=BulkCreateUserResponse)
+async def bulk_create_users(
+    request: BulkCreateUserRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> BulkCreateUserResponse:
+    # 1. Check for duplicate emails within request
+    emails = [u.email.lower() for u in request.users]
+    if len(emails) != len(set(emails)):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Lista zawiera zduplikowane adresy email",
+        )
+
+    # 2. Pre-fetch existing emails in one query
+    existing_emails = {
+        row[0].lower()
+        for row in db.query(User.email).filter(func.lower(User.email).in_(emails)).all()
+    }
+
+    results: list[BulkUserResult] = []
+    users_to_email: list[tuple[User, str]] = []
+
+    for entry in request.users:
+        if entry.email.lower() in existing_emails:
+            results.append(
+                BulkUserResult(
+                    email=entry.email,
+                    success=False,
+                    error="Email jest już zarejestrowany",
+                )
+            )
+            continue
+
+        try:
+            savepoint = db.begin_nested()
+            raw_token, hashed_token, expiry = generate_reset_token()
+
+            new_user = User(
+                id=uuid.uuid4(),
+                email=entry.email,
+                name=entry.name,
+                hashed_password="!",
+                role=request.role,
+                is_active=True,
+                password_reset_token=hashed_token,
+                password_reset_token_expires=expiry,
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+            )
+            db.add(new_user)
+            db.flush()
+
+            _create_admin_enrollments(db, new_user.id, request.package_ids, request.course_ids)
+            savepoint.commit()
+
+            results.append(
+                BulkUserResult(
+                    email=entry.email,
+                    success=True,
+                    user=UserResponse(
+                        id=str(new_user.id),
+                        email=new_user.email,
+                        name=new_user.name,
+                        role=new_user.role,
+                        is_active=new_user.is_active,
+                        created_at=new_user.created_at.isoformat() if new_user.created_at else None,
+                    ),
+                )
+            )
+            users_to_email.append((new_user, raw_token))
+        except Exception:
+            savepoint.rollback()
+            logger.exception("Nie udało się utworzyć użytkownika %s", entry.email)
+            results.append(
+                BulkUserResult(
+                    email=entry.email,
+                    success=False,
+                    error="Wystąpił nieoczekiwany błąd podczas tworzenia konta",
+                )
+            )
+
+    db.commit()
+
+    # Send welcome emails (fire-and-forget, outside transaction)
+    if request.send_welcome_email:
+        email_service = get_email_service()
+        for user_obj, raw_token in users_to_email:
+            try:
+                email_message = build_admin_welcome_email(
+                    name=str(user_obj.name),
+                    email=str(user_obj.email),
+                    token=raw_token,
+                )
+                await email_service.send_email(email_message)
+            except Exception:
+                logger.exception("Nie udało się wysłać emaila powitalnego do %s", user_obj.email)
+
+    created_count = sum(1 for r in results if r.success)
+    return BulkCreateUserResponse(
+        results=results,
+        created_count=created_count,
+        failed_count=len(results) - created_count,
     )
 
 
