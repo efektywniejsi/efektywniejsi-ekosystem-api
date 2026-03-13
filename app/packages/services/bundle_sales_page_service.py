@@ -22,7 +22,7 @@ def get_bundle_sales_page(db: Session, bundle_id: UUID) -> dict[str, Any] | None
     if not bundle:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Bundle not found",
+            detail="Oferta bundlowa nie znaleziona",
         )
     result: dict[str, Any] | None = bundle.sales_page_sections
     return result
@@ -37,7 +37,7 @@ def update_bundle_sales_page(db: Session, bundle_id: UUID, data: SalesPageData) 
     if not bundle:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Bundle not found",
+            detail="Oferta bundlowa nie znaleziona",
         )
 
     for section in data.sections:
@@ -48,7 +48,9 @@ def update_bundle_sales_page(db: Session, bundle_id: UUID, data: SalesPageData) 
             except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Invalid config for section '{section.type}' (id={section.id}): {e}",
+                    detail=(
+                        f"Nieprawidłowa konfiguracja sekcji '{section.type}' (id={section.id}): {e}"
+                    ),
                 ) from e
 
     serialized: dict[str, Any] = data.model_dump()

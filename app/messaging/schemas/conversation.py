@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.datetime_utils import UTCDatetime
 
@@ -17,8 +17,7 @@ class ParticipantInfo(BaseModel):
     avatar_url: str | None = None
     role: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MessagePreview(BaseModel):
@@ -35,8 +34,7 @@ class ConversationListItem(BaseModel):
     unread_count: int = 0
     updated_at: UTCDatetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ConversationListResponse(BaseModel):

@@ -153,7 +153,7 @@ async def test_cannot_mark_complete_without_95_percent(
     )
 
     assert response.status_code == 400
-    assert "95%" in response.json()["detail"]
+    assert "95%" in response.json()["error"]["message"]
 
 
 @pytest.mark.asyncio
@@ -309,7 +309,7 @@ async def test_video_lesson_requires_prior_progress(
     )
 
     assert response.status_code == 400
-    assert "rozpocząć oglądanie" in response.json()["detail"]
+    assert "rozpocząć oglądanie" in response.json()["error"]["message"]
 
 
 @pytest.mark.asyncio
@@ -338,7 +338,7 @@ async def test_video_lesson_error_shows_current_progress(
     )
 
     assert response.status_code == 400
-    detail = response.json()["detail"]
+    detail = response.json()["error"]["message"]
     assert "95%" in detail
     assert "30%" in detail  # Current progress shown in message
 
@@ -411,4 +411,4 @@ async def test_cannot_uncomplete_non_completed_lesson(
     )
 
     assert response.status_code == 400
-    assert "nie jest oznaczona" in response.json()["detail"]
+    assert "nie jest oznaczona" in response.json()["error"]["message"]

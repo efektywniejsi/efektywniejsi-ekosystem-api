@@ -123,13 +123,13 @@ class CertificateService:
         if not enrollment:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Enrollment not found",
+                detail="Zapis nie znaleziony",
             )
 
         if not enrollment.completed_at:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Course not completed yet",
+                detail="Kurs nie został jeszcze ukończony",
             )
 
         existing_certificate = (
@@ -147,7 +147,7 @@ class CertificateService:
         if not user or not course:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="User or course not found",
+                detail="Użytkownik lub kurs nie znaleziony",
             )
 
         certificate_code = CertificateService.generate_certificate_code()
@@ -189,14 +189,14 @@ class CertificateService:
                 "user_name": "",
                 "course_title": "",
                 "issued_at": None,
-                "message": "Certificate not found",
+                "message": "Certyfikat nie znaleziony",
             }
 
         return {
             "valid": True,
             "certificate_code": certificate_code,
-            "user_name": certificate.user.name if certificate.user else "Unknown",
-            "course_title": certificate.course.title if certificate.course else "Unknown",
+            "user_name": certificate.user.name if certificate.user else "Nieznany",
+            "course_title": certificate.course.title if certificate.course else "Nieznany",
             "issued_at": certificate.issued_at,
-            "message": "Certificate is valid",
+            "message": "Certyfikat jest ważny",
         }

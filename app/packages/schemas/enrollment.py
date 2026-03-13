@@ -4,7 +4,7 @@ Pydantic schemas for package enrollments.
 
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.core.datetime_utils import UTCDatetime
 
@@ -20,8 +20,7 @@ class PackageEnrollmentResponse(BaseModel):
     # Package details (nested)
     package: "PackageEnrollmentPackage"
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PackageEnrollmentPackage(BaseModel):
@@ -34,5 +33,4 @@ class PackageEnrollmentPackage(BaseModel):
     category: str
     total_time_saved: str | None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

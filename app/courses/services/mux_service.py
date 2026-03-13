@@ -1,14 +1,14 @@
 """Mux video service for direct uploads and asset management."""
 
-import logging
 from typing import Literal
 
 import mux_python
+import structlog
 from mux_python.rest import ApiException
 
 from app.core.config import settings
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class MuxAssetStatus:

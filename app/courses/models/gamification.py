@@ -42,7 +42,7 @@ class UserAchievement(Base):
     earned_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     progress_value: Mapped[int | None] = mapped_column(default=0)
 
-    user = relationship("User", backref="achievements")
+    user = relationship("User", back_populates="achievements")
     achievement = relationship("Achievement", back_populates="user_achievements")
 
     def __repr__(self) -> str:
@@ -66,7 +66,7 @@ class UserStreak(Base):
         onupdate=lambda: datetime.now(UTC),
     )
 
-    user = relationship("User", backref="streak", uselist=False)
+    user = relationship("User", back_populates="streak", uselist=False)
 
     def __repr__(self) -> str:
         return f"<UserStreak(id={self.id}, user_id={self.user_id}, current={self.current_streak}, longest={self.longest_streak})>"  # noqa: E501
@@ -87,7 +87,7 @@ class UserPoints(Base):
         onupdate=lambda: datetime.now(UTC),
     )
 
-    user = relationship("User", backref="points", uselist=False)
+    user = relationship("User", back_populates="points", uselist=False)
 
     def __repr__(self) -> str:
         return f"<UserPoints(id={self.id}, user_id={self.user_id}, total={self.total_points}, level={self.level})>"  # noqa: E501
@@ -106,7 +106,7 @@ class PointsHistory(Base):
     reference_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC), index=True)
 
-    user = relationship("User", backref="points_history")
+    user = relationship("User", back_populates="points_history")
 
     def __repr__(self) -> str:
         return f"<PointsHistory(id={self.id}, user_id={self.user_id}, points={self.points}, reason={self.reason})>"  # noqa: E501

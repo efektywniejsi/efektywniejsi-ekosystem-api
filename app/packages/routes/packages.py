@@ -21,7 +21,7 @@ from app.packages.schemas.package import (
     PackageWithChildrenResponse,
 )
 
-router = APIRouter(prefix="/packages", tags=["packages"])
+router = APIRouter(prefix="/packages")
 
 
 @router.get("", response_model=list[PackageListResponse])
@@ -139,7 +139,7 @@ def get_package_by_slug(
     )
 
     if not package:
-        raise HTTPException(status_code=404, detail="Pakiet nie znaleziony")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pakiet nie znaleziony")
 
     return PackageDetailResponse.from_orm(package)
 
@@ -164,7 +164,9 @@ def get_package_bundle_contents(
     try:
         package_uuid = uuid.UUID(package_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Nieprawidłowy format ID pakietu") from None
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Nieprawidłowy format ID pakietu"
+        ) from None
 
     package = (
         db.query(Package)
@@ -177,7 +179,9 @@ def get_package_bundle_contents(
     )
 
     if not package:
-        raise HTTPException(status_code=404, detail="Pakiet bundlowy nie znaleziony")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Pakiet bundlowy nie znaleziony"
+        )
 
     # Get child packages
     bundle_items = (
@@ -266,17 +270,24 @@ def create_package(
             try:
                 pkg_uuid = uuid.UUID(package_id)
             except ValueError:
-                raise HTTPException(400, f"Nieprawidłowy ID pakietu: {package_id}") from None
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Nieprawidłowy ID pakietu: {package_id}",
+                ) from None
 
             # Verify child package exists
             child_pkg = db.query(Package).filter(Package.id == pkg_uuid).first()
             if not child_pkg:
-                raise HTTPException(404, f"Pakiet {package_id} nie znaleziony")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Pakiet {package_id} nie znaleziony",
+                )
 
             # Don't allow nested bundles
             if child_pkg.is_bundle:
                 raise HTTPException(
-                    400, f"Nie można dodać bundla '{child_pkg.title}' do innego bundla"
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Nie można dodać bundla '{child_pkg.title}' do innego bundla",
                 )
 
             # Create bundle item relationship
@@ -317,12 +328,14 @@ def update_package(
     try:
         package_uuid = uuid.UUID(package_id)
     except ValueError:
-        raise HTTPException(400, "Nieprawidłowy ID pakietu") from None
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Nieprawidłowy ID pakietu"
+        ) from None
 
     package = db.query(Package).filter(Package.id == package_uuid).first()
 
     if not package:
-        raise HTTPException(404, "Package not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pakiet nie znaleziony")
 
     # Update fields
     if package_data.title is not None:
@@ -356,15 +369,22 @@ def update_package(
             try:
                 pkg_uuid = uuid.UUID(package_id)
             except ValueError:
-                raise HTTPException(400, f"Nieprawidłowy ID pakietu: {package_id}") from None
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Nieprawidłowy ID pakietu: {package_id}",
+                ) from None
 
             child_pkg = db.query(Package).filter(Package.id == pkg_uuid).first()
             if not child_pkg:
-                raise HTTPException(404, f"Pakiet {package_id} nie znaleziony")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Pakiet {package_id} nie znaleziony",
+                )
 
             if child_pkg.is_bundle:
                 raise HTTPException(
-                    400, f"Nie można dodać bundla '{child_pkg.title}' do innego bundla"
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Nie można dodać bundla '{child_pkg.title}' do innego bundla",
                 )
 
             bundle_item = PackageBundleItem(
@@ -401,20 +421,22 @@ def delete_package(
     try:
         package_uuid = uuid.UUID(package_id)
     except ValueError:
-        raise HTTPException(400, "Nieprawidłowy ID pakietu") from None
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Nieprawidłowy ID pakietu"
+        ) from None
 
     package = db.query(Package).filter(Package.id == package_uuid).first()
 
     if not package:
-        raise HTTPException(404, "Pakiet nie znaleziony")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pakiet nie znaleziony")
 
     enrollment_count = (
         db.query(PackageEnrollment).filter(PackageEnrollment.package_id == package_uuid).count()
     )
     if enrollment_count > 0:
         raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            f"Nie można usunąć pakietu — {enrollment_count} użytkowników ma aktywny dostęp",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Nie można usunąć pakietu — {enrollment_count} użytkowników ma aktywny dostęp",
         )
 
     # Soft delete

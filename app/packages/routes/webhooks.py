@@ -1,7 +1,6 @@
 """Payment webhook routes using abstract handler pattern."""
 
-import logging
-
+import structlog
 from fastapi import APIRouter, Depends, Header, Request
 from sqlalchemy.orm import Session
 
@@ -11,9 +10,9 @@ from app.packages.services.payu_webhook_handler import get_payu_handler
 from app.packages.services.stripe_webhook_handler import get_stripe_handler
 from app.packages.services.webhook_handler import WebhookResult
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
-router = APIRouter(prefix="/webhooks", tags=["webhooks"])
+router = APIRouter(prefix="/webhooks")
 
 
 def _result_to_response(result: WebhookResult) -> dict[str, str]:

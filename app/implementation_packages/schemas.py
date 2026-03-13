@@ -4,7 +4,7 @@ import json
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.core.datetime_utils import UTCDatetime
 
@@ -15,8 +15,7 @@ class ImplPackageProcessResponse(BaseModel):
     description: str | None = None
     sort_order: int = 0
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ImplPackageListResponse(BaseModel):
@@ -39,8 +38,8 @@ class ImplPackageListResponse(BaseModel):
     learning_title: str | None = None
     learning_description: str | None = None
     learning_thumbnail_url: str | None = None
-    created_at: str
-    updated_at: str
+    created_at: UTCDatetime
+    updated_at: UTCDatetime
 
     @field_validator("tools", mode="before")
     @classmethod
@@ -49,13 +48,7 @@ class ImplPackageListResponse(BaseModel):
             return list(json.loads(v))
         return v
 
-    @field_validator("created_at", "updated_at", mode="before")
-    @classmethod
-    def datetime_to_str(cls, v: object) -> str:
-        return str(v)
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ImplPackageDetailResponse(ImplPackageListResponse):
@@ -132,8 +125,7 @@ class ImplPackageEnrollmentResponse(BaseModel):
     expires_at: UTCDatetime | None = None
     is_expired: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ImplPackageEnrollmentListResponse(BaseModel):

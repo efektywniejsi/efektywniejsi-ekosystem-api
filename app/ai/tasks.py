@@ -1,9 +1,10 @@
 """Celery tasks for AI generation."""
 
 import json
-import logging
 from typing import Any
 from uuid import UUID
+
+import structlog
 
 from app.ai.models.ai_chat_session import AiChatSession
 from app.ai.schemas.ai_generation import AiGenerateRequest, EntityType
@@ -11,7 +12,7 @@ from app.ai.services.sales_page_generator import generate_sales_page
 from app.core.celery_app import celery_app
 from app.db.session import SessionLocal
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def _save_assistant_response(entity_type: str, entity_id: str, result_dict: dict) -> None:

@@ -32,7 +32,7 @@ async def test_cannot_enroll_twice(
     )
 
     assert response.status_code == 409
-    assert "already enrolled" in response.json()["detail"].lower()
+    assert "już zapisany" in response.json()["error"]["message"].lower()
 
 
 @pytest.mark.asyncio
@@ -98,4 +98,4 @@ async def test_no_enrollment_no_access(test_client: AsyncClient, test_user_token
     )
 
     assert response.status_code == 403
-    assert "enrolled" in response.json()["detail"].lower()
+    assert "zapisany" in response.json()["error"]["message"].lower()

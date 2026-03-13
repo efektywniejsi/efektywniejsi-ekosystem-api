@@ -64,7 +64,7 @@ class TestResetPasswordEndpoint:
         response = await test_client.post("/api/v1/password/reset", json=payload)
 
         assert response.status_code == 400
-        assert "Nieprawidłowy lub wygasły" in response.json()["detail"]
+        assert "Nieprawidłowy lub wygasły" in response.json()["error"]["message"]
 
     @pytest.mark.asyncio
     async def test_should_return_400_when_token_expired(self, test_client, test_user, db_session):
@@ -78,7 +78,7 @@ class TestResetPasswordEndpoint:
         response = await test_client.post("/api/v1/password/reset", json=payload)
 
         assert response.status_code == 400
-        assert "wygasł" in response.json()["detail"]
+        assert "wygasł" in response.json()["error"]["message"]
 
     @pytest.mark.asyncio
     async def test_should_return_422_when_password_too_short(
@@ -94,7 +94,7 @@ class TestResetPasswordEndpoint:
         response = await test_client.post("/api/v1/password/reset", json=payload)
 
         assert response.status_code == 422
-        assert "co najmniej 8 znaków" in response.json()["detail"]
+        assert "co najmniej 8 znaków" in response.json()["error"]["message"]
 
     @pytest.mark.asyncio
     async def test_should_allow_login_with_new_password(self, test_client, test_user, db_session):

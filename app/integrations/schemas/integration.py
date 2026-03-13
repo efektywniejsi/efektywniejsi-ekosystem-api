@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 IntegrationTypeValue = Literal["API", "OAuth 2.0", "MCP"]
 IntegrationCategoryValue = Literal[
@@ -89,7 +89,7 @@ class IntegrationResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LessonBriefResponse(BaseModel):
@@ -126,7 +126,7 @@ class LessonIntegrationResponse(BaseModel):
     context_note: str | None = None
     sort_order: int
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProcessIntegrationCreate(BaseModel):
@@ -141,4 +141,4 @@ class ProcessIntegrationResponse(BaseModel):
     context_note: str | None = None
     sort_order: int
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)

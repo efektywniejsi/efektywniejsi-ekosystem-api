@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from app.core.datetime_utils import UTCDatetime
 
@@ -34,10 +34,7 @@ class SalesWindowBase(BaseModel):
             return str(v.value)
         return str(v).lower()
 
-    model_config = {
-        "from_attributes": True,
-        "populate_by_name": True,
-    }
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class SalesWindowResponse(SalesWindowBase):
@@ -125,10 +122,7 @@ class SalesWindowCreate(BaseModel):
             raise ValueError("At least one bundle ID must be provided")
         return v
 
-    model_config = {
-        "from_attributes": True,
-        "populate_by_name": True,
-    }
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class SalesWindowListResponse(BaseModel):

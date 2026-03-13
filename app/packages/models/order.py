@@ -73,7 +73,11 @@ class Order(Base):
 
     # Relationships
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
-    user = relationship("User", backref="orders")
+    user = relationship("User", back_populates="orders")
+    package_enrollments = relationship("PackageEnrollment", back_populates="order")
+    implementation_package_enrollments = relationship(
+        "ImplementationPackageEnrollment", back_populates="order"
+    )
 
     def __repr__(self) -> str:
         return (

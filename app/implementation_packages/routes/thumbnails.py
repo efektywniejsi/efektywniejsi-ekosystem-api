@@ -1,11 +1,9 @@
-"""Course thumbnail management routes (admin only)."""
+"""Routes for implementation package thumbnail uploads."""
 
-import os
-import uuid as uuid_lib
+import uuid
 from pathlib import Path
-from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -13,25 +11,28 @@ from app.auth.dependencies import require_admin
 from app.auth.models.user import User
 from app.core.config import settings
 from app.core.constants import THUMBNAIL_ALLOWED_MIME_TYPES, THUMBNAIL_MAX_SIZE_BYTES
-from app.courses.models import Course
+from app.core.rate_limit import limiter
 from app.db.session import get_db
+from app.implementation_packages.models.implementation_package import ImplementationPackage
 
 router = APIRouter()
 
 
-@router.post("/courses/{course_id}/learning-thumbnail")
-async def upload_learning_thumbnail(
-    course_id: UUID,
+@router.post("/{package_id}/learning-thumbnail")
+@limiter.limit("30/minute")
+async def upload_package_learning_thumbnail(
+    request: Request,
+    package_id: uuid.UUID,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ) -> dict:
-    """Upload a learning thumbnail image for a course (admin only)."""
-    course = db.query(Course).filter(Course.id == course_id).first()
-    if not course:
+    """Upload a learning thumbnail image for an implementation package (admin only)."""
+    pkg = db.query(ImplementationPackage).filter(ImplementationPackage.id == package_id).first()
+    if not pkg:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Kurs nie znaleziony",
+            detail="Pakiet nie został znaleziony",
         )
 
     if file.content_type not in THUMBNAIL_ALLOWED_MIME_TYPES:
@@ -49,41 +50,42 @@ async def upload_learning_thumbnail(
         )
 
     file_extension = Path(file.filename or "image.jpg").suffix
-    unique_filename = f"{uuid_lib.uuid4()}{file_extension}"
+    unique_filename = f"{uuid.uuid4()}{file_extension}"
 
     upload_dir = Path(settings.UPLOAD_DIR) / "thumbnails"
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     # Remove old thumbnail file if it exists
-    if course.learning_thumbnail_url:
-        old_path = upload_dir / Path(course.learning_thumbnail_url).name
+    if pkg.learning_thumbnail_url:
+        old_path = upload_dir / Path(pkg.learning_thumbnail_url).name
         if old_path.exists():
-            os.remove(old_path)
+            old_path.unlink()
 
     file_path = upload_dir / unique_filename
     with open(file_path, "wb") as f:
         f.write(file_content)
 
     thumbnail_url = (
-        f"{settings.API_V1_PREFIX}/courses/{course_id}/learning-thumbnail/{unique_filename}"
+        f"{settings.API_V1_PREFIX}/implementation-packages/{package_id}"
+        f"/learning-thumbnail/{unique_filename}"
     )
-    course.learning_thumbnail_url = thumbnail_url
+    pkg.learning_thumbnail_url = thumbnail_url
 
     db.commit()
-    db.refresh(course)
+    db.refresh(pkg)
 
     return {
         "learning_thumbnail_url": thumbnail_url,
     }
 
 
-@router.get("/courses/{course_id}/learning-thumbnail/{filename}")
-async def serve_learning_thumbnail(
-    course_id: UUID,
+@router.get("/{package_id}/learning-thumbnail/{filename}")
+async def serve_package_learning_thumbnail(
+    package_id: uuid.UUID,
     filename: str,
     db: Session = Depends(get_db),
 ) -> FileResponse:
-    """Serve a learning thumbnail image."""
+    """Serve a learning thumbnail image for an implementation package."""
     upload_root = (Path(settings.UPLOAD_DIR) / "thumbnails").resolve()
     file_path = (upload_root / filename).resolve()
 

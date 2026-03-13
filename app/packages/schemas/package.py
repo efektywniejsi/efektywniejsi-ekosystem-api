@@ -2,13 +2,13 @@
 Pydantic schemas for packages.
 """
 
-import json
 import uuid
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.datetime_utils import UTCDatetime
+from app.shared.validators import parse_tools_json as _parse_tools_json
 
 
 class PackageProcessResponse(BaseModel):
@@ -19,8 +19,7 @@ class PackageProcessResponse(BaseModel):
     description: str | None
     sort_order: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PackageBundleItemResponse(BaseModel):
@@ -30,8 +29,7 @@ class PackageBundleItemResponse(BaseModel):
     child_package_id: uuid.UUID
     sort_order: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PackageListResponse(BaseModel):
@@ -53,16 +51,12 @@ class PackageListResponse(BaseModel):
     tools: list[str] = Field(default_factory=list)
     created_at: UTCDatetime | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("tools", mode="before")
     @classmethod
     def parse_tools_json(cls, v: Any) -> list[str]:
-        if isinstance(v, str):
-            parsed: list[str] = json.loads(v)
-            return parsed
-        return list(v)
+        return _parse_tools_json(v)
 
 
 class PackageDetailResponse(BaseModel):
@@ -87,16 +81,12 @@ class PackageDetailResponse(BaseModel):
     created_at: UTCDatetime
     updated_at: UTCDatetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("tools", mode="before")
     @classmethod
     def parse_tools_json(cls, v: Any) -> list[str]:
-        if isinstance(v, str):
-            parsed: list[str] = json.loads(v)
-            return parsed
-        return list(v)
+        return _parse_tools_json(v)
 
 
 class PackageWithChildrenResponse(BaseModel):
@@ -114,8 +104,7 @@ class PackageWithChildrenResponse(BaseModel):
     tools: list[str] = Field(default_factory=list)
     child_packages: list[PackageListResponse] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PackageCreateRequest(BaseModel):

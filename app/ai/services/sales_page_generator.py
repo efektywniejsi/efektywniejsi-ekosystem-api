@@ -1,11 +1,11 @@
 """Orchestrator: fetch context -> build prompt -> call AI -> validate response."""
 
 import json
-import logging
 import re
 import uuid
 from typing import Any, cast
 
+import structlog
 from anthropic.types import MessageParam
 from sqlalchemy.orm import Session, joinedload
 
@@ -23,7 +23,7 @@ from app.courses.schemas.sales_page import SECTION_CONFIG_MAP, SalesPageData
 from app.implementation_packages.models.implementation_package import ImplementationPackage
 from app.packages.models.package import Package
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def _fetch_course_data(db: Session, course_id: uuid.UUID) -> dict[str, Any]:

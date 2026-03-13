@@ -76,13 +76,16 @@ async def upload_bundle_sales_page_image(
     if not bundle:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Bundle not found",
+            detail="Pakiet nie znaleziony",
         )
 
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid file type. Allowed: PNG, JPG, WebP. Received: {file.content_type}",
+            detail=(
+                "Nieprawidłowy typ pliku. Dozwolone: PNG, JPG, WebP. "
+                f"Otrzymano: {file.content_type}"
+            ),
         )
 
     max_size_bytes = 5 * 1024 * 1024  # 5 MB
@@ -114,12 +117,18 @@ async def serve_bundle_sales_page_image(
     filename: str,
 ) -> FileResponse:
     """Serve a bundle sales page image."""
-    file_path = Path(settings.UPLOAD_DIR) / "sales-page" / filename
+    upload_root = (Path(settings.UPLOAD_DIR) / "sales-page").resolve()
+    file_path = (upload_root / filename).resolve()
+    if not str(file_path).startswith(str(upload_root)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nieprawidłowa nazwa pliku",
+        )
 
     if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image not found",
+            detail="Obraz nie znaleziony",
         )
 
     media_type = "image/jpeg"

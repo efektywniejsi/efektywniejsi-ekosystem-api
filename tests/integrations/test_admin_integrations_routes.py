@@ -109,7 +109,7 @@ class TestAdminCreateIntegration:
         )
 
         assert response.status_code == 400
-        assert "slug" in response.json()["detail"].lower()
+        assert "slug" in response.json()["error"]["message"].lower()
 
     @pytest.mark.asyncio
     async def test_create_integration_invalid_url(
@@ -331,7 +331,7 @@ class TestAdminLessonIntegrations:
         )
 
         assert response.status_code == 400
-        assert "już przypisana" in response.json()["detail"]
+        assert "już przypisana" in response.json()["error"]["message"]
 
     @pytest.mark.asyncio
     async def test_detach_integration_from_lesson(
