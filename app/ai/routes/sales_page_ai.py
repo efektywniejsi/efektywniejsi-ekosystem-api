@@ -103,7 +103,7 @@ async def ai_generate_course_sales_page(
 
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kurs nie znaleziony")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Kurs nie znaleziony")
 
     return _dispatch_task(db, EntityType.COURSE, course_id, request)
 
@@ -124,7 +124,9 @@ async def ai_generate_bundle_sales_page(
 
     bundle = db.query(Package).filter(Package.id == bundle_id).first()
     if not bundle:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bundle nie znaleziony")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Oferta bundlowa nie znaleziona"
+        )
 
     return _dispatch_task(db, EntityType.BUNDLE, bundle_id, request)
 
@@ -145,7 +147,9 @@ async def ai_generate_impl_package_sales_page(
 
     package = db.query(ImplementationPackage).filter(ImplementationPackage.id == package_id).first()
     if not package:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Pakiet wdrożeniowy nie znaleziony")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Pakiet wdrożeniowy nie znaleziony"
+        )
 
     return _dispatch_task(db, EntityType.IMPLEMENTATION_PACKAGE, package_id, request)
 

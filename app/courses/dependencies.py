@@ -43,12 +43,12 @@ class RequireCourseEnrollment:
         if not enrollment:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You must be enrolled in this course to access it",
+                detail="Musisz być zapisany do tego kursu, aby uzyskać dostęp",
             )
         if enrollment.is_expired:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Your access to this course has expired",
+                detail="Twój dostęp do tego kursu wygasł",
             )
 
 
@@ -74,26 +74,26 @@ class RequireLessonEnrollment:
         if not lesson:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Lesson not found",
+                detail="Lekcja nie znaleziona",
             )
 
         if not (self.skip_for_admin and _is_admin(current_user)):
             if lesson.status == LessonStatus.UNAVAILABLE:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Lesson not found",
+                    detail="Lekcja nie znaleziona",
                 )
             if lesson.status == LessonStatus.IN_PREPARATION:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="This lesson is currently in preparation and not yet available",
+                    detail="Ta lekcja jest obecnie w przygotowaniu i nie jest jeszcze dostępna",
                 )
 
         module = db.query(Module).filter(Module.id == lesson.module_id).first()
         if not module:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Module not found",
+                detail="Moduł nie znaleziony",
             )
 
         if self.skip_for_admin and _is_admin(current_user):
@@ -104,18 +104,18 @@ class RequireLessonEnrollment:
             if not course:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Course not found",
+                    detail="Kurs nie znaleziony",
                 )
             enrollment = EnrollmentService.get_user_enrollment(current_user.id, course.id, db)
             if not enrollment:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You must be enrolled in this course to access this lesson",
+                    detail="Musisz być zapisany do tego kursu, aby uzyskać dostęp do tej lekcji",
                 )
             if enrollment.is_expired:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Your access to this course has expired",
+                    detail="Twój dostęp do tego kursu wygasł",
                 )
         elif module.implementation_package_id:
             enrollment = (
@@ -129,15 +129,15 @@ class RequireLessonEnrollment:
             if not enrollment:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You must be enrolled in this package to access this lesson",
+                    detail="Musisz być zapisany do tego pakietu, aby uzyskać dostęp do tej lekcji",
                 )
             if enrollment.is_expired:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Your access to this package has expired",
+                    detail="Twój dostęp do tego pakietu wygasł",
                 )
         else:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Lesson has no associated course or package",
+                detail="Lekcja nie jest przypisana do żadnego kursu ani pakietu",
             )

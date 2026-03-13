@@ -6,17 +6,17 @@ for completed orders.
 API Documentation: https://github.com/fakturownia/API
 """
 
-import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
 import httpx  # type: ignore[import-not-found]
+import structlog
 
 from app.core.config import settings
 from app.packages.models.order import Order
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 @dataclass

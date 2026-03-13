@@ -1,9 +1,10 @@
 """Celery tasks for sending notifications."""
 
-import logging
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
+
+import structlog
 
 from app.auth.models.user import User
 from app.core.celery_app import celery_app
@@ -20,7 +21,7 @@ from app.notifications.models.announcement_log import AnnouncementLog
 from app.notifications.models.notification import NotificationType
 from app.notifications.services.notification_sender import NotificationSender
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 @celery_app.task(bind=True, max_retries=2, default_retry_delay=30)

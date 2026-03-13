@@ -4,13 +4,13 @@ This module provides a consistent exception hierarchy for the application
 and registers global exception handlers with FastAPI.
 """
 
-import logging
 from typing import Any
 
-from fastapi import FastAPI, Request, status
+import structlog
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class AppError(Exception):
@@ -120,6 +120,34 @@ class ExternalServiceError(AppError):
         )
 
 
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    """Wrap standard HTTPException into consistent error response format."""
+    code_map = {
+        400: "VALIDATION_ERROR",
+        401: "UNAUTHORIZED",
+        403: "FORBIDDEN",
+        404: "NOT_FOUND",
+        409: "CONFLICT",
+        413: "PAYLOAD_TOO_LARGE",
+        422: "VALIDATION_ERROR",
+        429: "RATE_LIMIT_EXCEEDED",
+    }
+    error_code = code_map.get(exc.status_code, "INTERNAL_ERROR")
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "success": False,
+            "error": {
+                "code": error_code,
+                "message": exc.detail if isinstance(exc.detail, str) else str(exc.detail),
+                "details": None,
+            },
+        },
+        headers=exc.headers,
+    )
+
+
 async def app_exception_handler(request: Request, exc: AppError) -> JSONResponse:
     """Handle AppException and return consistent JSON response."""
     logger.error(
@@ -169,6 +197,7 @@ def register_exception_handlers(app: FastAPI, *, debug: bool = False) -> None:
         app: The FastAPI application instance.
         debug: If True, unhandled exceptions propagate with stack traces.
     """
+    app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore[arg-type]
     app.add_exception_handler(AppError, app_exception_handler)  # type: ignore[arg-type]
     if not debug:
         app.add_exception_handler(Exception, unhandled_exception_handler)

@@ -4,6 +4,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from app.shared.schemas.sales_content import FaqItem
+
 SectionType = Literal[
     "hero",
     "features",
@@ -56,11 +58,6 @@ class TestimonialItem(BaseModel):
 class TestimonialsConfig(BaseModel):
     title: str = ""
     items: list[TestimonialItem] = Field(default_factory=list, max_length=20)
-
-
-class FaqItem(BaseModel):
-    question: str = ""
-    answer: str = ""
 
 
 class FaqConfig(BaseModel):

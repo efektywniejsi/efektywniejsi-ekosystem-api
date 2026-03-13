@@ -138,7 +138,7 @@ class ProgressService:
         if not lesson:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Lesson not found",
+                detail="Lekcja nie znaleziona",
             )
 
         is_text_only = lesson.mux_playback_id is None or lesson.duration_seconds == 0

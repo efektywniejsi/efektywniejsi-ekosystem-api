@@ -7,7 +7,7 @@ but not exposed to users. Invoices are sent via Fakturownia email automatically.
 
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.core.datetime_utils import UTCDatetime
 from app.packages.models.order import OrderStatus, PaymentProvider
@@ -23,8 +23,7 @@ class OrderItemResponse(BaseModel):
     package_slug: str
     price: int  # In grosz
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrderResponse(BaseModel):
@@ -43,8 +42,7 @@ class OrderResponse(BaseModel):
     created_at: UTCDatetime
     items: list[OrderItemResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrderListResponse(BaseModel):
@@ -58,5 +56,4 @@ class OrderListResponse(BaseModel):
     created_at: UTCDatetime
     items_count: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

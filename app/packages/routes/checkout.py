@@ -1,7 +1,7 @@
-import logging
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+import structlog
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -18,9 +18,9 @@ from app.packages.schemas.checkout import (
 from app.packages.schemas.order import OrderResponse
 from app.packages.services.checkout_service import CheckoutService
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
-router = APIRouter(prefix="/checkout", tags=["checkout"])
+router = APIRouter(prefix="/checkout")
 
 
 @router.post("/initiate", response_model=CheckoutInitiateResponse)
@@ -58,10 +58,12 @@ async def initiate_checkout(
         )
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error("Checkout failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Wystąpił błąd wewnętrzny") from e
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Wystąpił błąd wewnętrzny"
+        ) from e
 
 
 @router.post("/authenticated", response_model=CheckoutInitiateResponse)
@@ -113,10 +115,12 @@ async def authenticated_checkout(
         )
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error("Authenticated checkout failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Wystąpił błąd wewnętrzny") from e
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Wystąpił błąd wewnętrzny"
+        ) from e
 
 
 @router.get("/order/{order_id}/status", response_model=OrderStatusResponse)
@@ -132,7 +136,9 @@ async def get_authenticated_order_status(
     order = checkout_service.get_order_by_id(order_id)
 
     if not order or order.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Zamówienie nie znalezione")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Zamówienie nie znalezione"
+        )
 
     return OrderStatusResponse(
         order=OrderResponse.model_validate(order),
@@ -157,7 +163,9 @@ async def get_order_status(
     order = checkout_service.get_order_by_id(order_id)
 
     if not order or order.email.lower() != email.lower():
-        raise HTTPException(status_code=404, detail="Zamówienie nie znalezione")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Zamówienie nie znalezione"
+        )
 
     return OrderStatusResponse(
         order=OrderResponse.model_validate(order),

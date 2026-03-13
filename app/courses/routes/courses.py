@@ -1,11 +1,11 @@
 """Course management routes."""
 
-import logging
 import os
 import uuid as uuid_lib
 from pathlib import Path
 from uuid import UUID
 
+import structlog
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
@@ -29,7 +29,7 @@ from app.courses.schemas.course import (
 from app.courses.services.mux_service import MuxService, get_mux_service
 from app.db.session import get_db
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 router = APIRouter()
 

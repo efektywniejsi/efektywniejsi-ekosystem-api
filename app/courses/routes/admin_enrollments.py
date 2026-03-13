@@ -1,8 +1,8 @@
-import logging
 import secrets
 from datetime import UTC, datetime
 from uuid import UUID
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
@@ -22,7 +22,7 @@ from app.courses.schemas.enrollment import (
 )
 from app.db.session import get_db
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 router = APIRouter()
 
@@ -55,7 +55,7 @@ async def list_course_enrollments(
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found",
+            detail="Kurs nie znaleziony",
         )
 
     query = (
@@ -87,7 +87,7 @@ async def create_enrollment(
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found",
+            detail="Kurs nie znaleziony",
         )
 
     user = db.query(User).filter(User.email == request.email).first()
@@ -115,7 +115,7 @@ async def create_enrollment(
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="User is already enrolled in this course",
+            detail="Użytkownik jest już zapisany do tego kursu",
         )
 
     enrollment = Enrollment(
@@ -162,7 +162,7 @@ async def update_enrollment(
     if not enrollment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Enrollment not found",
+            detail="Zapis nie znaleziony",
         )
 
     enrollment.expires_at = request.expires_at
@@ -190,7 +190,7 @@ async def delete_enrollment(
     if not enrollment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Enrollment not found",
+            detail="Zapis nie znaleziony",
         )
 
     db.delete(enrollment)
@@ -210,7 +210,7 @@ async def get_course_user_progress(
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found",
+            detail="Kurs nie znaleziony",
         )
 
     lesson_ids = (

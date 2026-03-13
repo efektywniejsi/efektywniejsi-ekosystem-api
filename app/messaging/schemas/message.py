@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.datetime_utils import UTCDatetime
 from app.messaging.schemas.conversation import ParticipantInfo
@@ -18,8 +18,7 @@ class MessageResponse(BaseModel):
     created_at: UTCDatetime
     edited_at: UTCDatetime | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ConversationDetail(BaseModel):
@@ -29,8 +28,7 @@ class ConversationDetail(BaseModel):
     messages: list[MessageResponse]
     total_messages: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserSearchResult(BaseModel):
@@ -39,5 +37,4 @@ class UserSearchResult(BaseModel):
     avatar_url: str | None = None
     role: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

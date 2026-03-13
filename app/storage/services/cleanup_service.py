@@ -1,8 +1,8 @@
 """Service for identifying and cleaning up orphaned storage files."""
 
-import logging
 from datetime import UTC, datetime, timedelta
 
+import structlog
 from sqlalchemy.orm import Session
 
 from app.auth.models.user import User
@@ -12,7 +12,7 @@ from app.core.storage import StorageObject, get_storage
 from app.courses.models.attachment import Attachment
 from app.courses.models.course import Course
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def _extract_key_from_avatar_url(url: str | None) -> str | None:

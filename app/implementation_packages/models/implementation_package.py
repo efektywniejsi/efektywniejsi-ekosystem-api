@@ -111,9 +111,9 @@ class ImplementationPackageEnrollment(Base):
     last_accessed_at: Mapped[datetime | None] = mapped_column(default=None)
 
     # Relationships
-    user = relationship("User", backref="implementation_package_enrollments")
+    user = relationship("User", back_populates="implementation_package_enrollments")
     package = relationship("ImplementationPackage", back_populates="enrollments")
-    order = relationship("Order", backref="implementation_package_enrollments")
+    order = relationship("Order", back_populates="implementation_package_enrollments")
 
     @property
     def is_expired(self) -> bool:

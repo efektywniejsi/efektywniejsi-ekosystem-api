@@ -2,14 +2,14 @@
 Email service for package-related emails.
 """
 
-import logging
+import structlog
 
 from app.auth.services.email_service import EmailMessage, get_email_service
 from app.core.config import settings
 from app.packages.models.enrollment import PackageEnrollment
 from app.packages.models.order import Order
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 async def send_welcome_with_package_email(

@@ -1,17 +1,17 @@
 import hashlib
-import logging
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
+import structlog
 from fastapi import Response
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.core.config import settings
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 

@@ -5,19 +5,19 @@ that handles user preferences, notification creation, and email delivery.
 """
 
 import asyncio
-import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
+import structlog
 from sqlalchemy.orm import Session
 
 from app.auth.models.user import User
 from app.auth.services.email_service import EmailMessage, get_email_service
 from app.notifications.models.notification import Notification, NotificationStatus, NotificationType
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 @dataclass

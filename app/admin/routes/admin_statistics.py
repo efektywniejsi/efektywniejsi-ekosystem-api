@@ -32,7 +32,7 @@ from app.auth.dependencies import require_admin
 from app.auth.models.user import User
 from app.db.session import get_db
 
-router = APIRouter(prefix="/statistics", tags=["admin-statistics"])
+router = APIRouter(prefix="/statistics")
 
 
 @router.get("/dashboard", response_model=DashboardSummaryResponse)

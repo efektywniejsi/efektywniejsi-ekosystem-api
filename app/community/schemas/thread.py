@@ -1,7 +1,7 @@
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.community.models.thread import ThreadCategory
 from app.core.datetime_utils import UTCDatetime
@@ -58,8 +58,7 @@ class AuthorInfo(BaseModel):
     name: str
     avatar_url: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ReplyResponse(BaseModel):
@@ -71,8 +70,7 @@ class ReplyResponse(BaseModel):
     created_at: UTCDatetime
     updated_at: UTCDatetime | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ThreadListItem(BaseModel):
@@ -92,8 +90,7 @@ class ThreadListItem(BaseModel):
     lesson_title: str | None = None
     tags: list[str] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ThreadListResponse(BaseModel):
@@ -108,8 +105,7 @@ class ThreadAttachmentResponse(BaseModel):
     mime_type: str
     created_at: UTCDatetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ThreadDetailResponse(BaseModel):
@@ -136,8 +132,7 @@ class ThreadDetailResponse(BaseModel):
     tags: list[str] = Field(default_factory=list)
     attachments: list[ThreadAttachmentResponse] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TopAuthorItem(BaseModel):

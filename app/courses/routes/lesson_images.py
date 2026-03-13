@@ -47,13 +47,16 @@ async def upload_lesson_image(
     if not lesson:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Lesson not found",
+            detail="Lekcja nie znaleziona",
         )
 
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid file type. Allowed: PNG, JPG, WebP, GIF. Got: {file.content_type}",
+            detail=(
+                "Nieprawidłowy typ pliku. Dozwolone: PNG, JPG, WebP, GIF. "
+                f"Otrzymano: {file.content_type}"
+            ),
         )
 
     file_content = await file.read()
@@ -104,7 +107,7 @@ async def serve_lesson_image(
     if not storage.exists(storage_path):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image not found",
+            detail="Obraz nie znaleziony",
         )
 
     # For R2 storage: redirect to public URL (CDN-served)

@@ -4,11 +4,11 @@ This module provides a common interface and shared logic for handling
 payment webhooks from different providers (Stripe, PayU).
 """
 
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+import structlog
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -21,7 +21,7 @@ from app.packages.services.email_service import (
 from app.packages.services.fakturownia_service import get_fakturownia_service
 from app.packages.services.order_service import OrderService
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 @dataclass

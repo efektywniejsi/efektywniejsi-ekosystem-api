@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 from app.core.datetime_utils import UTCDatetime
 
@@ -34,8 +34,7 @@ class AdminEnrollmentResponse(BaseModel):
     expires_at: UTCDatetime | None = None
     is_expired: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AdminEnrollmentListResponse(BaseModel):

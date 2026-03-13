@@ -1,7 +1,7 @@
-import logging
 from typing import Literal
 from uuid import UUID
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -12,7 +12,7 @@ from app.courses.models import Lesson
 from app.courses.services.mux_service import MuxService, get_mux_service
 from app.db.session import get_db
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 router = APIRouter()
 
@@ -55,7 +55,7 @@ async def create_upload_url(
     if not lesson:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Lesson not found",
+            detail="Lekcja nie znaleziona",
         )
 
     # Delete old asset if it exists (skip placeholders)
@@ -87,7 +87,7 @@ async def create_upload_url(
         logger.error("Failed to create upload URL: %s", e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create upload URL",
+            detail="Nie udało się utworzyć URL przesyłania",
         ) from e
 
 
@@ -111,7 +111,7 @@ async def get_upload_status(
     if not lesson:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Lesson not found",
+            detail="Lekcja nie znaleziona",
         )
 
     logger.debug(
@@ -121,7 +121,7 @@ async def get_upload_status(
     if not lesson.mux_asset_id or lesson.mux_asset_id.startswith("PLACEHOLDER_"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No video upload in progress for this lesson",
+            detail="Brak trwającego przesyłania wideo dla tej lekcji",
         )
 
     try:
@@ -148,7 +148,7 @@ async def get_upload_status(
         logger.error("Error getting upload status: %s", e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get upload status",
+            detail="Nie udało się pobrać statusu przesyłania",
         ) from e
 
 
@@ -167,7 +167,7 @@ async def delete_lesson_video(
     if not lesson:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Lesson not found",
+            detail="Lekcja nie znaleziona",
         )
 
     # Try to delete from Mux if asset exists

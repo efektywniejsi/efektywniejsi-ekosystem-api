@@ -25,7 +25,7 @@ from app.packages.schemas.bundle import (
 )
 from app.packages.schemas.package import PackageListResponse
 
-router = APIRouter(prefix="/bundles", tags=["bundles"])
+router = APIRouter(prefix="/bundles")
 
 
 @router.get("", response_model=list[BundleListResponse])
@@ -107,7 +107,9 @@ def get_bundle_by_slug(
     )
 
     if not bundle:
-        raise HTTPException(status_code=404, detail="Bundle nie znaleziony")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Oferta bundlowa nie znaleziona"
+        )
 
     return BundleListResponse.from_orm(bundle)
 
@@ -209,7 +211,9 @@ def get_bundle_detail(
     try:
         bundle_uuid = uuid.UUID(bundle_id)
     except ValueError:
-        raise HTTPException(400, "Nieprawidłowy ID bundla") from None
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Nieprawidłowy ID bundla"
+        ) from None
 
     bundle = (
         db.query(Package)
@@ -222,7 +226,9 @@ def get_bundle_detail(
     )
 
     if not bundle:
-        raise HTTPException(404, "Bundle nie znaleziony")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Oferta bundlowa nie znaleziona"
+        )
 
     return _build_bundle_detail_response(db, bundle)
 
@@ -274,11 +280,16 @@ def create_bundle(
         try:
             pkg_uuid = uuid.UUID(package_id)
         except ValueError:
-            raise HTTPException(400, f"Nieprawidłowy ID pakietu: {package_id}") from None
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Nieprawidłowy ID pakietu: {package_id}",
+            ) from None
 
         pkg = db.query(Package).filter(Package.id == pkg_uuid).first()
         if not pkg:
-            raise HTTPException(404, f"Pakiet {package_id} nie znaleziony")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"Pakiet {package_id} nie znaleziony"
+            )
 
         bundle_item = PackageBundleItem(
             bundle_id=new_bundle.id,
@@ -292,11 +303,17 @@ def create_bundle(
             try:
                 course_uuid = uuid.UUID(ci.course_id)
             except ValueError:
-                raise HTTPException(400, f"Nieprawidłowy ID kursu: {ci.course_id}") from None
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Nieprawidłowy ID kursu: {ci.course_id}",
+                ) from None
 
             course = db.query(Course).filter(Course.id == course_uuid).first()
             if not course:
-                raise HTTPException(404, f"Kurs {ci.course_id} nie znaleziony")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Kurs {ci.course_id} nie znaleziony",
+                )
 
             course_item = BundleCourseItem(
                 bundle_id=new_bundle.id,
@@ -310,11 +327,16 @@ def create_bundle(
             try:
                 course_uuid = uuid.UUID(course_id)
             except ValueError:
-                raise HTTPException(400, f"Nieprawidłowy ID kursu: {course_id}") from None
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Nieprawidłowy ID kursu: {course_id}",
+                ) from None
 
             course = db.query(Course).filter(Course.id == course_uuid).first()
             if not course:
-                raise HTTPException(404, f"Kurs {course_id} nie znaleziony")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=f"Kurs {course_id} nie znaleziony"
+                )
 
             course_item = BundleCourseItem(
                 bundle_id=new_bundle.id,
@@ -328,7 +350,8 @@ def create_bundle(
             impl_uuid = uuid.UUID(ipi.implementation_package_id)
         except ValueError:
             raise HTTPException(
-                400, f"Nieprawidłowy ID pakietu wdrożeniowego: {ipi.implementation_package_id}"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Nieprawidłowy ID pakietu wdrożeniowego: {ipi.implementation_package_id}",
             ) from None
 
         impl_pkg = (
@@ -336,7 +359,8 @@ def create_bundle(
         )
         if not impl_pkg:
             raise HTTPException(
-                404, f"Pakiet wdrożeniowy {ipi.implementation_package_id} nie znaleziony"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Pakiet wdrożeniowy {ipi.implementation_package_id} nie znaleziony",
             )
 
         impl_item = BundleImplementationPackageItem(
@@ -365,7 +389,9 @@ def update_bundle(
     try:
         bundle_uuid = uuid.UUID(bundle_id)
     except ValueError:
-        raise HTTPException(400, "Nieprawidłowy ID bundla") from None
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Nieprawidłowy ID bundla"
+        ) from None
 
     bundle = (
         db.query(Package)
@@ -374,7 +400,9 @@ def update_bundle(
     )
 
     if not bundle:
-        raise HTTPException(404, "Bundle nie znaleziony")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Oferta bundlowa nie znaleziona"
+        )
 
     if bundle_data.name is not None:
         bundle.title = bundle_data.name
@@ -458,7 +486,9 @@ def delete_bundle(
     try:
         bundle_uuid = uuid.UUID(bundle_id)
     except ValueError:
-        raise HTTPException(400, "Nieprawidłowy ID bundla") from None
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Nieprawidłowy ID bundla"
+        ) from None
 
     bundle = (
         db.query(Package)
@@ -467,7 +497,9 @@ def delete_bundle(
     )
 
     if not bundle:
-        raise HTTPException(404, "Bundle nie znaleziony")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Oferta bundlowa nie znaleziona"
+        )
 
     purchase_count = (
         db.query(OrderItem)
@@ -480,8 +512,8 @@ def delete_bundle(
     )
     if purchase_count > 0:
         raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            f"Nie można usunąć oferty — {purchase_count} użytkowników dokonało zakupu",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Nie można usunąć oferty — {purchase_count} użytkowników dokonało zakupu",
         )
 
     bundle.is_published = False

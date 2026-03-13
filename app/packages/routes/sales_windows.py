@@ -141,7 +141,7 @@ async def create_sales_window(
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Sales window with id '{window_data.id}' already exists",
+            detail=f"Okno sprzedażowe z id '{window_data.id}' już istnieje",
         )
 
     # If creating as 'active', check no other window is active
@@ -152,9 +152,9 @@ async def create_sales_window(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
-                    f"Cannot create active window: Another sales window "
-                    f"'{existing_active.name}' is already active. "
-                    f"Please close it first."
+                    f"Nie można utworzyć aktywnego okna: inne okno sprzedażowe "
+                    f"'{existing_active.name}' jest już aktywne. "
+                    f"Najpierw je zamknij."
                 ),
             )
 
@@ -210,7 +210,7 @@ async def get_sales_window(
     if not sales_window:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Sales window with id '{window_id}' not found",
+            detail=f"Okno sprzedażowe z id '{window_id}' nie znalezione",
         )
 
     return SalesWindowDetailResponse(salesWindow=SalesWindowResponse.model_validate(sales_window))
@@ -259,7 +259,7 @@ async def update_sales_window(
     if not sales_window:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Sales window with id '{window_id}' not found",
+            detail=f"Okno sprzedażowe z id '{window_id}' nie znalezione",
         )
 
     # Track if any fields are being updated
@@ -284,9 +284,9 @@ async def update_sales_window(
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(
-                        f"Cannot activate: Another sales window "
-                        f"'{existing_active.name}' is already active. "
-                        f"Please close it first."
+                        f"Nie można aktywować: inne okno sprzedażowe "
+                        f"'{existing_active.name}' jest już aktywne. "
+                        f"Najpierw je zamknij."
                     ),
                 )
 
@@ -319,7 +319,7 @@ async def update_sales_window(
     if ends <= starts:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="endsAt must be after startsAt",
+            detail="Data zakończenia musi być po dacie rozpoczęcia",
         )
 
     # Update audit fields
@@ -368,7 +368,7 @@ async def delete_sales_window(
     if not sales_window:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Sales window with id '{window_id}' not found",
+            detail=f"Okno sprzedażowe z id '{window_id}' nie znalezione",
         )
 
     # Set status to closed
