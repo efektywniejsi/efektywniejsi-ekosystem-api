@@ -19,6 +19,9 @@ router = APIRouter()
 ALLOWED_MIME_TYPES = [
     "application/pdf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # DOCX
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # XLSX
+    "application/vnd.ms-excel",  # XLS
+    "text/csv",  # CSV
     "application/zip",
     "application/json",
     "image/png",
@@ -39,7 +42,7 @@ async def upload_attachment(
 ) -> dict:
     """Upload an attachment to a lesson (admin only).
 
-    Supports PDF, DOCX, ZIP, JSON, PNG, JPG files up to 50MB.
+    Supports PDF, DOCX, XLSX, XLS, CSV, ZIP, JSON, PNG, JPG files up to 50MB.
     """
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
     if not lesson:
@@ -52,7 +55,8 @@ async def upload_attachment(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
-                "Nieprawidłowy typ pliku. Dozwolone: PDF, DOCX, ZIP, JSON, PNG, JPG. "
+                "Nieprawidłowy typ pliku. Dozwolone: PDF, DOCX, XLSX,"
+                " XLS, CSV, ZIP, JSON, PNG, JPG. "
                 f"Otrzymano: {file.content_type}"
             ),
         )
