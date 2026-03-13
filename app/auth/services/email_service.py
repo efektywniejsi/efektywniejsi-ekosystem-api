@@ -197,6 +197,61 @@ Jeśli nie prosiłeś o reset hasła, zignoruj tę wiadomość.
     )
 
 
+def build_admin_welcome_email(name: str, email: str, token: str) -> EmailMessage:
+    """Build welcome email for admin-created users with password setup link."""
+    reset_url = f"{settings.DASHBOARD_URL}/reset-password?token={token}"
+
+    inner = f"""\
+<h2 style="margin: 0 0 24px 0; font-size: 22px; font-weight: 700; color: {_TEXT_LIGHT};">
+  Witaj w Efektywniejsi!
+</h2>
+<p style="margin: 0 0 16px 0; font-size: 15px; color: {_TEXT_MUTED}; line-height: 1.6;">
+  Cześć {name},
+</p>
+<p style="margin: 0 0 20px 0; font-size: 15px; color: {_TEXT_MUTED}; line-height: 1.6;">
+  Twoje konto zostało utworzone. Kliknij poniższy przycisk, aby ustawić hasło:
+</p>
+<table cellpadding="0" cellspacing="0" style="margin: 0 0 24px 0;">
+  <tr>
+    <td style="border-radius: 8px; background: linear-gradient(135deg, {_VIOLET}, {_CYAN});">
+      <a href="{reset_url}"
+         style="display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600;
+                color: #ffffff; text-decoration: none; border-radius: 8px;">
+        Ustaw hasło
+      </a>
+    </td>
+  </tr>
+</table>
+<p style="margin: 0 0 8px 0; font-size: 14px; color: {_TEXT_LIGHT}; font-weight: 600;">
+  Link wygasa za 1 godzinę.
+</p>
+<p style="margin: 0; font-size: 14px; color: {_TEXT_MUTED}; line-height: 1.6;">
+  Jeśli link wygaśnie, użyj opcji &bdquo;Zapomniałem hasła&rdquo; na stronie logowania.
+</p>"""
+
+    text_body = f"""\
+Witaj w Efektywniejsi - Ustaw hasło
+
+Cześć {name},
+
+Twoje konto zostało utworzone. Użyj poniższego linku, aby ustawić hasło:
+{reset_url}
+
+Link wygasa za 1 godzinę.
+
+Jeśli link wygaśnie, użyj opcji "Zapomniałem hasła" na stronie logowania.
+
+---
+© 2026 Efektywniejsi. Wszystkie prawa zastrzeżone."""
+
+    return EmailMessage(
+        to=email,
+        subject="Witaj w Efektywniejsi - Ustaw hasło",
+        body_html=_wrap_html(inner),
+        body_text=text_body,
+    )
+
+
 def build_welcome_email(name: str, email: str, temp_password: str) -> EmailMessage:
     login_url = f"{settings.DASHBOARD_URL}/login"
 
