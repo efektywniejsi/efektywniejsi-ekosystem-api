@@ -11,7 +11,6 @@ class TestCreateUserEndpoint:
         payload = {
             "email": "newuser@example.com",
             "name": "New User",
-            "password": "Password123",
             "role": "paid",
             "send_welcome_email": False,
         }
@@ -27,6 +26,28 @@ class TestCreateUserEndpoint:
         assert data["role"] == "paid"
 
     @pytest.mark.asyncio
+    async def test_should_create_user_with_unusable_password(
+        self, test_client, test_admin_token, db_session
+    ):
+        from app.auth.models.user import User
+
+        set_access_token_cookie(test_client, test_admin_token)
+        payload = {
+            "email": "resetflow@example.com",
+            "name": "Reset User",
+            "role": "paid",
+            "send_welcome_email": False,
+        }
+
+        response = await test_client.post("/api/v1/admin/users", json=payload)
+
+        assert response.status_code == 201
+        user = db_session.query(User).filter(User.email == "resetflow@example.com").first()
+        assert user.hashed_password == "!"
+        assert user.password_reset_token is not None
+        assert user.password_reset_token_expires is not None
+
+    @pytest.mark.asyncio
     async def test_should_return_409_when_email_already_exists(
         self, test_client, test_admin_token, test_user
     ):
@@ -34,7 +55,6 @@ class TestCreateUserEndpoint:
         payload = {
             "email": test_user.email,
             "name": "Duplicate User",
-            "password": "Password123",
             "role": "paid",
         }
 
@@ -44,19 +64,18 @@ class TestCreateUserEndpoint:
         assert "już zarejestrowany" in response.json()["detail"]
 
     @pytest.mark.asyncio
-    async def test_should_return_422_when_password_too_short(self, test_client, test_admin_token):
+    async def test_should_return_422_when_invalid_package_id(self, test_client, test_admin_token):
         set_access_token_cookie(test_client, test_admin_token)
         payload = {
             "email": "newuser@example.com",
             "name": "New User",
-            "password": "short",
             "role": "paid",
+            "package_ids": ["not-a-uuid"],
         }
 
         response = await test_client.post("/api/v1/admin/users", json=payload)
 
         assert response.status_code == 422
-        assert "co najmniej 8 znaków" in response.json()["detail"]
 
     @pytest.mark.asyncio
     async def test_should_return_403_when_not_admin(self, test_client, test_user_token):
@@ -64,7 +83,6 @@ class TestCreateUserEndpoint:
         payload = {
             "email": "newuser@example.com",
             "name": "New User",
-            "password": "Password123",
             "role": "paid",
         }
 
@@ -78,7 +96,6 @@ class TestCreateUserEndpoint:
         payload = {
             "email": "newuser@example.com",
             "name": "New User",
-            "password": "Password123",
             "role": "paid",
         }
 
