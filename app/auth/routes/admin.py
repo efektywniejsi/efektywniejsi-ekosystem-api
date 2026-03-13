@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -54,6 +54,14 @@ class CreateUserRequest(BaseModel):
 class BulkUserEntry(BaseModel):
     email: EmailStr
     name: str = Field(min_length=1)
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Imię nie może być puste")
+        return v
 
 
 class BulkCreateUserRequest(BaseModel):
