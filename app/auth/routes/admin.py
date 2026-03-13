@@ -1,8 +1,10 @@
-from datetime import UTC, datetime
+import logging
+import uuid
+from datetime import UTC, datetime, timedelta
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -18,26 +20,35 @@ from app.auth.schemas.user import (
     UserStats,
     UserWithStats,
 )
-from app.auth.services.email_service import build_welcome_email, get_email_service
+from app.auth.services.email_service import build_admin_welcome_email, get_email_service
 from app.community.models.reply import ThreadReply
 from app.community.models.thread import CommunityThread
-from app.core import security
+from app.core.security import generate_reset_token
 from app.courses.models.certificate import Certificate
 from app.courses.models.course import Course
 from app.courses.models.enrollment import Enrollment
 from app.courses.models.gamification import UserPoints, UserStreak
 from app.db.session import get_db
+from app.implementation_packages.models.implementation_package import (
+    ImplementationPackageEnrollment,
+)
 from app.messaging.models.conversation_participant import ConversationParticipant
+from app.packages.models.bundle import BundleCourseItem, BundleImplementationPackageItem
+from app.packages.models.enrollment import PackageEnrollment
+from app.packages.models.package import Package
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
 class CreateUserRequest(BaseModel):
     email: EmailStr
-    name: str
-    password: str
+    name: str = Field(min_length=1)
     role: Literal["paid", "admin"] = "paid"
-    send_welcome_email: bool = False
+    send_welcome_email: bool = True
+    package_ids: list[uuid.UUID] = []
+    course_ids: list[uuid.UUID] = []
 
 
 class UpdateUserRequest(BaseModel):
@@ -59,32 +70,39 @@ async def create_user(
             detail="Email jest już zarejestrowany",
         )
 
-    password_error = security.validate_password(request.password)
-    if password_error:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=password_error,
-        )
+    raw_token, hashed_token, expiry = generate_reset_token()
 
     new_user = User(
+        id=uuid.uuid4(),
         email=request.email,
         name=request.name,
-        hashed_password=security.get_password_hash(request.password),
+        hashed_password="!",
         role=request.role,
         is_active=True,
+        password_reset_token=hashed_token,
+        password_reset_token_expires=expiry,
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     db.add(new_user)
+    db.flush()
+
+    _create_admin_enrollments(db, new_user.id, request.package_ids, request.course_ids)
+
     db.commit()
     db.refresh(new_user)
 
     if request.send_welcome_email:
-        email_service = get_email_service()
-        email_message = build_welcome_email(
-            name=str(new_user.name),
-            email=str(new_user.email),
-            temp_password=request.password,
-        )
-        await email_service.send_email(email_message)
+        try:
+            email_service = get_email_service()
+            email_message = build_admin_welcome_email(
+                name=str(new_user.name),
+                email=str(new_user.email),
+                token=raw_token,
+            )
+            await email_service.send_email(email_message)
+        except Exception:
+            logger.exception("Nie udało się wysłać emaila powitalnego do %s", new_user.email)
 
     return UserResponse(
         id=str(new_user.id),
@@ -94,6 +112,137 @@ async def create_user(
         is_active=new_user.is_active,
         created_at=new_user.created_at.isoformat() if new_user.created_at else None,
     )
+
+
+def _create_admin_enrollments(
+    db: Session,
+    user_id: uuid.UUID,
+    package_ids: list[uuid.UUID],
+    course_ids: list[uuid.UUID],
+) -> None:
+    """Create enrollments from admin-provided package and course IDs.
+
+    Handles bundle expansion: child packages, courses, and implementation packages.
+    Silently skips duplicates (matching OrderService behavior).
+    """
+    for pkg_id in package_ids:
+        package = db.query(Package).filter(Package.id == pkg_id).first()
+        if not package:
+            continue
+
+        if package.is_bundle:
+            # 1. Enroll in child packages
+            for bundle_item in package.bundle_items:
+                _create_package_enrollment(db, user_id, bundle_item.child_package_id)
+
+            # 2. Enroll in bundle courses
+            course_items = (
+                db.query(BundleCourseItem).filter(BundleCourseItem.bundle_id == package.id).all()
+            )
+            for course_item in course_items:
+                existing = (
+                    db.query(Enrollment)
+                    .filter(
+                        Enrollment.user_id == user_id,
+                        Enrollment.course_id == course_item.course_id,
+                    )
+                    .first()
+                )
+                if not existing:
+                    expires_at = None
+                    if course_item.access_duration_days is not None:
+                        expires_at = datetime.now(UTC) + timedelta(
+                            days=course_item.access_duration_days
+                        )
+                    db.add(
+                        Enrollment(
+                            user_id=user_id,
+                            course_id=course_item.course_id,
+                            expires_at=expires_at,
+                        )
+                    )
+
+            # 3. Enroll in bundle implementation packages
+            impl_items = (
+                db.query(BundleImplementationPackageItem)
+                .filter(BundleImplementationPackageItem.bundle_id == package.id)
+                .all()
+            )
+            for impl_item in impl_items:
+                _create_impl_enrollment(
+                    db,
+                    user_id,
+                    impl_item.implementation_package_id,
+                    access_duration_days=impl_item.access_duration_days,
+                )
+        else:
+            _create_package_enrollment(db, user_id, package.id)
+
+    # Direct course enrollments
+    for cid in course_ids:
+        course = db.query(Course).filter(Course.id == cid).first()
+        if not course:
+            continue
+        existing = (
+            db.query(Enrollment)
+            .filter(Enrollment.user_id == user_id, Enrollment.course_id == cid)
+            .first()
+        )
+        if not existing:
+            db.add(Enrollment(user_id=user_id, course_id=cid))
+
+
+def _create_package_enrollment(db: Session, user_id: uuid.UUID, package_id: uuid.UUID) -> None:
+    """Create a PackageEnrollment, skipping if duplicate."""
+    existing = (
+        db.query(PackageEnrollment)
+        .filter(
+            PackageEnrollment.user_id == user_id,
+            PackageEnrollment.package_id == package_id,
+        )
+        .first()
+    )
+    if not existing:
+        db.add(
+            PackageEnrollment(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                package_id=package_id,
+                order_id=None,
+                enrolled_at=datetime.now(UTC),
+            )
+        )
+
+
+def _create_impl_enrollment(
+    db: Session,
+    user_id: uuid.UUID,
+    implementation_package_id: uuid.UUID,
+    access_duration_days: int | None = None,
+) -> None:
+    """Create an ImplementationPackageEnrollment, skipping if duplicate."""
+    existing = (
+        db.query(ImplementationPackageEnrollment)
+        .filter(
+            ImplementationPackageEnrollment.user_id == user_id,
+            ImplementationPackageEnrollment.package_id == implementation_package_id,
+        )
+        .first()
+    )
+    if not existing:
+        expires_at = None
+        if access_duration_days is not None:
+            expires_at = datetime.now(UTC) + timedelta(days=access_duration_days)
+        db.add(
+            ImplementationPackageEnrollment(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                package_id=implementation_package_id,
+                order_id=None,
+                enrolled_at=datetime.now(UTC),
+                expires_at=expires_at,
+            )
+        )
 
 
 @router.get("/users", response_model=UserListResponse)
