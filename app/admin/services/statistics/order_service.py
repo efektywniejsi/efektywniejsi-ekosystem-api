@@ -14,6 +14,7 @@ from app.admin.schemas.admin_statistics import (
     OrdersKPI,
     OrderStatisticsResponse,
     OrderStatusCount,
+    RecentOrderSummary,
 )
 from app.admin.services.statistics.base import get_period_boundaries
 from app.packages.models.order import Order, OrderItem, OrderStatus
@@ -134,6 +135,30 @@ class OrderStatisticsService:
             by_provider=by_provider,
             recent_orders=recent_orders,
         )
+
+    @staticmethod
+    def get_recent(db: Session, limit: int = 5) -> list[RecentOrderSummary]:
+        """Get most recent orders for dashboard widget.
+
+        Args:
+            db: Database session.
+            limit: Maximum number of orders to return.
+
+        Returns:
+            List of RecentOrderSummary sorted by created_at descending.
+        """
+        orders = db.query(Order).order_by(Order.created_at.desc()).limit(limit).all()
+        return [
+            RecentOrderSummary(
+                id=str(o.id),
+                order_number=o.order_number,
+                email=o.email,
+                status=o.status.value if hasattr(o.status, "value") else str(o.status),
+                total=o.total,
+                created_at=o.created_at,
+            )
+            for o in orders
+        ]
 
     @staticmethod
     def get_order_details(

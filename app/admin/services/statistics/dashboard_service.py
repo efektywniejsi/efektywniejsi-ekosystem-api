@@ -64,6 +64,11 @@ class DashboardService:
         top_packages = RankingsService.get_top_packages(db, limit=5)
         top_courses = RankingsService.get_top_courses(db, limit=5)
 
+        # Recent activity for dashboard widgets
+        recent_active_users = UserStatisticsService.get_recent_active(db, limit=5)
+        recent_new_users = UserStatisticsService.get_recent_new(db, limit=5)
+        recent_orders = OrderStatisticsService.get_recent(db, limit=5)
+
         return DashboardSummaryResponse(
             revenue=revenue_kpi,
             orders=orders_kpi,
@@ -71,4 +76,7 @@ class DashboardService:
             education=education_kpi,
             top_packages=top_packages,
             top_courses=top_courses,
+            recent_active_users=recent_active_users,
+            recent_new_users=recent_new_users,
+            recent_orders=recent_orders,
         )
