@@ -1,6 +1,8 @@
 name: Deploy
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       target:
@@ -21,7 +23,7 @@ jobs:
     name: Deploy API to Fly.io
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: inputs.target == 'api+worker' || inputs.target == 'api'
+    if: github.event_name == 'push' || inputs.target == 'api+worker' || inputs.target == 'api'
 
     steps:
       - name: Checkout code
@@ -44,7 +46,7 @@ jobs:
     name: Deploy Worker to Fly.io
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: inputs.target == 'api+worker' || inputs.target == 'worker'
+    if: github.event_name == 'push' || inputs.target == 'api+worker' || inputs.target == 'worker'
 
     steps:
       - name: Checkout code
