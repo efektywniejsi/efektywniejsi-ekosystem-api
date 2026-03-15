@@ -63,6 +63,35 @@ class RankedItem(BaseModel):
     revenue: int = Field(default=0, description="Revenue in grosz")
 
 
+class RecentActiveUser(BaseModel):
+    """Recently active user for dashboard widget."""
+
+    id: str
+    email: str
+    full_name: str | None
+    last_activity: UTCDatetime
+
+
+class RecentNewUser(BaseModel):
+    """Recently registered user for dashboard widget."""
+
+    id: str
+    email: str
+    full_name: str | None
+    created_at: UTCDatetime
+
+
+class RecentOrderSummary(BaseModel):
+    """Recent order for dashboard widget."""
+
+    id: str
+    order_number: str
+    email: str
+    status: str
+    total: int = Field(description="Total in grosz")
+    created_at: UTCDatetime
+
+
 class DashboardSummaryResponse(BaseModel):
     """Complete dashboard summary with all KPIs."""
 
@@ -72,6 +101,15 @@ class DashboardSummaryResponse(BaseModel):
     education: EducationKPI
     top_packages: list[RankedItem] = Field(description="Top 5 packages by sales")
     top_courses: list[RankedItem] = Field(description="Top 5 courses by enrollments")
+    recent_active_users: list[RecentActiveUser] = Field(
+        default_factory=list, description="Recently active users (last 5)"
+    )
+    recent_new_users: list[RecentNewUser] = Field(
+        default_factory=list, description="Recently registered users (last 5)"
+    )
+    recent_orders: list[RecentOrderSummary] = Field(
+        default_factory=list, description="Recent orders (last 5)"
+    )
 
 
 class RevenueDataPoint(BaseModel):

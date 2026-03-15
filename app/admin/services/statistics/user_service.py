@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 from app.admin.schemas.admin_statistics import (
     DailyUserDetailsResponse,
     MonthlyUsersResponse,
+    RecentActiveUser,
+    RecentNewUser,
     UserActivityDataPoint,
     UserDetail,
     UsersKPI,
@@ -235,6 +237,62 @@ class UserStatisticsService:
             total=total,
             users=users_list,
         )
+
+    @staticmethod
+    def get_recent_active(db: Session, limit: int = 5) -> list[RecentActiveUser]:
+        """Get most recently active users based on UserDailyActivity.
+
+        Args:
+            db: Database session.
+            limit: Maximum number of users to return.
+
+        Returns:
+            List of RecentActiveUser sorted by last_seen_at descending.
+        """
+        activities = (
+            db.query(UserDailyActivity)
+            .order_by(UserDailyActivity.last_seen_at.desc())
+            .limit(limit)
+            .all()
+        )
+        if not activities:
+            return []
+
+        user_ids = [a.user_id for a in activities]
+        users_map = {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()}
+
+        return [
+            RecentActiveUser(
+                id=str(a.user_id),
+                email=users_map[a.user_id].email,
+                full_name=users_map[a.user_id].name,
+                last_activity=a.last_seen_at,
+            )
+            for a in activities
+            if a.user_id in users_map
+        ]
+
+    @staticmethod
+    def get_recent_new(db: Session, limit: int = 5) -> list[RecentNewUser]:
+        """Get most recently registered users.
+
+        Args:
+            db: Database session.
+            limit: Maximum number of users to return.
+
+        Returns:
+            List of RecentNewUser sorted by created_at descending.
+        """
+        users = db.query(User).order_by(User.created_at.desc()).limit(limit).all()
+        return [
+            RecentNewUser(
+                id=str(u.id),
+                email=u.email,
+                full_name=u.name,
+                created_at=u.created_at,
+            )
+            for u in users
+        ]
 
     @staticmethod
     def get_monthly_new_users(db: Session, limit: int = 50) -> MonthlyUsersResponse:
