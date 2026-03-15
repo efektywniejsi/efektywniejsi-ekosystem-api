@@ -242,34 +242,40 @@ class UserStatisticsService:
     def get_recent_active(db: Session, limit: int = 5) -> list[RecentActiveUser]:
         """Get most recently active users based on UserDailyActivity.
 
+        Each user appears only once with their most recent activity timestamp.
+
         Args:
             db: Database session.
-            limit: Maximum number of users to return.
+            limit: Maximum number of unique users to return.
 
         Returns:
             List of RecentActiveUser sorted by last_seen_at descending.
         """
-        activities = (
-            db.query(UserDailyActivity)
-            .order_by(UserDailyActivity.last_seen_at.desc())
+        rows = (
+            db.query(
+                UserDailyActivity.user_id,
+                func.max(UserDailyActivity.last_seen_at).label("last_seen"),
+            )
+            .group_by(UserDailyActivity.user_id)
+            .order_by(func.max(UserDailyActivity.last_seen_at).desc())
             .limit(limit)
             .all()
         )
-        if not activities:
+        if not rows:
             return []
 
-        user_ids = [a.user_id for a in activities]
+        user_ids = [r[0] for r in rows]
         users_map = {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()}
 
         return [
             RecentActiveUser(
-                id=str(a.user_id),
-                email=users_map[a.user_id].email,
-                full_name=users_map[a.user_id].name,
-                last_activity=a.last_seen_at,
+                id=str(user_id),
+                email=users_map[user_id].email,
+                full_name=users_map[user_id].name,
+                last_activity=last_seen,
             )
-            for a in activities
-            if a.user_id in users_map
+            for user_id, last_seen in rows
+            if user_id in users_map
         ]
 
     @staticmethod
