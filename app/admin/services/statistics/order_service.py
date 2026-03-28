@@ -207,9 +207,16 @@ class OrderStatisticsService:
 
         orders = query.order_by(Order.created_at.desc()).limit(limit).all()
 
+        # Batch load all order items to avoid N+1
+        order_ids = [o.id for o in orders]
+        items_map: dict[Any, list[OrderItem]] = {}
+        if order_ids:
+            all_items = db.query(OrderItem).filter(OrderItem.order_id.in_(order_ids)).all()
+            for item in all_items:
+                items_map.setdefault(item.order_id, []).append(item)
+
         order_responses = []
         for order in orders:
-            items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
             order_responses.append(
                 OrderDetailResponse(
                     id=str(order.id),
@@ -223,7 +230,7 @@ class OrderStatisticsService:
                     created_at=order.created_at,
                     items=[
                         OrderDetailItem(package_title=item.package_title, price=item.price)
-                        for item in items
+                        for item in items_map.get(order.id, [])
                     ],
                 )
             )

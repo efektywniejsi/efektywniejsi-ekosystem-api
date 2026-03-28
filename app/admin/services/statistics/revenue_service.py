@@ -74,7 +74,7 @@ class RevenueService:
         current_revenue, current_count = RevenueService.get_revenue_for_period(
             db, start_date, end_date
         )
-        avg_order_value = current_revenue // current_count if current_count > 0 else 0
+        avg_order_value = round(current_revenue / current_count) if current_count > 0 else 0
 
         current_summary = RevenueSummary(
             total=current_revenue,
@@ -89,7 +89,7 @@ class RevenueService:
             prev_revenue, prev_count = RevenueService.get_revenue_for_period(
                 db, prev_start, prev_end
             )
-            prev_avg = prev_revenue // prev_count if prev_count > 0 else 0
+            prev_avg = round(prev_revenue / prev_count) if prev_count > 0 else 0
             previous_summary = RevenueSummary(
                 total=prev_revenue,
                 orders_count=prev_count,
