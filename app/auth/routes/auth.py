@@ -92,6 +92,7 @@ async def login(
         if user.password_changed_at
         else None,
         notification_preferences=user.notification_preferences,
+        has_completed_onboarding=user.has_completed_onboarding,
         buyer_tax_no=user.buyer_tax_no,
         buyer_company_name=user.buyer_company_name,
         buyer_street=user.buyer_street,
@@ -175,6 +176,7 @@ async def get_current_user_info(
         if current_user.password_changed_at
         else None,
         notification_preferences=current_user.notification_preferences,
+        has_completed_onboarding=current_user.has_completed_onboarding,
         buyer_tax_no=current_user.buyer_tax_no,
         buyer_company_name=current_user.buyer_company_name,
         buyer_street=current_user.buyer_street,
