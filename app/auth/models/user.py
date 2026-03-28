@@ -27,6 +27,7 @@ class User(Base):
     totp_enabled: Mapped[bool] = mapped_column(default=False)
     stripe_customer_id: Mapped[str | None] = mapped_column(default=None, index=True)
     notification_preferences: Mapped[dict | None] = mapped_column(type_=JSON, default=None)
+    has_completed_onboarding: Mapped[bool] = mapped_column(default=False)
 
     # Company / invoice data
     buyer_tax_no: Mapped[str | None] = mapped_column(default=None)

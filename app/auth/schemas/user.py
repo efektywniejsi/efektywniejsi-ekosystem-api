@@ -16,6 +16,7 @@ class UserResponse(BaseModel):
     buyer_street: str | None = None
     buyer_post_code: str | None = None
     buyer_city: str | None = None
+    has_completed_onboarding: bool
     created_at: str | None = None
 
     model_config = ConfigDict(from_attributes=True)

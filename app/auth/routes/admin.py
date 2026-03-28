@@ -144,6 +144,7 @@ async def create_user(
         name=new_user.name,
         role=new_user.role,
         is_active=new_user.is_active,
+        has_completed_onboarding=new_user.has_completed_onboarding,
         created_at=new_user.created_at.isoformat() if new_user.created_at else None,
     )
 
@@ -214,6 +215,7 @@ async def bulk_create_users(
                         name=new_user.name,
                         role=new_user.role,
                         is_active=new_user.is_active,
+                        has_completed_onboarding=new_user.has_completed_onboarding,
                         created_at=new_user.created_at.isoformat() if new_user.created_at else None,
                     ),
                 )
@@ -521,6 +523,7 @@ async def list_users(
                 role=user.role,
                 is_active=user.is_active,
                 avatar_url=user.avatar_url,
+                has_completed_onboarding=user.has_completed_onboarding,
                 created_at=user.created_at.isoformat() if user.created_at else None,
                 stats=stats,
             )
@@ -651,5 +654,6 @@ async def update_user(
         name=user.name,
         role=user.role,
         is_active=user.is_active,
+        has_completed_onboarding=user.has_completed_onboarding,
         created_at=user.created_at.isoformat() if user.created_at else None,
     )

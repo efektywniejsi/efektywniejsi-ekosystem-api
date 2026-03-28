@@ -348,3 +348,23 @@ async def update_notification_preferences(
     current_user.notification_preferences = data.model_dump()
     db.commit()
     return data
+
+
+@router.patch("/onboarding/complete")
+async def complete_onboarding(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    current_user.has_completed_onboarding = True
+    db.commit()
+    return {"message": "Onboarding zakończony"}
+
+
+@router.patch("/onboarding/reset")
+async def reset_onboarding(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    current_user.has_completed_onboarding = False
+    db.commit()
+    return {"message": "Onboarding zresetowany"}
