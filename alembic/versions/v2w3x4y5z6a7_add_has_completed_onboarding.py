@@ -28,6 +28,12 @@ def upgrade() -> None:
             server_default=sa.text("true"),
         ),
     )
+    # Backfill done — change server default to false for new users
+    op.alter_column(
+        "users",
+        "has_completed_onboarding",
+        server_default=sa.text("false"),
+    )
 
 
 def downgrade() -> None:
