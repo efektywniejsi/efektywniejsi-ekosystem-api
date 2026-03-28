@@ -9,7 +9,7 @@ from typing import Any, cast
 from sqlalchemy.orm import Session
 
 from app.auth.models.user import User
-from app.core.security import generate_reset_token
+from app.core.security import generate_invitation_token
 from app.courses.models.enrollment import Enrollment
 from app.implementation_packages.models.implementation_package import (
     ImplementationPackageEnrollment,
@@ -91,7 +91,7 @@ class OrderService:
             # If user never set their password, generate a new reset token
             # so they can set it via the welcome email
             if existing_user.hashed_password == "!":
-                raw_token, hashed_token, expiry = generate_reset_token()
+                raw_token, hashed_token, expiry = generate_invitation_token()
                 existing_user.password_reset_token = hashed_token
                 existing_user.password_reset_token_expires = expiry
                 # Store raw token for email - transient, not persisted
@@ -100,7 +100,7 @@ class OrderService:
             return existing_user
 
         # Create new user with unusable password
-        raw_token, hashed_token, expiry = generate_reset_token()
+        raw_token, hashed_token, expiry = generate_invitation_token()
 
         user = User(
             id=uuid.uuid4(),
