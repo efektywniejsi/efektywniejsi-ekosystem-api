@@ -4,8 +4,8 @@ from uuid import UUID
 
 import structlog
 from fastapi import HTTPException, status
-from sqlalchemy import func, or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import case, func, or_
+from sqlalchemy.orm import Session, joinedload, load_only
 
 from app.auth.models.user import User
 from app.messaging.models.conversation import Conversation
@@ -26,6 +26,8 @@ from app.messaging.schemas.message import (
 from app.notifications.tasks import send_direct_message_notification
 
 logger = structlog.get_logger(__name__)
+
+QUICK_CONTACTS_DEFAULT_LIMIT = 50
 
 
 def _escape_like(value: str) -> str:
@@ -525,6 +527,42 @@ class MessageService:
             )
             for u in users
         ]
+
+    def get_quick_contacts(
+        self, current_user_id: UUID, limit: int = QUICK_CONTACTS_DEFAULT_LIMIT
+    ) -> list[UserSearchResult]:
+        users = (
+            self.db.query(User)
+            .options(load_only(User.id, User.name, User.avatar_url, User.role))
+            .filter(
+                User.id != current_user_id,
+                User.is_active == True,  # noqa: E712
+            )
+            .order_by(
+                case((User.role == "admin", 0), else_=1),
+                User.name.asc(),
+            )
+            .limit(limit)
+            .all()
+        )
+
+        return [
+            UserSearchResult(
+                id=u.id,
+                name=u.name,
+                avatar_url=u.avatar_url,
+                role=u.role,
+            )
+            for u in users
+        ]
+
+    def find_conversation_with_user(
+        self, current_user_id: UUID, other_user_id: UUID
+    ) -> UUID | None:
+        if current_user_id == other_user_id:
+            return None
+        conversation = self._find_existing_conversation(current_user_id, other_user_id)
+        return conversation.id if conversation else None
 
     @staticmethod
     def _send_dm_notification(
