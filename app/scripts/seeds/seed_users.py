@@ -7,6 +7,14 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
+# Import all model packages so SQLAlchemy can resolve cross-module relationships
+import app.courses.models  # noqa: F401
+import app.packages.models  # noqa: F401
+import app.implementation_packages.models  # noqa: F401
+import app.community.models  # noqa: F401
+import app.messaging.models  # noqa: F401
+import app.integrations.models  # noqa: F401
+import app.processes.models  # noqa: F401
 from app.auth.models.user import User
 from app.core.security import get_password_hash
 from app.db.session import SessionLocal
@@ -70,6 +78,19 @@ def seed_test_users() -> None:
                 "email": os.environ.get("TEST_USER2_EMAIL", "user2@test.pl"),
                 "name": "Anna Nowak",
                 "password": os.environ.get("TEST_USER2_PASSWORD") or generate_secure_password(),
+                "role": "paid",
+            },
+            # E2E test users with known passwords (used by Playwright auth setup)
+            {
+                "email": "e2e-admin@test.pl",
+                "name": "E2E Admin",
+                "password": "E2eAdmin123!",
+                "role": "admin",
+            },
+            {
+                "email": "e2e-user@test.pl",
+                "name": "E2E Paid User",
+                "password": "E2eUser123!",
                 "role": "paid",
             },
         ]
