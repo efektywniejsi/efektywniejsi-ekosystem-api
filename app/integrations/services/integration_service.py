@@ -498,6 +498,7 @@ class IntegrationService:
     def create_proposal(self, data: ProposalCreate, submitted_by: User) -> ProposalResponse:
         proposal = IntegrationProposal(
             name=data.name,
+            proposal_type=data.proposal_type,
             category=data.category,
             description=data.description,
             official_docs_url=str(data.official_docs_url) if data.official_docs_url else None,
@@ -661,6 +662,7 @@ class IntegrationService:
         return ProposalResponse(
             id=proposal.id,
             name=proposal.name,
+            proposal_type=proposal.proposal_type,
             category=proposal.category,
             description=proposal.description,
             official_docs_url=proposal.official_docs_url,

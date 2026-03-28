@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import ForeignKey, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -9,9 +9,16 @@ from app.db.session import Base
 
 class IntegrationProposal(Base):
     __tablename__ = "integration_proposals"
+    __table_args__ = (
+        CheckConstraint(
+            "proposal_type IN ('integration', 'process')",
+            name="ck_proposal_type_valid",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4, index=True)
     name: Mapped[str] = mapped_column()
+    proposal_type: Mapped[str] = mapped_column(default="integration", index=True)
     category: Mapped[str | None] = mapped_column(default=None)
     description: Mapped[str] = mapped_column(Text)
     official_docs_url: Mapped[str | None] = mapped_column(default=None)
