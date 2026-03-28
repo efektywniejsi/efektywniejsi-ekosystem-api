@@ -108,3 +108,23 @@ def search_users(
 ) -> list[UserSearchResult]:
     service = MessageService(db)
     return service.search_users(q, current_user.id)
+
+
+@router.get("/users/contacts", response_model=list[UserSearchResult])
+def get_quick_contacts(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[UserSearchResult]:
+    service = MessageService(db)
+    return service.get_quick_contacts(current_user.id)
+
+
+@router.get("/users/{user_id}/conversation")
+def find_conversation_with_user(
+    user_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, str | None]:
+    service = MessageService(db)
+    conv_id = service.find_conversation_with_user(current_user.id, user_id)
+    return {"conversation_id": str(conv_id) if conv_id else None}

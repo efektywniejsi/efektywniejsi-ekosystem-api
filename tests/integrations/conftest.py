@@ -72,6 +72,7 @@ def create_integration_proposal(
     db_session: Session,
     submitted_by_id: uuid.UUID,
     name: str = "New Integration Proposal",
+    proposal_type: str = "integration",
     category: str | None = "CRM",
     description: str = "This is a proposal for a new integration",
     official_docs_url: str | None = "https://example.com",
@@ -82,6 +83,7 @@ def create_integration_proposal(
     proposal = IntegrationProposal(
         id=uuid.uuid4(),
         name=name,
+        proposal_type=proposal_type,
         category=category,
         description=description,
         official_docs_url=official_docs_url,
