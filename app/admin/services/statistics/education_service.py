@@ -93,52 +93,70 @@ class EducationService:
             else 0.0
         )
 
-        # Per-course statistics
+        # Per-course statistics — batch queries instead of N+1
         courses_data = db.query(Course).filter(Course.is_published == True).all()  # noqa: E712
+        course_ids = [c.id for c in courses_data]
+
+        # Batch: enrollment counts, active learners, completions per course
+        enrollment_stats = {}
+        if course_ids:
+            rows = (
+                db.query(
+                    Enrollment.course_id,
+                    func.count(Enrollment.id),
+                    func.count(Enrollment.id).filter(Enrollment.last_accessed_at >= week_ago),
+                    func.count(Enrollment.id).filter(Enrollment.completed_at.isnot(None)),
+                )
+                .filter(Enrollment.course_id.in_(course_ids))
+                .group_by(Enrollment.course_id)
+                .all()
+            )
+            enrollment_stats = {
+                r[0]: {"total": r[1], "active": r[2], "completed": r[3]} for r in rows
+            }
+
+        # Batch: certificate counts per course
+        cert_stats = {}
+        if course_ids:
+            rows = (
+                db.query(Certificate.course_id, func.count(Certificate.id))
+                .filter(Certificate.course_id.in_(course_ids))
+                .group_by(Certificate.course_id)
+                .all()
+            )
+            cert_stats = {r[0]: r[1] for r in rows}
+
+        # Batch: average progress per course
+        progress_stats = {}
+        if course_ids:
+            rows = (
+                db.query(
+                    Enrollment.course_id,
+                    func.avg(LessonProgress.completion_percentage),
+                )
+                .join(
+                    LessonProgress,
+                    (Enrollment.user_id == LessonProgress.user_id),
+                )
+                .filter(Enrollment.course_id.in_(course_ids))
+                .group_by(Enrollment.course_id)
+                .all()
+            )
+            progress_stats = {r[0]: r[1] for r in rows}
 
         courses = []
         for course in courses_data:
-            enrollments = db.query(Enrollment).filter(Enrollment.course_id == course.id).count()
-            active = (
-                db.query(Enrollment)
-                .filter(
-                    Enrollment.course_id == course.id,
-                    Enrollment.last_accessed_at >= week_ago,
-                )
-                .count()
-            )
-            completed = (
-                db.query(Enrollment)
-                .filter(
-                    Enrollment.course_id == course.id,
-                    Enrollment.completed_at.isnot(None),
-                )
-                .count()
-            )
-            certs = db.query(Certificate).filter(Certificate.course_id == course.id).count()
-
-            # Calculate average progress
-            progress_data = (
-                db.query(func.avg(LessonProgress.completion_percentage))
-                .join(
-                    Enrollment,
-                    (Enrollment.user_id == LessonProgress.user_id)
-                    & (Enrollment.course_id == course.id),
-                )
-                .scalar()
-            )
-            avg_progress = round(progress_data or 0, 2)
-
+            e_stats = enrollment_stats.get(course.id, {"total": 0, "active": 0, "completed": 0})
             courses.append(
                 CourseProgressStats(
                     id=str(course.id),
                     title=course.title,
                     slug=course.slug,
-                    total_enrollments=enrollments,
-                    active_learners=active,
-                    completed_count=completed,
-                    average_progress=avg_progress,
-                    certificates_issued=certs,
+                    total_enrollments=e_stats["total"],
+                    active_learners=e_stats["active"],
+                    completed_count=e_stats["completed"],
+                    average_progress=round(progress_stats.get(course.id) or 0, 2),
+                    certificates_issued=cert_stats.get(course.id, 0),
                 )
             )
 
@@ -172,10 +190,24 @@ class EducationService:
             .all()
         )
 
+        # Batch load users and courses to avoid N+1
+        user_ids = list({e.user_id for e in enrollments})
+        course_ids = list({e.course_id for e in enrollments})
+        users_map = (
+            {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()}
+            if user_ids
+            else {}
+        )
+        courses_map = (
+            {c.id: c for c in db.query(Course).filter(Course.id.in_(course_ids)).all()}
+            if course_ids
+            else {}
+        )
+
         completions = []
         for e in enrollments:
-            user = db.query(User).filter(User.id == e.user_id).first()
-            course = db.query(Course).filter(Course.id == e.course_id).first()
+            user = users_map.get(e.user_id)
+            course = courses_map.get(e.course_id)
             completions.append(
                 CompletionDetail(
                     user_email=user.email if user else "",
@@ -202,10 +234,24 @@ class EducationService:
 
         certs = db.query(Certificate).order_by(Certificate.issued_at.desc()).limit(limit).all()
 
+        # Batch load users and courses to avoid N+1
+        user_ids = list({c.user_id for c in certs})
+        course_ids = list({c.course_id for c in certs})
+        users_map = (
+            {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()}
+            if user_ids
+            else {}
+        )
+        courses_map = (
+            {co.id: co for co in db.query(Course).filter(Course.id.in_(course_ids)).all()}
+            if course_ids
+            else {}
+        )
+
         certificates = []
         for c in certs:
-            user = db.query(User).filter(User.id == c.user_id).first()
-            course = db.query(Course).filter(Course.id == c.course_id).first()
+            user = users_map.get(c.user_id)
+            course = courses_map.get(c.course_id)
             certificates.append(
                 CertificateDetail(
                     user_email=user.email if user else "",

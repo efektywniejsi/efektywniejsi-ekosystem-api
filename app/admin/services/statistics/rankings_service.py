@@ -144,13 +144,24 @@ class RankingsService:
             .all()
         )
 
+        # Batch load completion counts to avoid N+1
+        course_ids = [c.id for c in course_stats]
+        completion_map = {}
+        if course_ids:
+            rows = (
+                db.query(Enrollment.course_id, func.count(Enrollment.id))
+                .filter(
+                    Enrollment.course_id.in_(course_ids),
+                    Enrollment.completed_at.isnot(None),
+                )
+                .group_by(Enrollment.course_id)
+                .all()
+            )
+            completion_map = {r[0]: r[1] for r in rows}
+
         courses = []
         for c in course_stats:
-            completion_count = (
-                db.query(Enrollment)
-                .filter(Enrollment.course_id == c.id, Enrollment.completed_at.isnot(None))
-                .count()
-            )
+            completion_count = completion_map.get(c.id, 0)
             completion_rate = (
                 round((completion_count / c.enrollments) * 100, 2) if c.enrollments > 0 else 0.0
             )
@@ -179,47 +190,48 @@ class RankingsService:
             SalesWindowsResponse with per-window statistics.
         """
         windows = db.query(SalesWindow).order_by(SalesWindow.starts_at.desc()).all()
+        if not windows:
+            return SalesWindowsResponse(windows=[])
+
+        # Build per-window stats in a single query using CASE expressions
+        # For each window, compute order count, revenue, and unique customers
+        completed_orders = (
+            db.query(Order)
+            .filter(
+                Order.status == OrderStatus.COMPLETED,
+                Order.payment_completed_at.isnot(None),
+            )
+            .all()
+        )
+
+        # Aggregate in Python to avoid N*3 queries
+        from collections import defaultdict
+
+        stats_map: dict[str, dict] = defaultdict(
+            lambda: {"total_orders": 0, "total_revenue": 0, "customers": set()}
+        )
+        for order in completed_orders:
+            for w in windows:
+                if w.starts_at <= order.payment_completed_at <= w.ends_at:
+                    key = str(w.id)
+                    stats_map[key]["total_orders"] += 1
+                    stats_map[key]["total_revenue"] += order.total or 0
+                    stats_map[key]["customers"].add(order.email)
 
         window_stats = []
         for w in windows:
-            orders_query = db.query(Order).filter(
-                Order.status == OrderStatus.COMPLETED,
-                Order.payment_completed_at >= w.starts_at,
-                Order.payment_completed_at <= w.ends_at,
-            )
-
-            total_orders = orders_query.count()
-            total_revenue = (
-                db.query(func.sum(Order.total))
-                .filter(
-                    Order.status == OrderStatus.COMPLETED,
-                    Order.payment_completed_at >= w.starts_at,
-                    Order.payment_completed_at <= w.ends_at,
-                )
-                .scalar()
-                or 0
-            )
-            unique_customers = (
-                db.query(func.count(func.distinct(Order.email)))
-                .filter(
-                    Order.status == OrderStatus.COMPLETED,
-                    Order.payment_completed_at >= w.starts_at,
-                    Order.payment_completed_at <= w.ends_at,
-                )
-                .scalar()
-                or 0
-            )
-
+            key = str(w.id)
+            s = stats_map[key]
             window_stats.append(
                 SalesWindowStats(
-                    id=str(w.id),
+                    id=key,
                     name=w.name,
                     status=w.status,
                     starts_at=w.starts_at,
                     ends_at=w.ends_at,
-                    total_orders=total_orders,
-                    total_revenue=total_revenue,
-                    unique_customers=unique_customers,
+                    total_orders=s["total_orders"],
+                    total_revenue=s["total_revenue"],
+                    unique_customers=len(s["customers"]),
                 )
             )
 

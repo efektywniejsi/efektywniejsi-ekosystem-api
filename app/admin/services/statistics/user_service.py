@@ -151,7 +151,10 @@ class UserStatisticsService:
         Returns:
             DailyUserDetailsResponse with user list and totals.
         """
-        target_date = datetime.strptime(date, "%Y-%m-%d")
+        try:
+            target_date = datetime.strptime(date, "%Y-%m-%d")
+        except ValueError as exc:
+            raise ValueError(f"Nieprawidłowy format daty: {date}. Oczekiwano YYYY-MM-DD.") from exc
         day_start = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
         day_end = day_start + timedelta(days=1)
 
@@ -206,19 +209,29 @@ class UserStatisticsService:
                 .all()
             )
 
-            for user in users:
-                last_activity = (
-                    db.query(func.max(Enrollment.last_accessed_at))
-                    .filter(Enrollment.user_id == user.id)
-                    .scalar()
+            # Batch load last activity to avoid N+1
+            user_ids = [u.id for u in users]
+            last_activity_map = {}
+            if user_ids:
+                rows = (
+                    db.query(
+                        Enrollment.user_id,
+                        func.max(Enrollment.last_accessed_at),
+                    )
+                    .filter(Enrollment.user_id.in_(user_ids))
+                    .group_by(Enrollment.user_id)
+                    .all()
                 )
+                last_activity_map = {r[0]: r[1] for r in rows}
+
+            for user in users:
                 users_list.append(
                     UserDetail(
                         id=str(user.id),
                         email=user.email,
                         full_name=user.name,
                         created_at=user.created_at,
-                        last_activity=last_activity,
+                        last_activity=last_activity_map.get(user.id),
                     )
                 )
 

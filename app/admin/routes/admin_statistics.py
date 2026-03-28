@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.admin.schemas.admin_statistics import (
@@ -248,4 +248,7 @@ async def get_daily_user_details(
     - Total count
     - List of users with their details
     """
-    return UserStatisticsService.get_daily_details(db, date, user_type, limit)
+    try:
+        return UserStatisticsService.get_daily_details(db, date, user_type, limit)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
