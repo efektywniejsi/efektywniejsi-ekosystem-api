@@ -622,6 +622,45 @@ async def get_user_details(
     )
 
 
+@router.post("/users/{user_id}/resend-welcome-email", status_code=status.HTTP_204_NO_CONTENT)
+async def resend_welcome_email(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> None:
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Użytkownik nie znaleziony",
+        )
+
+    if user.hashed_password != "!":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Użytkownik już ustawił hasło",
+        )
+
+    raw_token, hashed_token, expiry = generate_reset_token()
+    user.password_reset_token = hashed_token
+    user.password_reset_token_expires = expiry
+    user.updated_at = datetime.now(UTC)
+    db.commit()
+
+    email_service = get_email_service()
+    email_message = build_admin_welcome_email(
+        name=str(user.name),
+        email=str(user.email),
+        token=raw_token,
+    )
+    sent = await email_service.send_email(email_message)
+    if not sent:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Nie udało się wysłać emaila. Sprawdź konfigurację SMTP.",
+        )
+
+
 @router.patch("/users/{user_id}", response_model=UserResponse)
 async def update_user(
     user_id: str,
