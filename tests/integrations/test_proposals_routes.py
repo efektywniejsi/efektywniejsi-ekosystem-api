@@ -33,6 +33,7 @@ class TestSubmitProposal:
         data = response.json()
 
         assert data["name"] == "Notion API"
+        assert data["proposal_type"] == "integration"
         assert data["category"] == "Productivity"
         assert data["status"] == "pending"
         assert data["official_docs_url"] == "https://developers.notion.com/"
@@ -61,6 +62,53 @@ class TestSubmitProposal:
         assert data["name"] == "Simple Integration"
         assert data["category"] is None
         assert data["official_docs_url"] is None
+
+    @pytest.mark.asyncio
+    async def test_submit_process_proposal(
+        self,
+        test_client: AsyncClient,
+        test_user_token,
+    ):
+        """Test submitting a process proposal."""
+        payload = {
+            "name": "Automatyczny onboarding klienta",
+            "proposal_type": "process",
+            "description": "Proces automatyzacji onboardingu nowych klientów B2B.",
+        }
+
+        response = await test_client.post(
+            "/api/v1/integration-proposals",
+            json=payload,
+            cookies={"access_token": test_user_token},
+        )
+
+        assert response.status_code == 201
+        data = response.json()
+
+        assert data["name"] == "Automatyczny onboarding klienta"
+        assert data["proposal_type"] == "process"
+        assert data["category"] is None
+
+    @pytest.mark.asyncio
+    async def test_submit_proposal_invalid_type(
+        self,
+        test_client: AsyncClient,
+        test_user_token,
+    ):
+        """Test that invalid proposal_type is rejected."""
+        payload = {
+            "name": "Bad Type Proposal",
+            "proposal_type": "invalid_type",
+            "description": "This should fail validation because of invalid type.",
+        }
+
+        response = await test_client.post(
+            "/api/v1/integration-proposals",
+            json=payload,
+            cookies={"access_token": test_user_token},
+        )
+
+        assert response.status_code == 422
 
     @pytest.mark.asyncio
     async def test_submit_proposal_short_description(
