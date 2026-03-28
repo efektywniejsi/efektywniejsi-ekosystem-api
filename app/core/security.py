@@ -61,11 +61,16 @@ def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-def generate_reset_token() -> tuple[str, str, datetime]:
+def generate_reset_token(*, expire_hours: int | None = None) -> tuple[str, str, datetime]:
     raw_token = secrets.token_urlsafe(32)
     hashed_token = hashlib.sha256(raw_token.encode()).hexdigest()
-    expiry = datetime.now(UTC) + timedelta(hours=settings.PASSWORD_RESET_TOKEN_EXPIRE_HOURS)
+    hours = expire_hours if expire_hours is not None else settings.PASSWORD_RESET_TOKEN_EXPIRE_HOURS
+    expiry = datetime.now(UTC) + timedelta(hours=hours)
     return raw_token, hashed_token, expiry
+
+
+def generate_invitation_token() -> tuple[str, str, datetime]:
+    return generate_reset_token(expire_hours=settings.INVITATION_TOKEN_EXPIRE_DAYS * 24)
 
 
 def validate_password(password: str) -> str | None:

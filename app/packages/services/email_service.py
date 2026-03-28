@@ -193,7 +193,7 @@ def _build_welcome_package_email(
                 Ustaw hasło i zaloguj się
             </a>
         </p>
-        <p><strong>⚠️ Link wygasa za 1 godzinę.</strong></p>
+        <p><strong>⚠️ Link wygasa za 7 dni.</strong></p>
 
         <p style="margin-top: 30px;">Po ustawieniu hasła przejdź do panelu:</p>
         <p><a href="{dashboard_url}" style="color: #4CAF50;">{dashboard_url}</a></p>
@@ -226,7 +226,7 @@ USTAW HASŁO I ZACZNIJ PRACĘ
 Aby uzyskać dostęp do swoich pakietów, musisz ustawić hasło:
 {reset_url}
 
-⚠️ Link wygasa za 1 godzinę.
+⚠️ Link wygasa za 7 dni.
 
 Po ustawieniu hasła przejdź do panelu:
 {dashboard_url}

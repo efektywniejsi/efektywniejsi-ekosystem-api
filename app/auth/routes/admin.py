@@ -23,7 +23,7 @@ from app.auth.schemas.user import (
 from app.auth.services.email_service import build_admin_welcome_email, get_email_service
 from app.community.models.reply import ThreadReply
 from app.community.models.thread import CommunityThread
-from app.core.security import generate_reset_token
+from app.core.security import generate_invitation_token
 from app.courses.models.certificate import Certificate
 from app.courses.models.course import Course
 from app.courses.models.enrollment import Enrollment
@@ -104,7 +104,7 @@ async def create_user(
             detail="Email jest już zarejestrowany",
         )
 
-    raw_token, hashed_token, expiry = generate_reset_token()
+    raw_token, hashed_token, expiry = generate_invitation_token()
 
     new_user = User(
         id=uuid.uuid4(),
@@ -185,7 +185,7 @@ async def bulk_create_users(
 
         try:
             savepoint = db.begin_nested()
-            raw_token, hashed_token, expiry = generate_reset_token()
+            raw_token, hashed_token, expiry = generate_invitation_token()
 
             new_user = User(
                 id=uuid.uuid4(),
@@ -641,7 +641,7 @@ async def resend_welcome_email(
             detail="Użytkownik już ustawił hasło",
         )
 
-    raw_token, hashed_token, expiry = generate_reset_token()
+    raw_token, hashed_token, expiry = generate_invitation_token()
     user.password_reset_token = hashed_token
     user.password_reset_token_expires = expiry
     user.updated_at = datetime.now(UTC)

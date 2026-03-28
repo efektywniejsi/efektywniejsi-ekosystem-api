@@ -223,7 +223,7 @@ def build_admin_welcome_email(name: str, email: str, token: str) -> EmailMessage
   </tr>
 </table>
 <p style="margin: 0 0 8px 0; font-size: 14px; color: {_TEXT_LIGHT}; font-weight: 600;">
-  Link wygasa za 1 godzinę.
+  Link wygasa za 7 dni.
 </p>
 <p style="margin: 0; font-size: 14px; color: {_TEXT_MUTED}; line-height: 1.6;">
   Jeśli link wygaśnie, użyj opcji &bdquo;Zapomniałem hasła&rdquo; na stronie logowania.
@@ -237,7 +237,7 @@ Cześć {name},
 Twoje konto zostało utworzone. Użyj poniższego linku, aby ustawić hasło:
 {reset_url}
 
-Link wygasa za 1 godzinę.
+Link wygasa za 7 dni.
 
 Jeśli link wygaśnie, użyj opcji "Zapomniałem hasła" na stronie logowania.
 
