@@ -309,7 +309,7 @@ async def test_video_lesson_requires_prior_progress(
     )
 
     assert response.status_code == 400
-    assert "rozpocząć oglądanie" in response.json()["error"]["message"]
+    assert "Ukończenie lekcji wymaga obejrzenia video" in response.json()["error"]["message"]
 
 
 @pytest.mark.asyncio

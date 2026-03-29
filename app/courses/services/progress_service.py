@@ -156,10 +156,7 @@ class ProgressService:
             else:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=(
-                        "Musisz najpierw rozpocząć oglądanie lekcji wideo, "
-                        "aby móc ją oznaczyć jako ukończoną"
-                    ),
+                    detail="Ukończenie lekcji wymaga obejrzenia video",
                 )
 
         threshold = ProgressService.COMPLETION_THRESHOLD
@@ -167,8 +164,7 @@ class ProgressService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
-                    f"Musisz obejrzeć co najmniej {threshold}% lekcji wideo, "
-                    f"aby móc ją oznaczyć jako ukończoną "
+                    f"Ukończenie lekcji wymaga obejrzenia co najmniej {threshold}% video "
                     f"(obecny postęp: {progress.completion_percentage}%)"
                 ),
             )
