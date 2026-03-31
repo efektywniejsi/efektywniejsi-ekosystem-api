@@ -69,6 +69,7 @@ class RecentActiveUser(BaseModel):
     id: str
     email: str
     full_name: str | None
+    avatar_url: str | None = None
     last_activity: UTCDatetime
 
 
@@ -78,6 +79,7 @@ class RecentNewUser(BaseModel):
     id: str
     email: str
     full_name: str | None
+    avatar_url: str | None = None
     created_at: UTCDatetime
 
 

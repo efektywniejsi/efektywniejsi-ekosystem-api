@@ -285,6 +285,7 @@ class UserStatisticsService:
                 id=str(user_id),
                 email=users_map[user_id].email,
                 full_name=users_map[user_id].name,
+                avatar_url=users_map[user_id].avatar_url,
                 last_activity=last_seen,
             )
             for user_id, last_seen in rows
@@ -308,6 +309,7 @@ class UserStatisticsService:
                 id=str(u.id),
                 email=u.email,
                 full_name=u.name,
+                avatar_url=u.avatar_url,
                 created_at=u.created_at,
             )
             for u in users
