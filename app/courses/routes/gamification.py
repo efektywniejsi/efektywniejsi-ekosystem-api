@@ -38,8 +38,8 @@ async def get_my_gamification_summary(
     if not user_streak:
         user_streak = UserStreak(
             user_id=current_user.id,
-            current_streak=0,
-            longest_streak=0,
+            current_streak=1,
+            longest_streak=1,
             last_activity_date=date.today(),
         )
         db.add(user_streak)
