@@ -97,6 +97,7 @@ class LessonBriefResponse(BaseModel):
     title: str
     course_id: UUID
     course_title: str
+    course_slug: str
 
 
 class IntegrationDetailResponse(IntegrationResponse):

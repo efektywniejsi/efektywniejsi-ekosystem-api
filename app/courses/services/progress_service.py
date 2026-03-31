@@ -141,7 +141,8 @@ class ProgressService:
                 detail="Lekcja nie znaleziona",
             )
 
-        is_text_only = lesson.mux_playback_id is None or lesson.duration_seconds == 0
+        is_text_only = lesson.mux_playback_id is None
+        is_short_video = lesson.duration_seconds is not None and 0 < lesson.duration_seconds <= 30
 
         progress = (
             db.query(LessonProgress)
@@ -160,7 +161,7 @@ class ProgressService:
                 )
 
         threshold = ProgressService.COMPLETION_THRESHOLD
-        if not is_text_only and progress.completion_percentage < threshold:
+        if not is_text_only and not is_short_video and progress.completion_percentage < threshold:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(

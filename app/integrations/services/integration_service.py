@@ -633,6 +633,7 @@ class IntegrationService:
                         title=lesson.title,
                         course_id=lesson.module.course.id,
                         course_title=lesson.module.course.title,
+                        course_slug=lesson.module.course.slug,
                     )
                 )
 
