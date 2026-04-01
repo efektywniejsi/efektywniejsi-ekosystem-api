@@ -208,8 +208,14 @@ def build_admin_welcome_email(name: str, email: str, token: str) -> EmailMessage
 <p style="margin: 0 0 16px 0; font-size: 15px; color: {_TEXT_MUTED}; line-height: 1.6;">
   Cześć {name},
 </p>
+<p style="margin: 0 0 12px 0; font-size: 15px; color: {_TEXT_MUTED}; line-height: 1.6;">
+  Zapraszamy Cię do platformy <strong style="color: {_TEXT_LIGHT};">Efektywniejsi</strong> &mdash;
+  stworzyliśmy ją specjalnie dla uczestników naszych kursów, aby wspierać Cię w nauce
+  i pomagać w efektywnym wdrażaniu nowych umiejętności.
+</p>
 <p style="margin: 0 0 20px 0; font-size: 15px; color: {_TEXT_MUTED}; line-height: 1.6;">
-  Twoje konto zostało utworzone. Kliknij poniższy przycisk, aby ustawić hasło:
+  Znajdziesz tu materiały szkoleniowe, lekcje oraz narzędzia, które pomogą Ci w pełni
+  wykorzystać potencjał kursu. Aby zacząć, ustaw hasło do swojego konta:
 </p>
 <table cellpadding="0" cellspacing="0" style="margin: 0 0 24px 0;">
   <tr>
@@ -234,7 +240,9 @@ Witaj w Efektywniejsi - Ustaw hasło
 
 Cześć {name},
 
-Twoje konto zostało utworzone. Użyj poniższego linku, aby ustawić hasło:
+Zapraszamy Cię do platformy Efektywniejsi — stworzyliśmy ją specjalnie dla uczestników naszych kursów, aby wspierać Cię w nauce i pomagać w efektywnym wdrażaniu nowych umiejętności.
+
+Znajdziesz tu materiały szkoleniowe, lekcje oraz narzędzia, które pomogą Ci w pełni wykorzystać potencjał kursu. Aby zacząć, ustaw hasło do swojego konta:
 {reset_url}
 
 Link wygasa za 7 dni.
