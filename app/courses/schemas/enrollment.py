@@ -50,3 +50,27 @@ class AdminCreateEnrollmentRequest(BaseModel):
 
 class AdminUpdateEnrollmentRequest(BaseModel):
     expires_at: datetime | None = None
+
+
+class AdminBulkCreateEnrollmentRequest(BaseModel):
+    user_ids: list[str]
+    expires_at: datetime | None = None
+
+
+class AdminBulkCreateEnrollmentResponse(BaseModel):
+    enrolled_count: int
+    skipped_count: int
+
+
+class EnrollableUser(BaseModel):
+    id: str
+    email: str
+    name: str | None = None
+    is_enrolled: bool = False
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EnrollableUserListResponse(BaseModel):
+    total: int
+    users: list[EnrollableUser]
