@@ -10,13 +10,17 @@ from sqlalchemy.orm import Session, joinedload
 from app.auth.dependencies import require_admin
 from app.auth.models.user import User
 from app.auth.services.email_service import build_welcome_email, get_email_service
-from app.core import security
+from app.core import security  # noqa: F401 - used by single create_enrollment
 from app.courses.models import Course, Enrollment, Lesson, LessonProgress, Module
 from app.courses.schemas.enrollment import (
+    AdminBulkCreateEnrollmentRequest,
+    AdminBulkCreateEnrollmentResponse,
     AdminCreateEnrollmentRequest,
     AdminEnrollmentListResponse,
     AdminEnrollmentResponse,
     AdminUpdateEnrollmentRequest,
+    EnrollableUser,
+    EnrollableUserListResponse,
     UserCourseProgress,
     UserProgressListResponse,
 )
@@ -141,6 +145,106 @@ async def create_enrollment(
             logger.warning("Could not send welcome email: %s", e)
 
     return _enrollment_to_response(enrollment)
+
+
+@router.get(
+    "/courses/{course_id}/enrollable-users",
+    response_model=EnrollableUserListResponse,
+)
+async def list_enrollable_users(
+    course_id: UUID,
+    search: str | None = Query(None, description="Szukaj po imieniu lub emailu"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> EnrollableUserListResponse:
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kurs nie znaleziony",
+        )
+
+    query = db.query(User).filter(User.is_active == True)  # noqa: E712
+    if search:
+        search_term = f"%{search.strip()}%"
+        query = query.filter((User.name.ilike(search_term)) | (User.email.ilike(search_term)))
+    query = query.order_by(User.name.asc())
+
+    users = query.all()
+
+    enrolled_ids_set = {
+        row[0]
+        for row in db.query(Enrollment.user_id).filter(Enrollment.course_id == course_id).all()
+    }
+
+    return EnrollableUserListResponse(
+        total=len(users),
+        users=[
+            EnrollableUser(
+                id=str(u.id),
+                email=str(u.email),
+                name=u.name,
+                is_enrolled=u.id in enrolled_ids_set,
+            )
+            for u in users
+        ],
+    )
+
+
+@router.post(
+    "/courses/{course_id}/enrollments/bulk",
+    response_model=AdminBulkCreateEnrollmentResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def bulk_create_enrollments(
+    course_id: UUID,
+    request: AdminBulkCreateEnrollmentRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> AdminBulkCreateEnrollmentResponse:
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kurs nie znaleziony",
+        )
+
+    unique_ids = list(dict.fromkeys(request.user_ids))
+
+    already_enrolled = {
+        row.user_id
+        for row in db.query(Enrollment.user_id)
+        .filter(
+            Enrollment.course_id == course_id,
+            Enrollment.user_id.in_([UUID(uid) for uid in unique_ids]),
+        )
+        .all()
+    }
+
+    enrolled_count = 0
+    skipped_count = 0
+
+    for uid in unique_ids:
+        user_uuid = UUID(uid)
+        if user_uuid in already_enrolled:
+            skipped_count += 1
+            continue
+
+        enrollment = Enrollment(
+            user_id=user_uuid,
+            course_id=course_id,
+            enrolled_at=datetime.now(UTC),
+            expires_at=request.expires_at,
+        )
+        db.add(enrollment)
+        enrolled_count += 1
+
+    db.commit()
+
+    return AdminBulkCreateEnrollmentResponse(
+        enrolled_count=enrolled_count,
+        skipped_count=skipped_count,
+    )
 
 
 @router.patch(
