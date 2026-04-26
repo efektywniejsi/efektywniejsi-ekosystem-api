@@ -4,7 +4,7 @@ FastAPI backend for the Efektywniejsi learning platform with authentication, cou
 
 ## 🚀 Features
 
-- **Authentication**: JWT-based auth with refresh tokens, password reset
+- **Authentication**: JWT-based auth with refresh tokens, password reset.
 - **Course Management**: Hierarchical courses (Course → Module → Lesson)
 - **Video Streaming**: Mux integration for video hosting and playback
 - **Progress Tracking**: Granular lesson progress with auto-completion
