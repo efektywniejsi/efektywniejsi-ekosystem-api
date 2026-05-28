@@ -182,9 +182,6 @@ async def delete_integration_image(
     return {"message": "Obraz został usunięty"}
 
 
-# ─────────────────────────────────────────────────────────────
-# Auth Guide Markdown Images
-# ─────────────────────────────────────────────────────────────
 
 
 @router.post("/integrations/{integration_id}/auth-guide-images")

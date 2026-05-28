@@ -25,9 +25,6 @@ from app.integrations.models import Integration, IntegrationType
 
 
 INTEGRATIONS_DATA = [
-    # ─────────────────────────────────────────────────────────────
-    # AI Category
-    # ─────────────────────────────────────────────────────────────
     {
         "slug": "openai",
         "name": "OpenAI",
@@ -181,9 +178,6 @@ curl https://api.anthropic.com/v1/messages \\
         "sort_order": 3,
         "integration_types": ["API"],
     },
-    # ─────────────────────────────────────────────────────────────
-    # CRM Category
-    # ─────────────────────────────────────────────────────────────
     {
         "slug": "hubspot",
         "name": "HubSpot",
@@ -271,9 +265,6 @@ Authorization: Bearer YOUR_API_TOKEN
         "sort_order": 11,
         "integration_types": ["API", "OAuth 2.0"],
     },
-    # ─────────────────────────────────────────────────────────────
-    # Automation Category
-    # ─────────────────────────────────────────────────────────────
     {
         "slug": "make",
         "name": "Make (Integromat)",
@@ -342,9 +333,6 @@ docker run -it --rm \\
         "sort_order": 21,
         "integration_types": ["API", "OAuth 2.0"],
     },
-    # ─────────────────────────────────────────────────────────────
-    # Communication Category
-    # ─────────────────────────────────────────────────────────────
     {
         "slug": "slack",
         "name": "Slack",
@@ -546,9 +534,6 @@ curl "https://api.telegram.org/bot$BOT_TOKEN/getWebhookInfo"
         "sort_order": 32,
         "integration_types": ["API"],
     },
-    # ─────────────────────────────────────────────────────────────
-    # Data Enrichment Category
-    # ─────────────────────────────────────────────────────────────
     {
         "slug": "clearbit",
         "name": "Clearbit",
@@ -735,9 +720,6 @@ HTTP 429 — przekroczono limit.
         "sort_order": 42,
         "integration_types": ["API"],
     },
-    # ─────────────────────────────────────────────────────────────
-    # Database Category
-    # ─────────────────────────────────────────────────────────────
     {
         "slug": "airtable",
         "name": "Airtable",
@@ -843,9 +825,6 @@ Integracja ma dostęp TYLKO do stron, z którymi została połączona!
         "sort_order": 51,
         "integration_types": ["API", "OAuth 2.0", "MCP"],
     },
-    # ─────────────────────────────────────────────────────────────
-    # Productivity Category — Google Workspace
-    # ─────────────────────────────────────────────────────────────
     {
         "slug": "google-workspace",
         "name": "Google Workspace",
@@ -951,9 +930,6 @@ Integracja ma dostęp TYLKO do stron, z którymi została połączona!
         "sort_order": 52,
         "integration_types": ["OAuth 2.0"],
     },
-    # ─────────────────────────────────────────────────────────────
-    # Payments Category
-    # ─────────────────────────────────────────────────────────────
     {
         "slug": "stripe",
         "name": "Stripe",
@@ -989,9 +965,6 @@ Integracja ma dostęp TYLKO do stron, z którymi została połączona!
         "sort_order": 60,
         "integration_types": ["API", "OAuth 2.0"],
     },
-    # ─────────────────────────────────────────────────────────────
-    # Forms Category
-    # ─────────────────────────────────────────────────────────────
     {
         "slug": "tally",
         "name": "Tally",
@@ -1141,9 +1114,6 @@ Tally.openPopup('FORM_ID', {
         "sort_order": 70,
         "integration_types": ["API", "OAuth 2.0"],
     },
-    # ─────────────────────────────────────────────────────────────
-    # Search Category
-    # ─────────────────────────────────────────────────────────────
     {
         "slug": "algolia",
         "name": "Algolia",
@@ -1268,9 +1238,6 @@ korzystać z wyszukiwania w czasie rzeczywistym:
         "sort_order": 81,
         "integration_types": ["API", "MCP"],
     },
-    # ─────────────────────────────────────────────────────────────
-    # Customer Support Category
-    # ─────────────────────────────────────────────────────────────
     {
         "slug": "intercom",
         "name": "Intercom",
@@ -1342,9 +1309,6 @@ https://{subdomain}.zendesk.com/api/v2/{resource}
         "sort_order": 91,
         "integration_types": ["API", "OAuth 2.0"],
     },
-    # ─────────────────────────────────────────────────────────────
-    # Tools Category
-    # ─────────────────────────────────────────────────────────────
     {
         "slug": "github",
         "name": "GitHub",

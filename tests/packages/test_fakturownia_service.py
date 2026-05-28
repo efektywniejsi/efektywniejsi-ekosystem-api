@@ -16,9 +16,6 @@ from app.packages.services.fakturownia_service import (
     get_fakturownia_service,
 )
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Test Fixtures
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 def create_mock_order(
@@ -82,9 +79,6 @@ def create_mock_settings(**overrides):
     return mock_settings
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Tests: Configuration
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 class TestFakturowniaServiceConfiguration:
@@ -127,9 +121,6 @@ class TestFakturowniaServiceConfiguration:
             assert service.base_url == "https://mojafirma.fakturownia.pl"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Tests: PDF URL Generation
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 class TestFakturowniaServicePdfUrl:
@@ -147,9 +138,6 @@ class TestFakturowniaServicePdfUrl:
             assert url == "https://mojafirma.fakturownia.pl/invoice/ABC123XYZ.pdf"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Tests: Invoice Data Building
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 class TestFakturowniaServiceBuildInvoiceData:
@@ -311,9 +299,6 @@ class TestFakturowniaServiceBuildInvoiceData:
             assert "send_email" not in data["invoice"]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Tests: Invoice Creation (API calls)
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 class TestFakturowniaServiceCreateInvoice:
@@ -481,9 +466,6 @@ class TestFakturowniaServiceCreateInvoice:
                 assert "/send_by_email.json" in email_call[0][0]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Tests: Singleton Pattern
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 class TestFakturowniaServiceSingleton:
@@ -506,9 +488,6 @@ class TestFakturowniaServiceSingleton:
             assert service1 is service2
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Tests: InvoiceResult Dataclass
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 class TestInvoiceResult:
@@ -543,9 +522,6 @@ class TestInvoiceResult:
         assert result.invoice_token is None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Tests: B2B Invoice with Full Billing Details
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 class TestFakturowniaServiceB2BInvoice:

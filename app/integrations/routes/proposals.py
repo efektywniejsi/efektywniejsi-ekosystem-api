@@ -12,9 +12,6 @@ from app.integrations.services import IntegrationService
 router = APIRouter()
 
 
-# ─────────────────────────────────────────────────────────────
-# User Endpoints
-# ─────────────────────────────────────────────────────────────
 
 
 @router.post(
@@ -42,9 +39,6 @@ def get_my_proposals(
     return service.get_user_proposals(current_user)
 
 
-# ─────────────────────────────────────────────────────────────
-# Admin Endpoints
-# ─────────────────────────────────────────────────────────────
 
 
 @router.get("/admin/integration-proposals", response_model=list[ProposalResponse])
