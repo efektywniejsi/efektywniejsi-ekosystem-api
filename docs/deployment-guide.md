@@ -74,16 +74,10 @@ nano .env.production
 ### Production `.env` Template
 
 ```env
-# ======================
-# APPLICATION
-# ======================
 ENVIRONMENT=production
 DEBUG=false
 API_VERSION=v1
 
-# ======================
-# DATABASE
-# ======================
 # Use managed PostgreSQL (e.g., AWS RDS, DigitalOcean Managed DB)
 DATABASE_URL=postgresql://username:password@db-host:5432/dbname
 
@@ -93,30 +87,18 @@ DB_MAX_OVERFLOW=10
 DB_POOL_TIMEOUT=30
 DB_POOL_RECYCLE=3600
 
-# ======================
-# REDIS
-# ======================
 # Use managed Redis or dedicated server
 REDIS_URL=redis://redis-host:6379/0
 REDIS_PASSWORD=your_redis_password
 
-# ======================
-# JWT & SECURITY
-# ======================
 # Generate with: openssl rand -hex 32
 SECRET_KEY=YOUR_STRONG_RANDOM_SECRET_KEY_64_CHARS_MINIMUM_PLEASE
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 REFRESH_TOKEN_EXPIRE_DAYS=30
 
-# ======================
-# FRONTEND
-# ======================
 FRONTEND_URL=https://yourdomain.com
 CORS_ORIGINS=["https://yourdomain.com","https://www.yourdomain.com"]
 
-# ======================
-# EMAIL (SMTP)
-# ======================
 EMAIL_BACKEND=smtp
 SMTP_HOST=smtp.sendgrid.net
 SMTP_PORT=587
@@ -126,27 +108,15 @@ SMTP_FROM_EMAIL=noreply@yourdomain.com
 SMTP_FROM_NAME="Efektywniejsi"
 SMTP_USE_TLS=true
 
-# ======================
-# FILE UPLOADS
-# ======================
 UPLOAD_DIR=/app/uploads
 MAX_FILE_SIZE_MB=50
 
-# ======================
-# MUX VIDEO
-# ======================
 MUX_TOKEN_ID=your_production_mux_token_id
 MUX_TOKEN_SECRET=your_production_mux_token_secret
 
-# ======================
-# MONITORING & LOGGING
-# ======================
 SENTRY_DSN=https://your_sentry_dsn@sentry.io/project_id
 LOG_LEVEL=INFO
 
-# ======================
-# RATE LIMITING
-# ======================
 RATE_LIMIT_ENABLED=true
 RATE_LIMIT_PER_HOUR=1000
 ```
