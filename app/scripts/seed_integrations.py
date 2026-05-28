@@ -25,6 +25,9 @@ from app.integrations.models import Integration, IntegrationType
 
 
 INTEGRATIONS_DATA = [
+    # ─────────────────────────────────────────────────────────────
+    # AI Category
+    # ─────────────────────────────────────────────────────────────
     {
         "slug": "openai",
         "name": "OpenAI",
@@ -178,6 +181,9 @@ curl https://api.anthropic.com/v1/messages \\
         "sort_order": 3,
         "integration_types": ["API"],
     },
+    # ─────────────────────────────────────────────────────────────
+    # CRM Category
+    # ─────────────────────────────────────────────────────────────
     {
         "slug": "hubspot",
         "name": "HubSpot",
@@ -265,6 +271,9 @@ Authorization: Bearer YOUR_API_TOKEN
         "sort_order": 11,
         "integration_types": ["API", "OAuth 2.0"],
     },
+    # ─────────────────────────────────────────────────────────────
+    # Automation Category
+    # ─────────────────────────────────────────────────────────────
     {
         "slug": "make",
         "name": "Make (Integromat)",
@@ -333,6 +342,9 @@ docker run -it --rm \\
         "sort_order": 21,
         "integration_types": ["API", "OAuth 2.0"],
     },
+    # ─────────────────────────────────────────────────────────────
+    # Communication Category
+    # ─────────────────────────────────────────────────────────────
     {
         "slug": "slack",
         "name": "Slack",
@@ -534,6 +546,9 @@ curl "https://api.telegram.org/bot$BOT_TOKEN/getWebhookInfo"
         "sort_order": 32,
         "integration_types": ["API"],
     },
+    # ─────────────────────────────────────────────────────────────
+    # Data Enrichment Category
+    # ─────────────────────────────────────────────────────────────
     {
         "slug": "clearbit",
         "name": "Clearbit",
@@ -720,6 +735,9 @@ HTTP 429 — przekroczono limit.
         "sort_order": 42,
         "integration_types": ["API"],
     },
+    # ─────────────────────────────────────────────────────────────
+    # Database Category
+    # ─────────────────────────────────────────────────────────────
     {
         "slug": "airtable",
         "name": "Airtable",
@@ -825,6 +843,9 @@ Integracja ma dostęp TYLKO do stron, z którymi została połączona!
         "sort_order": 51,
         "integration_types": ["API", "OAuth 2.0", "MCP"],
     },
+    # ─────────────────────────────────────────────────────────────
+    # Productivity Category — Google Workspace
+    # ─────────────────────────────────────────────────────────────
     {
         "slug": "google-workspace",
         "name": "Google Workspace",
@@ -930,6 +951,9 @@ Integracja ma dostęp TYLKO do stron, z którymi została połączona!
         "sort_order": 52,
         "integration_types": ["OAuth 2.0"],
     },
+    # ─────────────────────────────────────────────────────────────
+    # Payments Category
+    # ─────────────────────────────────────────────────────────────
     {
         "slug": "stripe",
         "name": "Stripe",
@@ -965,6 +989,9 @@ Integracja ma dostęp TYLKO do stron, z którymi została połączona!
         "sort_order": 60,
         "integration_types": ["API", "OAuth 2.0"],
     },
+    # ─────────────────────────────────────────────────────────────
+    # Forms Category
+    # ─────────────────────────────────────────────────────────────
     {
         "slug": "tally",
         "name": "Tally",
@@ -1114,6 +1141,9 @@ Tally.openPopup('FORM_ID', {
         "sort_order": 70,
         "integration_types": ["API", "OAuth 2.0"],
     },
+    # ─────────────────────────────────────────────────────────────
+    # Search Category
+    # ─────────────────────────────────────────────────────────────
     {
         "slug": "algolia",
         "name": "Algolia",
@@ -1147,97 +1177,9 @@ Tally.openPopup('FORM_ID', {
         "sort_order": 80,
         "integration_types": ["API"],
     },
-    {
-        "slug": "tavily",
-        "name": "Tavily Search",
-        "icon": "ScanSearch",
-        "category": "Search",
-        "description": (
-            "API wyszukiwania zaprojektowane specjalnie dla agentów AI i aplikacji RAG. "
-            "Zwraca czyste, ustrukturyzowane wyniki z wielu źródeł — idealne do budowania "
-            "agentów, którzy potrzebują aktualnych informacji z internetu."
-        ),
-        "auth_guide": """## Jak uzyskać klucz API Tavily
-
-### Krok 1: Utwórz konto
-1. Wejdź na [app.tavily.com](https://app.tavily.com)
-2. Kliknij **Sign Up** — możesz użyć konta Google lub GitHub
-3. Darmowy plan obejmuje **1 000 zapytań miesięcznie**
-
-### Krok 2: Skopiuj klucz API
-1. Po zalogowaniu przejdziesz automatycznie do **Dashboard**
-2. Twój klucz API (`tvly-...`) jest widoczny na stronie głównej
-3. Kliknij ikonę kopiowania, aby skopiować klucz
-
-### Krok 3: Przetestuj klucz
-```bash
-curl -X POST https://api.tavily.com/search \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "api_key": "$TAVILY_API_KEY",
-    "query": "najnowsze trendy AI 2026",
-    "search_depth": "basic"
-  }'
-```
-
-### Dostępne endpointy
-
-| Endpoint | Opis |
-|----------|------|
-| `POST /search` | Wyszukiwanie w internecie |
-| `POST /extract` | Ekstrakcja treści z URL |
-
-### Parametry wyszukiwania
-
-| Parametr | Opis | Domyślna |
-|----------|------|----------|
-| `query` | Zapytanie wyszukiwania | (wymagane) |
-| `search_depth` | `"basic"` lub `"advanced"` | `"basic"` |
-| `include_answer` | Wygeneruj podsumowanie | `false` |
-| `max_results` | Maksymalna liczba wyników (1–10) | `5` |
-| `include_domains` | Ogranicz do wybranych domen | `[]` |
-| `exclude_domains` | Wyklucz domeny | `[]` |
-
-### Przykład z Pythonem
-```python
-from tavily import TavilyClient
-
-client = TavilyClient(api_key="tvly-...")
-results = client.search(
-    query="najnowsze trendy AI",
-    search_depth="advanced",
-    max_results=5
-)
-for result in results["results"]:
-    print(result["title"], result["url"])
-```
-
-### Użycie jako MCP Server
-Tavily udostępnia oficjalny **MCP Server**, który pozwala agentom AI (np. Claude)
-korzystać z wyszukiwania w czasie rzeczywistym:
-
-```json
-{
-  "mcpServers": {
-    "tavily": {
-      "command": "npx",
-      "args": ["-y", "tavily-mcp@latest"],
-      "env": {
-        "TAVILY_API_KEY": "tvly-..."
-      }
-    }
-  }
-}
-```
-
-> 💡 **Wskazówka:** Tavily jest zoptymalizowane pod kątem LLM — zwraca czyste, podsumowane wyniki zamiast surowego HTML, co znacznie zmniejsza zużycie tokenów.
-""",
-        "official_docs_url": "https://docs.tavily.com",
-        "video_tutorial_url": None,
-        "is_published": True,
-        "sort_order": 81,
-        "integration_types": ["API", "MCP"],
-    },
+    # ─────────────────────────────────────────────────────────────
+    # Customer Support Category
+    # ─────────────────────────────────────────────────────────────
     {
         "slug": "intercom",
         "name": "Intercom",
@@ -1309,6 +1251,9 @@ https://{subdomain}.zendesk.com/api/v2/{resource}
         "sort_order": 91,
         "integration_types": ["API", "OAuth 2.0"],
     },
+    # ─────────────────────────────────────────────────────────────
+    # Tools Category
+    # ─────────────────────────────────────────────────────────────
     {
         "slug": "github",
         "name": "GitHub",
