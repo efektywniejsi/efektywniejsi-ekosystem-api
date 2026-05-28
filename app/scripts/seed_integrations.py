@@ -1177,6 +1177,97 @@ Tally.openPopup('FORM_ID', {
         "sort_order": 80,
         "integration_types": ["API"],
     },
+    {
+        "slug": "tavily",
+        "name": "Tavily Search",
+        "icon": "ScanSearch",
+        "category": "Search",
+        "description": (
+            "API wyszukiwania zaprojektowane specjalnie dla agentów AI i aplikacji RAG. "
+            "Zwraca czyste, ustrukturyzowane wyniki z wielu źródeł — idealne do budowania "
+            "agentów, którzy potrzebują aktualnych informacji z internetu."
+        ),
+        "auth_guide": """## Jak uzyskać klucz API Tavily
+
+### Krok 1: Utwórz konto
+1. Wejdź na [app.tavily.com](https://app.tavily.com)
+2. Kliknij **Sign Up** — możesz użyć konta Google lub GitHub
+3. Darmowy plan obejmuje **1 000 zapytań miesięcznie**
+
+### Krok 2: Skopiuj klucz API
+1. Po zalogowaniu przejdziesz automatycznie do **Dashboard**
+2. Twój klucz API (`tvly-...`) jest widoczny na stronie głównej
+3. Kliknij ikonę kopiowania, aby skopiować klucz
+
+### Krok 3: Przetestuj klucz
+```bash
+curl -X POST https://api.tavily.com/search \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "api_key": "$TAVILY_API_KEY",
+    "query": "najnowsze trendy AI 2026",
+    "search_depth": "basic"
+  }'
+```
+
+### Dostępne endpointy
+
+| Endpoint | Opis |
+|----------|------|
+| `POST /search` | Wyszukiwanie w internecie |
+| `POST /extract` | Ekstrakcja treści z URL |
+
+### Parametry wyszukiwania
+
+| Parametr | Opis | Domyślna |
+|----------|------|----------|
+| `query` | Zapytanie wyszukiwania | (wymagane) |
+| `search_depth` | `"basic"` lub `"advanced"` | `"basic"` |
+| `include_answer` | Wygeneruj podsumowanie | `false` |
+| `max_results` | Maksymalna liczba wyników (1–10) | `5` |
+| `include_domains` | Ogranicz do wybranych domen | `[]` |
+| `exclude_domains` | Wyklucz domeny | `[]` |
+
+### Przykład z Pythonem
+```python
+from tavily import TavilyClient
+
+client = TavilyClient(api_key="tvly-...")
+results = client.search(
+    query="najnowsze trendy AI",
+    search_depth="advanced",
+    max_results=5
+)
+for result in results["results"]:
+    print(result["title"], result["url"])
+```
+
+### Użycie jako MCP Server
+Tavily udostępnia oficjalny **MCP Server**, który pozwala agentom AI (np. Claude)
+korzystać z wyszukiwania w czasie rzeczywistym:
+
+```json
+{
+  "mcpServers": {
+    "tavily": {
+      "command": "npx",
+      "args": ["-y", "tavily-mcp@latest"],
+      "env": {
+        "TAVILY_API_KEY": "tvly-..."
+      }
+    }
+  }
+}
+```
+
+> 💡 **Wskazówka:** Tavily jest zoptymalizowane pod kątem LLM — zwraca czyste, podsumowane wyniki zamiast surowego HTML, co znacznie zmniejsza zużycie tokenów.
+""",
+        "official_docs_url": "https://docs.tavily.com",
+        "video_tutorial_url": None,
+        "is_published": True,
+        "sort_order": 81,
+        "integration_types": ["API", "MCP"],
+    },
     # ─────────────────────────────────────────────────────────────
     # Customer Support Category
     # ─────────────────────────────────────────────────────────────
