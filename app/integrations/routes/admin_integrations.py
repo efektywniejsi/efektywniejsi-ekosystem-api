@@ -109,9 +109,6 @@ def detach_integration_from_lesson(
     service.detach_integration_from_lesson(lesson_id, integration_id)
 
 
-# ─────────────────────────────────────────────────────────────
-# Process Integration Endpoints
-# ─────────────────────────────────────────────────────────────
 
 
 @router.post(

@@ -152,7 +152,6 @@ uv run python app/scripts/list_placeholder_lessons.py
 Output:
 ```
 Lessons with placeholder Mux IDs:
-==================================================
 [1] TO_BE_REPLACED_001
     Lekcja: Wprowadzenie do kursu
     Kurs: Masterclass Low-code
@@ -180,7 +179,6 @@ uv run python app/scripts/update_mux_ids.py --mapping mux_id_mapping.json --dry-
 Output:
 ```
 🔍 DRY RUN MODE
-============================================================
 Loaded 9 mappings from mux_id_mapping.json
 
 [DRY RUN] Would update lesson: Wprowadzenie do kursu

@@ -21,9 +21,6 @@ class ProcessService:
     def __init__(self, db: Session):
         self.db = db
 
-    # ─────────────────────────────────────────────────────────────
-    # Public Methods
-    # ─────────────────────────────────────────────────────────────
 
     def get_published_processes(self) -> list[ProcessResponse]:
         usage_counts = self._get_usage_counts()
@@ -90,9 +87,6 @@ class ProcessService:
             used_in_lessons=used_in_lessons,
         )
 
-    # ─────────────────────────────────────────────────────────────
-    # Admin CRUD Methods
-    # ─────────────────────────────────────────────────────────────
 
     def get_all_processes(self) -> list[ProcessResponse]:
         usage_counts = self._get_usage_counts()
@@ -192,9 +186,6 @@ class ProcessService:
         self.db.delete(process)
         self.db.commit()
 
-    # ─────────────────────────────────────────────────────────────
-    # Lesson Process Methods
-    # ─────────────────────────────────────────────────────────────
 
     def get_lesson_processes(self, lesson_id: UUID) -> list[LessonProcessResponse]:
         lesson = self.db.query(Lesson).filter(Lesson.id == lesson_id).first()
@@ -292,9 +283,6 @@ class ProcessService:
         self.db.delete(lesson_process)
         self.db.commit()
 
-    # ─────────────────────────────────────────────────────────────
-    # Private Helpers
-    # ─────────────────────────────────────────────────────────────
 
     def _get_usage_counts(self) -> dict[UUID, int]:
         results = (

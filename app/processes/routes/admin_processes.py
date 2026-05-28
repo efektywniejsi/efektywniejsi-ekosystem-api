@@ -73,9 +73,6 @@ def delete_process(
     service.delete_process(process_id)
 
 
-# ─────────────────────────────────────────────────────────────
-# Lesson Process Endpoints
-# ─────────────────────────────────────────────────────────────
 
 
 @router.post(

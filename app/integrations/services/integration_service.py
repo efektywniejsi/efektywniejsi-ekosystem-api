@@ -35,9 +35,6 @@ class IntegrationService:
     def __init__(self, db: Session):
         self.db = db
 
-    # ─────────────────────────────────────────────────────────────
-    # Public Integration Methods
-    # ─────────────────────────────────────────────────────────────
 
     def get_published_integrations(
         self,
@@ -110,9 +107,6 @@ class IntegrationService:
 
         return [CategoryCountResponse(category=r.category, count=r.count) for r in results]
 
-    # ─────────────────────────────────────────────────────────────
-    # Admin Integration Methods
-    # ─────────────────────────────────────────────────────────────
 
     def get_all_integrations(self) -> list[IntegrationResponse]:
         # Pre-load usage counts in single query to avoid N+1
@@ -261,9 +255,6 @@ class IntegrationService:
         self.db.delete(integration)
         self.db.commit()
 
-    # ─────────────────────────────────────────────────────────────
-    # Lesson Integration Methods
-    # ─────────────────────────────────────────────────────────────
 
     def get_lesson_integrations(self, lesson_id: UUID) -> list[LessonIntegrationResponse]:
         # Verify lesson exists
@@ -376,9 +367,6 @@ class IntegrationService:
         self.db.delete(lesson_integration)
         self.db.commit()
 
-    # ─────────────────────────────────────────────────────────────
-    # Process Integration Methods
-    # ─────────────────────────────────────────────────────────────
 
     def get_process_integrations(self, process_id: UUID) -> list[ProcessIntegrationResponse]:
         # Verify process exists
@@ -491,9 +479,6 @@ class IntegrationService:
         self.db.delete(process_integration)
         self.db.commit()
 
-    # ─────────────────────────────────────────────────────────────
-    # Proposal Methods
-    # ─────────────────────────────────────────────────────────────
 
     def create_proposal(self, data: ProposalCreate, submitted_by: User) -> ProposalResponse:
         proposal = IntegrationProposal(
@@ -558,9 +543,6 @@ class IntegrationService:
             proposal, proposal.submitted_by.name if proposal.submitted_by else "Unknown"
         )
 
-    # ─────────────────────────────────────────────────────────────
-    # Private Helpers
-    # ─────────────────────────────────────────────────────────────
 
     def _get_usage_counts(self) -> dict[UUID, int]:
         """Get usage counts for all integrations in a single query."""

@@ -244,11 +244,6 @@ async def test_progress_without_enrollment_fails(
     assert response.status_code == 403
 
 
-# ============================================================================
-# Text-only lesson tests
-# ============================================================================
-
-
 @pytest.mark.asyncio
 async def test_mark_text_only_lesson_complete_without_prior_progress(
     test_client: AsyncClient,
@@ -341,11 +336,6 @@ async def test_video_lesson_error_shows_current_progress(
     detail = response.json()["error"]["message"]
     assert "95%" in detail
     assert "30%" in detail  # Current progress shown in message
-
-
-# ============================================================================
-# Mark as uncomplete tests
-# ============================================================================
 
 
 @pytest.mark.asyncio

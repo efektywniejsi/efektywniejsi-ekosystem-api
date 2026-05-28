@@ -168,9 +168,6 @@ def create_lesson_integration(
     return lesson_integration
 
 
-# ─────────────────────────────────────────────────────────────
-# Pytest Fixtures
-# ─────────────────────────────────────────────────────────────
 
 
 @pytest.fixture

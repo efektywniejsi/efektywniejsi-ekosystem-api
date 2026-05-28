@@ -1,4 +1,3 @@
-# ── Builder stage ────────────────────────────────────────────────
 FROM python:3.12-slim AS builder
 
 WORKDIR /app
@@ -19,7 +18,6 @@ COPY pyproject.toml uv.lock ./
 RUN uv venv /opt/venv && \
     VIRTUAL_ENV=/opt/venv uv pip install --compile-bytecode -e .
 
-# ── Runtime stage ────────────────────────────────────────────────
 FROM python:3.12-slim AS runtime
 
 WORKDIR /app
