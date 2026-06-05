@@ -16,7 +16,7 @@ from app.admin.schemas.admin_statistics import (
 )
 from app.auth.models.user import User
 from app.courses.models.certificate import Certificate
-from app.courses.models.course import Course
+from app.courses.models.course import Course, Lesson, Module
 from app.courses.models.enrollment import Enrollment
 from app.courses.models.progress import LessonProgress
 
@@ -126,27 +126,54 @@ class EducationService:
             )
             cert_stats = {r[0]: r[1] for r in rows}
 
-        # Batch: average progress per course
-        progress_stats = {}
+        # Batch: total lesson count per course (Course -> Module -> Lesson)
+        lesson_counts = {}
+        if course_ids:
+            rows = (
+                db.query(Module.course_id, func.count(Lesson.id))
+                .join(Lesson, Lesson.module_id == Module.id)
+                .filter(Module.course_id.in_(course_ids))
+                .group_by(Module.course_id)
+                .all()
+            )
+            lesson_counts = {r[0]: r[1] for r in rows}
+
+        # Batch: sum of completion_percentage per course, scoped to lessons that
+        # belong to the course AND to users actually enrolled in that course.
+        # Average progress treats never-started lessons as 0% (see denominator below).
+        progress_sums = {}
         if course_ids:
             rows = (
                 db.query(
-                    Enrollment.course_id,
-                    func.avg(LessonProgress.completion_percentage),
+                    Module.course_id,
+                    func.sum(LessonProgress.completion_percentage),
                 )
+                .join(Lesson, Lesson.module_id == Module.id)
+                .join(LessonProgress, LessonProgress.lesson_id == Lesson.id)
                 .join(
-                    LessonProgress,
-                    (Enrollment.user_id == LessonProgress.user_id),
+                    Enrollment,
+                    (Enrollment.user_id == LessonProgress.user_id)
+                    & (Enrollment.course_id == Module.course_id),
                 )
-                .filter(Enrollment.course_id.in_(course_ids))
-                .group_by(Enrollment.course_id)
+                .filter(Module.course_id.in_(course_ids))
+                .group_by(Module.course_id)
                 .all()
             )
-            progress_stats = {r[0]: r[1] for r in rows}
+            progress_sums = {r[0]: (r[1] or 0) for r in rows}
 
         courses = []
         for course in courses_data:
             e_stats = enrollment_stats.get(course.id, {"total": 0, "active": 0, "completed": 0})
+            # Average progress = achieved percentage points / total possible points.
+            # Denominator counts every enrolled user × every lesson, so lessons a user
+            # never opened correctly count as 0% instead of inflating the average.
+            total_lessons = lesson_counts.get(course.id, 0)
+            denominator = e_stats["total"] * total_lessons
+            average_progress = (
+                round(progress_sums.get(course.id, 0) / denominator, 2)
+                if denominator > 0
+                else 0.0
+            )
             courses.append(
                 CourseProgressStats(
                     id=str(course.id),
@@ -155,7 +182,7 @@ class EducationService:
                     total_enrollments=e_stats["total"],
                     active_learners=e_stats["active"],
                     completed_count=e_stats["completed"],
-                    average_progress=round(progress_stats.get(course.id) or 0, 2),
+                    average_progress=average_progress,
                     certificates_issued=cert_stats.get(course.id, 0),
                 )
             )
