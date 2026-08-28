@@ -1,4 +1,4 @@
-# Efektywniejsi Ekosystem - API
+# Efektywniejsi Ekosystem - backend
 
 FastAPI backend for the Efektywniejsi learning platform with authentication, course management, video streaming, gamification, and certificates.
 
